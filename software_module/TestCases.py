@@ -21,9 +21,9 @@ f_truth = fitKDE(data, bw=1, method="tree")
 x_truth, y_truth = f_truth()
 
 
-# Replicate the Nature methods paper
+# Replicate the Nature methods paper small world simulations
 pt_nat, Gt_nat = genNatureSW()
 
 FRCt_nat = getFRCVec(Gt_nat)
 
-Ht = vecEntropy(FRCt_nat, getEntropyKDEPlugin)
+Ht_nat = vecEntropy(FRCt_nat, getEntropyKDEPlugin)
