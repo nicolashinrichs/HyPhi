@@ -21,7 +21,6 @@ eeg-ccorr-to-networkx/
 │   └── CCORR_00.mat           # Dummy file: 1 epoch × 1 band (anonymised)
 │
 ├── .gitignore
-├── LICENSE                    # MIT by default
 ├── requirements.txt
 └── README.md                  # Project front page
 ```
@@ -146,19 +145,3 @@ Saved 1 dyads → toy.pkl
 ```
 
 ---
-
-## License
-
-This project is released under the [MIT License](LICENSE), but may be adapted under another OSI-approved license (e.g., BSD-3-Clause) as needed.
-
----
-
-## Next Steps
-
-- Push to GitHub for version control and sharing.
-- Enable GitHub Actions for continuous integration.
-- Optionally mint a Zenodo DOI for academic citation.
-
----
-
-With this structure in place, the tool is ready for collaborative extension, reproducible research, and broad reuse across hyperscanning projects.
