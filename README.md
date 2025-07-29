@@ -1,6 +1,6 @@
 # Geometric Phase Transitions in Hyperscanning Networks
 
-This repository accompanies the manuscript "Beyond Inter-Brain Synchrony: Geometric Phase Transitions in Hyperscanning Networks" by Nicolás Hinrichs, Noah Guzman, Dimitris Bolis, Gesa Hartwigsen, Leonhard Schilbach, Guillaume Dumas, and Melanie Weber (2025); it provides a comprehensive, modular pipeline for analyzing phase transitions in inter-brain coupling using geometric network analysis techniques applied to dual-EEG data.
+This repository accompanies the manuscript "Beyond Inter-Brain Synchrony: Geometric Phase Transitions in Hyperscanning Networks" by Nicolás Hinrichs, Noah Guzman, Jun Lin Liow, Dimitris Bolis, Gesa Hartwigsen, Leonhard Schilbach, Guillaume Dumas, and Melanie Weber (2025); it provides a comprehensive, modular pipeline for analyzing phase transitions in inter-brain coupling using geometric network analysis techniques applied to dual-EEG data.
 
 ## Overview
 
