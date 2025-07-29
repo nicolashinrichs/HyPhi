@@ -12,6 +12,8 @@ import infomeasure as im
 from DensityEstimation import *
 from GraphCurvatures import *
 
+# Compute the entropy distribution of the FRC
+# or quantify the diversity or spread of curvature
 
 def getEntropyVasicek(G: nx.classes.graph.Graph, window_length: int | None, curvature: str = "formanCurvature") -> float:
     curvatures = extractCurvatures(G, curvature=curvature)
