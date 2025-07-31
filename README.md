@@ -69,7 +69,7 @@ Traditional synchrony metrics often miss critical dynamic topological changes. G
 
 ## Licensing
 
-This repository is released under the MIT License. See `LICENSE` for more details.
+This repository is released under the BSD-3-Clause license. See `LICENSE` for more details.
 
 ## Citation
 
