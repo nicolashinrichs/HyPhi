@@ -1,4 +1,4 @@
-# Geometric Phase Transitions in Hyperscanning Networks
+# HiPhi(Φ): the toolkit for detecting phase transitions in inter-brain networks by tracking discrete Ricci curvature and its entropy distribution.
 
 This repository accompanies the manuscript "Beyond Inter-Brain Synchrony: Geometric Phase Transitions in Hyperscanning Networks" by Nicolás Hinrichs, Noah Guzman, Jun Lin Liow, Dimitris Bolis, Gesa Hartwigsen, Leonhard Schilbach, Guillaume Dumas, and Melanie Weber (2025); it provides a comprehensive, modular pipeline for analyzing phase transitions in inter-brain coupling using geometric network analysis techniques applied to dual-EEG data.
 
