@@ -60,5 +60,9 @@ def genTVSW(n: int, k: int, trez: int, minpow: float | int, maxpow: float | int,
     return pt, Gt
 
 
-def genNatureSW():
-    return genTVSW(1000, 50, 100, -4, 0)
+def genNatureSW(seed_val: int = 42):
+    return genTVSW(1000, 50, 100, -4, 0, seed_val=seed_val)
+
+
+def genNeuRepsWSW(seed_val: int = 42):
+    return genTVWeightedSW(1000, 50, 1., 100, -4, 0, seed_val=seed_val)
