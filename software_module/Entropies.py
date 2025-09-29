@@ -99,3 +99,12 @@ def vecEntropy(Gt: npt.NDArray[nx.classes.graph.Graph] | List[nx.classes.graph.G
     ray.shutdown()
 
     return np.array(list(H_map))
+
+
+def getQuantiles(G: nx.classes.graph.Graph, qs: npt.NDArray[float] | List[float], curvature: str = "formanCurvature") -> npt.NDArray[float]:
+    curvatures = extractCurvatures(G, curvature=curvature)
+    return np.quantile(curvatures, qs)
+
+
+def vecQuantiles(Gt: npt.NDArray[nx.classes.graph.Graph] | List[nx.classes.graph.Graph], qs: npt.NDArray[float] | List[float], curvature: str = "formanCurvature") -> npt.NDArray[float]:
+    return np.array([getQuantiles(G, qs=qs, curvature=curvature) for G in Gt])
