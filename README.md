@@ -40,10 +40,6 @@ Documentation and supplemental information.
 * `materials/`: information about EEG devices and experimental setup.
 * `software_details/`: detailed computational environment documentation.
 
-### `tests`
-
-Scripts for validating pipeline functions.
-
 ### `software_module`
 
 Custom software functions and modules.
