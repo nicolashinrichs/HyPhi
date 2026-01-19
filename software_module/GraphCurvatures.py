@@ -4,6 +4,7 @@
 
 import networkx as nx
 import numpy as np
+import math
 from GraphRicciCurvature.OllivierRicci import OllivierRicci
 from GraphRicciCurvature.FormanRicci import FormanRicci
 
@@ -24,17 +25,17 @@ def getFRCVec(Gt, method_val="1d"):
     return list(map(lambda G: getFRC(G, method_val=method_val), Gt))
 
 
-def getORC(G, alpha_val=0.5, method_val="OTDSinkhornMix"):
+def getORC(G, alpha_val=0.5, base_val=math.e, power_val=0, method_val="OTDSinkhornMix"):
     # Initialize Forman-Ricci Curvature class
-    orc = OllivierRicci(G, alpha=alpha_val, method=method_val)
+    orc = OllivierRicci(G, alpha=alpha_val, base=base_val, exp_power=power_val, method=method_val)
     # Compute the Forman-Ricci curvature
     orc.compute_ricci_curvature()
     # Return updated graph with curvature property on edges
     return orc.G
 
 
-def getORCVec(Gt, alpha_val=0.5, method_val="OTDSinkhornMix"):
-    return list(map(lambda G: getORC(G, alpha_val, method_val=method_val), Gt))
+def getORCVec(Gt, alpha_val=0.5, base_val=math.e, power_val=0, method_val="OTDSinkhornMix"):
+    return list(map(lambda G: getORC(G, alpha_val, base_val, power_val, method_val=method_val), Gt))
 
 
 def extractCurvatures(G, curvature="formanCurvature"):

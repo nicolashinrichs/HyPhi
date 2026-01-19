@@ -1,0 +1,263 @@
+{
+  "description": "Energy-distance omnibus and pairwise tests with Holm correction",
+  "alpha": 0.05,
+  "trial_types": [
+    "AA",
+    "SA",
+    "F"
+  ],
+  "freq_bands": [
+    "Delta",
+    "Theta",
+    "Alpha-Low",
+    "Alpha-High",
+    "Beta-Low",
+    "Beta-High",
+    "Gamma-Low",
+    "Gamma-High"
+  ],
+  "omnibus": {
+    "Delta": {
+      "observed_statistic": 0.12571398758788632,
+      "p_raw": 0.0,
+      "p_holm": 0.0,
+      "significant_raw": true,
+      "significant_holm": true
+    },
+    "Theta": {
+      "observed_statistic": 0.14855113526862307,
+      "p_raw": 0.0,
+      "p_holm": 0.0,
+      "significant_raw": true,
+      "significant_holm": true
+    },
+    "Alpha-Low": {
+      "observed_statistic": 0.11559459581737737,
+      "p_raw": 0.0,
+      "p_holm": 0.0,
+      "significant_raw": true,
+      "significant_holm": true
+    },
+    "Alpha-High": {
+      "observed_statistic": 0.07947318239393555,
+      "p_raw": 0.008,
+      "p_holm": 0.04,
+      "significant_raw": true,
+      "significant_holm": true
+    },
+    "Beta-Low": {
+      "observed_statistic": 0.06939173586361012,
+      "p_raw": 0.0875,
+      "p_holm": 0.0875,
+      "significant_raw": false,
+      "significant_holm": false
+    },
+    "Beta-High": {
+      "observed_statistic": 0.08874551655630207,
+      "p_raw": 0.012,
+      "p_holm": 0.048,
+      "significant_raw": true,
+      "significant_holm": true
+    },
+    "Gamma-Low": {
+      "observed_statistic": 0.10078350161251999,
+      "p_raw": 0.012,
+      "p_holm": 0.048,
+      "significant_raw": true,
+      "significant_holm": true
+    },
+    "Gamma-High": {
+      "observed_statistic": 0.09297259301534601,
+      "p_raw": 0.0305,
+      "p_holm": 0.061,
+      "significant_raw": true,
+      "significant_holm": false
+    }
+  },
+  "pairwise": {
+    "Delta": {
+      "AA-SA": {
+        "observed_statistic": 0.07151068135385996,
+        "p_raw": 0.1815,
+        "p_holm": 1.0,
+        "significant_raw": false,
+        "significant_holm": false
+      },
+      "AA-F": {
+        "observed_statistic": 0.040547342030920946,
+        "p_raw": 0.768,
+        "p_holm": 1.0,
+        "significant_raw": false,
+        "significant_holm": false
+      },
+      "SA-F": {
+        "observed_statistic": 0.13258485232117276,
+        "p_raw": 0.001,
+        "p_holm": 0.02,
+        "significant_raw": true,
+        "significant_holm": true
+      }
+    },
+    "Theta": {
+      "AA-SA": {
+        "observed_statistic": 0.05098140221197469,
+        "p_raw": 0.3895,
+        "p_holm": 1.0,
+        "significant_raw": false,
+        "significant_holm": false
+      },
+      "AA-F": {
+        "observed_statistic": 0.16959157988260093,
+        "p_raw": 0.0,
+        "p_holm": 0.0,
+        "significant_raw": true,
+        "significant_holm": true
+      },
+      "SA-F": {
+        "observed_statistic": 0.15745347272215834,
+        "p_raw": 0.0,
+        "p_holm": 0.0,
+        "significant_raw": true,
+        "significant_holm": true
+      }
+    },
+    "Alpha-Low": {
+      "AA-SA": {
+        "observed_statistic": 0.03956024698453567,
+        "p_raw": 0.5835,
+        "p_holm": 1.0,
+        "significant_raw": false,
+        "significant_holm": false
+      },
+      "AA-F": {
+        "observed_statistic": 0.1321083981212958,
+        "p_raw": 0.0,
+        "p_holm": 0.0,
+        "significant_raw": true,
+        "significant_holm": true
+      },
+      "SA-F": {
+        "observed_statistic": 0.17870532385532406,
+        "p_raw": 0.0,
+        "p_holm": 0.0,
+        "significant_raw": true,
+        "significant_holm": true
+      }
+    },
+    "Alpha-High": {
+      "AA-SA": {
+        "observed_statistic": 0.03914545008267481,
+        "p_raw": 0.578,
+        "p_holm": 1.0,
+        "significant_raw": false,
+        "significant_holm": false
+      },
+      "AA-F": {
+        "observed_statistic": 0.09806543558317324,
+        "p_raw": 0.0125,
+        "p_holm": 0.2,
+        "significant_raw": true,
+        "significant_holm": false
+      },
+      "SA-F": {
+        "observed_statistic": 0.09176399898631564,
+        "p_raw": 0.0195,
+        "p_holm": 0.2925,
+        "significant_raw": true,
+        "significant_holm": false
+      }
+    },
+    "Beta-Low": {
+      "AA-SA": {
+        "observed_statistic": 0.04060396526181733,
+        "p_raw": 0.649,
+        "p_holm": 1.0,
+        "significant_raw": false,
+        "significant_holm": false
+      },
+      "AA-F": {
+        "observed_statistic": 0.11705198238413926,
+        "p_raw": 0.005,
+        "p_holm": 0.095,
+        "significant_raw": true,
+        "significant_holm": false
+      },
+      "SA-F": {
+        "observed_statistic": 0.07519231133306518,
+        "p_raw": 0.1045,
+        "p_holm": 1.0,
+        "significant_raw": false,
+        "significant_holm": false
+      }
+    },
+    "Beta-High": {
+      "AA-SA": {
+        "observed_statistic": 0.040413946073245166,
+        "p_raw": 0.672,
+        "p_holm": 1.0,
+        "significant_raw": false,
+        "significant_holm": false
+      },
+      "AA-F": {
+        "observed_statistic": 0.09489596476527228,
+        "p_raw": 0.041,
+        "p_holm": 0.5740000000000001,
+        "significant_raw": true,
+        "significant_holm": false
+      },
+      "SA-F": {
+        "observed_statistic": 0.046768126755397044,
+        "p_raw": 0.5365,
+        "p_holm": 1.0,
+        "significant_raw": false,
+        "significant_holm": false
+      }
+    },
+    "Gamma-Low": {
+      "AA-SA": {
+        "observed_statistic": 0.032322722490990274,
+        "p_raw": 0.938,
+        "p_holm": 1.0,
+        "significant_raw": false,
+        "significant_holm": false
+      },
+      "AA-F": {
+        "observed_statistic": 0.13606732092616644,
+        "p_raw": 0.0075,
+        "p_holm": 0.1275,
+        "significant_raw": true,
+        "significant_holm": false
+      },
+      "SA-F": {
+        "observed_statistic": 0.07943311516026136,
+        "p_raw": 0.1505,
+        "p_holm": 1.0,
+        "significant_raw": false,
+        "significant_holm": false
+      }
+    },
+    "Gamma-High": {
+      "AA-SA": {
+        "observed_statistic": 0.05279312467967875,
+        "p_raw": 0.4965,
+        "p_holm": 1.0,
+        "significant_raw": false,
+        "significant_holm": false
+      },
+      "AA-F": {
+        "observed_statistic": 0.08232090786061975,
+        "p_raw": 0.1265,
+        "p_holm": 1.0,
+        "significant_raw": false,
+        "significant_holm": false
+      },
+      "SA-F": {
+        "observed_statistic": 0.13561879227853313,
+        "p_raw": 0.007,
+        "p_holm": 0.126,
+        "significant_raw": true,
+        "significant_holm": false
+      }
+    }
+  }
+}
