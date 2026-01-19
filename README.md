@@ -1,7 +1,7 @@
 # HyPhi(Φ)
 The toolkit for detecting phase transitions in inter-brain networks by tracking discrete Ricci curvature and its entropy distribution.
 
-This repository accompanies the manuscript "Beyond Inter-Brain Synchrony with HyPhi(Φ): Characterizing Geometric Regimes in Hyperscanning Networks" by Nicolás Hinrichs, Noah Guzman, Jun Lin Liow, Merle Fairhurst, Gesa Hartwigsen, Leonhard Schilbach, Guillaume Dumas, and Melanie Weber (2026); it provides a comprehensive, modular pipeline for analyzing phase transitions in inter-brain coupling using geometric network analysis techniques applied to dual-EEG data.
+This repository accompanies the manuscript "Beyond Inter-Brain Synchrony with HyPhi(Φ): A Pipeline for Characterizing Geometric Regimes in Hyperscanning Networks" by Nicolás Hinrichs, Noah Guzman, Jun Lin Liow, Merle Fairhurst, Gesa Hartwigsen, Leonhard Schilbach, Guillaume Dumas, and Melanie Weber (2026); it provides a comprehensive, modular pipeline for analyzing phase transitions in inter-brain coupling using geometric network analysis techniques applied to dual-EEG data.
 
 ## Overview
 
@@ -53,7 +53,7 @@ This repository is released under the BSD-3-Clause license. See `LICENSE` for mo
 
 Please cite:
 
-> Hinrichs, N., et al. (2026). *Beyond Inter-Brain Synchrony with HyPhi(Φ): Characterizing Geometric Regimes in Hyperscanning Networks*. \[Manuscript in preparation].
+> Hinrichs, N., et al. (2026). *Beyond Inter-Brain Synchrony with HyPhi(Φ): A Pipeline for Characterizing Geometric Regimes in Hyperscanning Networks*. \[Manuscript in preparation].
 
 ## Contact
 
