@@ -44,10 +44,6 @@ Documentation and supplemental information.
 
 Custom software functions and modules.
 
-### `templates`
-
-Blank templates for documenting experiments, simulations, and analyses.
-
 ## Installation and Dependencies
 
 Ensure Python 3.8+ is installed. Required Python libraries:
