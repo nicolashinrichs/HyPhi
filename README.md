@@ -1,5 +1,7 @@
 # HyPhi(Φ)
-[![DOI](https://zenodo.org/badge/1014584858.svg)](https://doi.org/10.5281/zenodo.18415663)
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18415664.svg)](https://doi.org/10.5281/zenodo.18415664)
+
 The toolkit for detecting phase transitions in inter-brain networks by tracking discrete Ricci curvature and its entropy distribution.
 
 This repository contains a modular pipeline for analyzing phase transitions in inter-brain coupling using geometric network analysis techniques, demonstrated on simulated and hyperscanning datasets. 
