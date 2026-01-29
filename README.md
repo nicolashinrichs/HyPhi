@@ -1,4 +1,5 @@
 # HyPhi(Φ)
+[![DOI](https://zenodo.org/badge/1014584858.svg)](https://doi.org/10.5281/zenodo.18415663)
 The toolkit for detecting phase transitions in inter-brain networks by tracking discrete Ricci curvature and its entropy distribution.
 
 This repository contains a modular pipeline for analyzing phase transitions in inter-brain coupling using geometric network analysis techniques, demonstrated on simulated and hyperscanning datasets. 
@@ -46,6 +47,16 @@ Ensure Python 3.8+ is installed. Required Python libraries:
 ## Scientific Motivation
 
 Traditional synchrony metrics often miss critical dynamic topological changes. Geometric descriptors like the Forman-Ricci curvature capture network reconfigurations, providing insights into how brains dynamically couple and decouple during interactions.
+
+## Citation
+
+If you use this software, please cite it as:
+
+Nicolás Hinrichs & Noah Guzmán (2026). *HyPhi(Φ): A toolkit for detecting phase transitions in inter-brain networks*.
+nicolashinrichs/HyPhi: Second release (v1.1.0). Zenodo. 
+https://doi.org/10.5281/zenodo.18415663
+
+ (2026).  https://doi.org/10.5281/zenodo.18415664
 
 ## Licensing
 
