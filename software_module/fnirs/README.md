@@ -12,7 +12,7 @@ This workflow implements standard preprocessing. It is suitable for initial data
 
 ```python
 
-from fnirs_ecg_vr_v1 import *
+from fnirs_ecg_vr import *
 
 # 1. Load and align data streams
 # Handles LIONirs exports and standardizes time indices
