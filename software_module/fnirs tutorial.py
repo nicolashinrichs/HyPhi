@@ -181,12 +181,17 @@ def process_ecg_physio(ecg_file, target_timestamps):
 
 
 # ============================================================
-# 4. Graph Construction (The Output)
+# 4. Graph Construction
 # ============================================================
 
 def build_annotated_graphs(fnirs_df, vr_df, ecg_df, start_time, window_size=150, step=10):
-    graphs = []
-    meta_list = []
+    """
+    Constructs a list of NetworkX graphs.
+    Each graph contains:
+      1. Weighted Edges (Neural Synchrony)
+      2. Graph-level Attributes (Phase, VR, ECG metadata)
+    """
+    annotated_graphs = []
     
     n = len(fnirs_df)
     
@@ -203,20 +208,53 @@ def build_annotated_graphs(fnirs_df, vr_df, ecg_df, start_time, window_size=150,
         t_mid = w_fnirs.index[len(w_fnirs)//2]
         phase = get_etc_phase(t_mid, start_time)
         
-        # Build Graph
+        # Build Graph Structure (The Topology)
         corr = w_fnirs.corr().abs()
         np.fill_diagonal(corr.values, 0)
         G = nx.from_numpy_array(corr.values)
         
-        # Meta
-        meta = {
-            "timestamp": t_mid,
-            "phase": phase,
-            "hand_disp": w_vr["Dyad_HandDisp"].mean(),
-            "pns_index": w_ecg["PNS"].mean() if "PNS" in w_ecg else np.nan
-        }
+        # Embed Annotations directly into the Graph Object
+        # These are accessible via G.graph['key']
+        G.graph['timestamp'] = t_mid
+        G.graph['phase'] = phase
+        G.graph['hand_disp'] = w_vr["Dyad_HandDisp"].mean()
+        G.graph['pns_index'] = w_ecg["PNS"].mean() if "PNS" in w_ecg else np.nan
+        G.graph['motion_energy'] = w_vr["P1_HeadEnergy"].mean() # Control variable
         
-        graphs.append(G)
-        meta_list.append(meta)
+        annotated_graphs.append(G)
         
-    return graphs, meta_list
+    return annotated_graphs
+
+
+# ============================================================
+# Downstream Usage with HyPhi (Updated)
+# ============================================================
+#
+# # 1. Run Pipeline
+# G_list = build_annotated_graphs(fnirs_clean, vr_processed, ecg_processed, start_time=10.0)
+#
+# # 2. Calculate Geometry (HyPhi)
+# # HyPhi functions typically iterate over the list of graphs
+# from GraphCurvatures import getFRCVec
+# from Entropies import vecEntropy, getEntropyKozachenko
+#
+# # Calculate Curvature Vector (list of arrays)
+# frc_vec = getFRCVec(G_list, method_val="augmented")
+#
+# # Calculate Entropy Vector (list of floats)
+# h_estimator = lambda G: getEntropyKozachenko(G, curvature="formanCurvature")
+# rne_vec = vecEntropy(frc_vec, estim=h_estimator)
+#
+# # 3. Extract Results for Statistics
+# # Now we can pull the metadata directly from the graphs to align with RNE
+# import pandas as pd
+#
+# results = []
+# for i, G in enumerate(G_list):
+#     # Combine the computed Entropy with the embedded Graph Metadata
+#     row = G.graph.copy()  # Gets timestamp, phase, physio, etc.
+#     row['RNE'] = rne_vec[i]
+#     results.append(row)
+#
+# final_stats_df = pd.DataFrame(results)
+# # final_stats_df is now ready for Linear Mixed Models
