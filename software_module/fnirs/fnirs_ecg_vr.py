@@ -1,4 +1,4 @@
-## HyPhi x fNIRS
+## HyPhi for fNIRS x ECG x VR
 ##
 ## This script implements a hybrid workflow:
 ## 1. Input: .csv files exported from LIONirs (Matlab) containing HbO data with NaNs.
