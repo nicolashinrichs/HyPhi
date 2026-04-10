@@ -1,0 +1,73 @@
+# Config file for hyphi
+# Drop all relevant paths, parameters, etc. here
+# They can be accessed in the code via:
+#   from hyphi.configs import config, paths, params
+# Note, store private configs in the same folder as this file: "./[PRIVATE_PREFIX]_configs.toml"
+# They shouldn't be tracked via git
+
+PROJECT_NAME = "HyPhi" # used for paths, logging, etc. Must be capitalized as the name of the project root folder
+
+# Set paths
+[paths]
+# all paths are relative to the PROJECT_ROOT folder named 'hyphi' (PROJECT_NAME)
+DATA = "./data"
+RESULTS = "./results"
+CACHE = "./data/cache"
+
+[paths.results]
+visualizations = "./results/datavisualization"
+
+# Set parameters
+[params]
+weight_decay = 0.01 # PLACEHOLDER
+
+################################################
+##################  LOGGER  ####################
+################################################
+
+# Set logging
+[logging]
+version = 1                      # currently only version 1
+disable_existing_loggers = false
+
+[logging.formatters.fmtfile]
+# Format for file handler
+format = "{asctime:23} :: {name} :: {levelname:^8} :: {message}"
+style = "{"
+
+[logging.formatters.console]
+# Format for console handler (StreamHandler)
+format = "\n\t{asctime:19} :: {name} :: {levelname:^8} :: {message}\n"
+style = "{"
+datefmt = "%Y-%m-%d %H:%M:%S"
+
+[logging.handlers.file_handler]
+level = "DEBUG"                  # == 10 (pass int or string)
+formatter = "fmtfile"
+filename = "code/logs/hyphi.log" # parent dir must exist
+class = "logging.FileHandler"    # for file output
+
+[logging.handlers.stream_handler]
+level = "INFO"
+formatter = "console"
+class = "logging.StreamHandler" # for console output
+
+[logging.loggers.__main__] # __name__ of the calling module
+level = "INFO" # handlers can have different levels
+# logging.DEBUG == 10 < ...INFO == 20 < WARNING == 30 < ERROR == 40 < CRITICAL == 50
+propagate = true
+handlers = ["file_handler", "stream_handler"]
+
+# Add more handlers & loggers here
+# [logging.handlers.NAME_OF_HANDLER]
+# level = 10  # == "DEBUG" (pass int or string)
+# formatter = "fmtfile"
+# filename = "logs/NAME_OF_LOGFILE.log"
+# class = "logging.handlers.RotatingFileHandler"
+# maxBytes = 5_000_000 # approx. 5 MB
+# backupCount=20
+
+# [logging.loggers.NAME_OF_LOGGER]
+# level = 10  # == "DEBUG" (pass int or string)
+# propagate = true
+# handlers = ["NAME_OF_HANDLER", "ADD_MORE_HANDLERS_HERE"]
