@@ -1,6 +1,6 @@
 # ============= #
-# Preliminaries # 
-# ============= # 
+# Preliminaries #
+# ============= #
 
 from FileIO import *
 import numpy as np
@@ -10,25 +10,25 @@ import matplotlib as mpl
 import matplotlib.cm as cm
 import matplotlib.colors as mpc
 from matplotlib.colors import ListedColormap, BoundaryNorm
-from mpl_toolkits.axes_grid1.inset_locator import inset_axes 
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from matplotlib.lines import Line2D  # for custom legend handles
 from tqdm import tqdm
 from os import path
 import sys
 
 # Colorblind friendly palette (8 colors) to set the color cycle of plots (Bang Wong's palette)
-wong = ['#000000', '#E69F00', '#56B4E9', '#009E73', '#F0E442', '#0072B2', '#D55E00', '#CC79A7']
+wong = ["#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7"]
 
 # Set Matplotlib rc params
 params = {
-    'axes.labelsize': 20,
-    'axes.unicode_minus': False,
-    'axes.titlesize': 20,
-    'legend.fontsize': 12,
-    'xtick.labelsize': 12,
-    'ytick.labelsize': 12,
-    'font.family': 'sans-serif',
-    'axes.prop_cycle': mpl.cycler(color=wong)
+    "axes.labelsize": 20,
+    "axes.unicode_minus": False,
+    "axes.titlesize": 20,
+    "legend.fontsize": 12,
+    "xtick.labelsize": 12,
+    "ytick.labelsize": 12,
+    "font.family": "sans-serif",
+    "axes.prop_cycle": mpl.cycler(color=wong),
 }
 plt.rcParams.update(params)
 
@@ -37,8 +37,8 @@ basepath = path.dirname(__file__)
 configpath = path.abspath(path.join(basepath, "..", "experiments", "analysis"))
 
 # ========================== #
-# Load CCORR Analysis Config # 
-# ========================== # 
+# Load CCORR Analysis Config #
+# ========================== #
 
 # Analysis configuration file
 configfile = path.abspath(path.join(configpath, sys.argv[1]))
@@ -59,8 +59,9 @@ hyperviz = path.abspath(config["viz_loc"])
 makeDir(hyperviz)
 
 # ======== #
-# Plotting # 
-# ======== # 
+# Plotting #
+# ======== #
+
 
 def plotHyperFRC(entropy, quantiles, title=None, band_labels=None, window_labels=None, q_labels=None):
     """
@@ -79,7 +80,7 @@ def plotHyperFRC(entropy, quantiles, title=None, band_labels=None, window_labels
     ent_q3 = np.percentile(entropy, 75, axis=1)
 
     # Quantiles: median + IQR across trials for each quantile
-    q_median = np.median(quantiles, axis=1)    # (8, 4, 5)
+    q_median = np.median(quantiles, axis=1)  # (8, 4, 5)
     q_q1 = np.percentile(quantiles, 25, axis=1)
     q_q3 = np.percentile(quantiles, 75, axis=1)
 
@@ -89,7 +90,7 @@ def plotHyperFRC(entropy, quantiles, title=None, band_labels=None, window_labels
 
     # --- Set up discrete colormap for quantile index ---
     # Use first n_q Wong colors
-    cmap = ListedColormap(wong[1:n_q+1])
+    cmap = ListedColormap(wong[1 : n_q + 1])
     # Quantile indices: 0,1,2,3,4 → boundaries at -0.5,0.5,...,4.5
     boundaries = np.arange(-0.5, n_q + 0.5, 1)
     norm = BoundaryNorm(boundaries, cmap.N)
@@ -97,42 +98,31 @@ def plotHyperFRC(entropy, quantiles, title=None, band_labels=None, window_labels
     for b in range(n_bands):
         # Top: entropy
         ax_ent = axes[0, b]
-        ax_ent.spines['top'].set_visible(False)
-        ax_ent.spines['right'].set_visible(False)
-        ax_ent.plot(x, ent_median[b], marker='o', color=wong[0])
+        ax_ent.spines["top"].set_visible(False)
+        ax_ent.spines["right"].set_visible(False)
+        ax_ent.plot(x, ent_median[b], marker="o", color=wong[0])
         ax_ent.fill_between(x, ent_q1[b], ent_q3[b], color=wong[0], alpha=0.3)
         if b == 0:
-            ax_ent.set_ylabel('Entropy')
-        ax_ent.set_title(band_labels[b] if band_labels is not None else f'Band {b}')
+            ax_ent.set_ylabel("Entropy")
+        ax_ent.set_title(band_labels[b] if band_labels is not None else f"Band {b}")
 
         # Bottom: quantiles colored by index
         ax_q = axes[1, b]
-        ax_q.spines['top'].set_visible(False)
-        ax_q.spines['right'].set_visible(False)
+        ax_q.spines["top"].set_visible(False)
+        ax_q.spines["right"].set_visible(False)
         for q_idx in range(n_q):
             color = cmap(norm(q_idx))
-            ax_q.plot(
-                x,
-                q_median[b, :, q_idx],
-                marker='o',
-                color=color
-            )
-            ax_q.fill_between(
-                x,
-                q_q1[b, :, q_idx],
-                q_q3[b, :, q_idx],
-                color=color,
-                alpha=0.2
-            )
+            ax_q.plot(x, q_median[b, :, q_idx], marker="o", color=color)
+            ax_q.fill_between(x, q_q1[b, :, q_idx], q_q3[b, :, q_idx], color=color, alpha=0.2)
 
         if b == 0:
-            ax_q.set_ylabel('Quantile Value')
+            ax_q.set_ylabel("Quantile Value")
         if window_labels is not None:
             ax_q.set_xticks(x)
             ax_q.set_xticklabels(window_labels, rotation=45)
         else:
             ax_q.set_xticks(x)
-            ax_q.set_xlabel('Time Window')
+            ax_q.set_xlabel("Time Window")
 
     # --- Single discrete colorbar on the right of the bottom-right quantile plot ---
     # Create a dummy ScalarMappable using the same cmap/norm
@@ -145,10 +135,10 @@ def plotHyperFRC(entropy, quantiles, title=None, band_labels=None, window_labels
     # Label ticks as quantiles
     if q_labels is not None:
         cbar.set_ticklabels(q_labels)
-        cbar.set_label('Quantile')
+        cbar.set_label("Quantile")
     else:
-        cbar.set_ticklabels([f'Q{q_idx + 1}' for q_idx in range(n_q)])
-        cbar.set_label('Quantile Index')
+        cbar.set_ticklabels([f"Q{q_idx + 1}" for q_idx in range(n_q)])
+        cbar.set_label("Quantile Index")
 
     # Figure title
     if title is not None:
@@ -160,9 +150,9 @@ def plotHyperFRC(entropy, quantiles, title=None, band_labels=None, window_labels
 
 
 def plotHyperFRCFullExp(
-    entropy_list,      # list of 3 arrays, each (8, 30, 4)
-    quantiles_list,    # list of 3 arrays, each (8, 30, 4, 5)
-    trial_type_seq,    # array-like, length 90, values in {0,1,2} or {1,2,3}
+    entropy_list,  # list of 3 arrays, each (8, 30, 4)
+    quantiles_list,  # list of 3 arrays, each (8, 30, 4, 5)
+    trial_type_seq,  # array-like, length 90, values in {0,1,2} or {1,2,3}
     title=None,
     band_labels=None,
     window_labels=None,
@@ -186,8 +176,9 @@ def plotHyperFRCFullExp(
 
     trial_type_seq = np.asarray(trial_type_seq)
     n_trials_total = trial_type_seq.shape[0]
-    assert n_trials_total == n_types * n_trials_per_type, \
+    assert n_trials_total == n_types * n_trials_per_type, (
         "trial_type_seq length must equal total number of trials across types"
+    )
 
     # Ensure 0,1,2 labels internally
     if trial_type_seq.min() == 1:
@@ -197,7 +188,7 @@ def plotHyperFRCFullExp(
 
     # Default type labels if none provided
     if type_labels is None:
-        type_labels = [f"T{k+1}" for k in range(n_types)]
+        type_labels = [f"T{k + 1}" for k in range(n_types)]
 
     # Time axis
     total_windows = n_trials_total * n_windows
@@ -212,8 +203,8 @@ def plotHyperFRCFullExp(
 
     # Fill combined arrays according to chronological order
     for t in range(n_trials_total):
-        k = tt_seq[t]            # trial type index 0..2
-        i = per_type_counters[k] # trial index within type
+        k = tt_seq[t]  # trial type index 0..2
+        i = per_type_counters[k]  # trial index within type
         per_type_counters[k] += 1
 
         start = t * n_windows
@@ -224,16 +215,11 @@ def plotHyperFRCFullExp(
             quant_combined[b, start:end, :] = quantiles_list[k][b, i, :, :]
 
     # Figure: n_bands rows, 2 columns (entropy | quantiles)
-    fig, axes = plt.subplots(
-        n_bands, 2,
-        figsize=(28, 2.0 * n_bands),
-        sharex=True,
-        sharey='col'
-    )
+    fig, axes = plt.subplots(n_bands, 2, figsize=(28, 2.0 * n_bands), sharex=True, sharey="col")
     axes = np.atleast_2d(axes)
 
     # Discrete colormap for quantiles (skip black)
-    cmap = ListedColormap(wong[1:n_q+1])
+    cmap = ListedColormap(wong[1 : n_q + 1])
     boundaries = np.arange(-0.5, n_q + 0.5, 1)
     norm = BoundaryNorm(boundaries, cmap.N)
 
@@ -246,34 +232,29 @@ def plotHyperFRCFullExp(
 
         # Remove top and right spines
         for ax in (ax_ent, ax_q):
-            ax.spines['top'].set_visible(False)
-            ax.spines['right'].set_visible(False)
+            ax.spines["top"].set_visible(False)
+            ax.spines["right"].set_visible(False)
 
         # ---- Entropy time series (left column) ----
         ax_ent.plot(time_index, ent_combined[b], color=wong[0], linewidth=1)
-        ax_ent.set_ylabel('Entropy')
+        ax_ent.set_ylabel("Entropy")
 
         if band_labels is not None:
-            ax_ent.set_title(band_labels[b], loc='left')
+            ax_ent.set_title(band_labels[b], loc="left")
         else:
-            ax_ent.set_title(f'Band {b}', loc='left')
+            ax_ent.set_title(f"Band {b}", loc="left")
 
         # Vertical trial boundaries
         for x_trial in trial_boundaries:
-            ax_ent.axvline(x=x_trial - 0.5, color='k', linestyle=':', linewidth=0.5)
+            ax_ent.axvline(x=x_trial - 0.5, color="k", linestyle=":", linewidth=0.5)
 
         # ---- Quantiles time series (right column) ----
         for q_idx in range(n_q):
             color = cmap(norm(q_idx))
-            ax_q.plot(
-                time_index,
-                quant_combined[b, :, q_idx],
-                color=color,
-                linewidth=1
-            )
+            ax_q.plot(time_index, quant_combined[b, :, q_idx], color=color, linewidth=1)
 
         for x_trial in trial_boundaries:
-            ax_q.axvline(x=x_trial - 0.5, color='k', linestyle=':', linewidth=0.5)
+            ax_q.axvline(x=x_trial - 0.5, color="k", linestyle=":", linewidth=0.5)
 
         # Label trial types beneath the quantile axis
         for t in range(n_trials_total):
@@ -284,30 +265,30 @@ def plotHyperFRCFullExp(
                 x_center,
                 -0.05,
                 label,
-                ha='center',
-                va='top',
+                ha="center",
+                va="top",
                 rotation=60,
                 fontsize=8,
-                transform=ax_ent.get_xaxis_transform()
+                transform=ax_ent.get_xaxis_transform(),
             )
             ax_q.text(
                 x_center,
                 -0.05,
                 label,
-                ha='center',
-                va='top',
+                ha="center",
+                va="top",
                 rotation=60,
                 fontsize=8,
-                transform=ax_q.get_xaxis_transform()
+                transform=ax_q.get_xaxis_transform(),
             )
 
-        ax_q.set_ylabel('Quantile')
+        ax_q.set_ylabel("Quantile")
 
         # X-label only on last band row
         if b == n_bands - 1:
             for ax in (ax_ent, ax_q):
-                ax.tick_params(axis='x', labelbottom=False)  # hide tick labels
-                ax.set_xlabel('Time Window', labelpad=20) # prevent overlap 
+                ax.tick_params(axis="x", labelbottom=False)  # hide tick labels
+                ax.set_xlabel("Time Window", labelpad=20)  # prevent overlap
 
     if title is not None:
         fig.suptitle(title, y=0.99)
@@ -323,27 +304,27 @@ def plotHyperFRCFullExp(
         # inset_axes sizes in relative axes coordinates (width, height)
         cax = inset_axes(
             ax_q,
-            width="1.5%",   # narrow
-            height="80%",   # tall
+            width="1.5%",  # narrow
+            height="80%",  # tall
             loc="center right",
-            borderpad=1.0
+            borderpad=1.0,
         )
         cbar = fig.colorbar(sm, cax=cax, boundaries=boundaries, ticks=np.arange(n_q))
         if q_labels is not None:
             cbar.set_ticklabels(q_labels)
-            cbar.set_label('Quantile', fontsize=8)
+            cbar.set_label("Quantile", fontsize=8)
         else:
-            cbar.set_ticklabels([f'Q{q_idx + 1}' for q_idx in range(n_q)])
-            cbar.set_label('Quantile index', fontsize=8)
+            cbar.set_ticklabels([f"Q{q_idx + 1}" for q_idx in range(n_q)])
+            cbar.set_label("Quantile index", fontsize=8)
         cbar.ax.tick_params(labelsize=7)
 
     return fig, axes
 
 
 def plotHyperFRCFullExp_avgWindows(
-    entropy_list,      # list of 3 arrays, each (8, 30, 4)
-    quantiles_list,    # list of 3 arrays, each (8, 30, 4, 5)
-    trial_type_seq,    # array-like, length 90, values in {0,1,2} or {1,2,3}
+    entropy_list,  # list of 3 arrays, each (8, 30, 4)
+    quantiles_list,  # list of 3 arrays, each (8, 30, 4, 5)
+    trial_type_seq,  # array-like, length 90, values in {0,1,2} or {1,2,3}
     title=None,
     band_labels=None,
     window_labels=None,
@@ -362,8 +343,9 @@ def plotHyperFRCFullExp_avgWindows(
 
     trial_type_seq = np.asarray(trial_type_seq)
     n_trials_total = trial_type_seq.shape[0]
-    assert n_trials_total == n_types * n_trials_per_type, \
+    assert n_trials_total == n_types * n_trials_per_type, (
         "trial_type_seq length must equal total number of trials across types"
+    )
 
     # Ensure 0,1,2 labels internally
     if trial_type_seq.min() == 1:
@@ -373,7 +355,7 @@ def plotHyperFRCFullExp_avgWindows(
 
     # Default type labels if none provided (used in marker legend)
     if type_labels is None:
-        type_labels = [f"Type {k+1}" for k in range(n_types)]
+        type_labels = [f"Type {k + 1}" for k in range(n_types)]
 
     # Time axis: one point per trial
     time_index = np.arange(n_trials_total)
@@ -388,8 +370,8 @@ def plotHyperFRCFullExp_avgWindows(
     # Fill combined arrays according to chronological order,
     # averaging across the 4 windows within each trial.
     for t in range(n_trials_total):
-        k = tt_seq[t]            # trial type index 0..2
-        i = per_type_counters[k] # trial index within type
+        k = tt_seq[t]  # trial type index 0..2
+        i = per_type_counters[k]  # trial index within type
         per_type_counters[k] += 1
 
         for b in range(n_bands):
@@ -400,22 +382,17 @@ def plotHyperFRCFullExp_avgWindows(
 
     # Marker style per trial type
     marker_map = {
-        0: '*',   # type 0
-        1: 'x',   # type 1
-        2: 'd',   # type 2
+        0: "*",  # type 0
+        1: "x",  # type 1
+        2: "d",  # type 2
     }
 
     # Figure: n_bands rows, 2 columns (entropy | quantiles)
-    fig, axes = plt.subplots(
-        n_bands, 2,
-        figsize=(28, 2.0 * n_bands),
-        sharex=True,
-        sharey='col'
-    )
+    fig, axes = plt.subplots(n_bands, 2, figsize=(28, 2.0 * n_bands), sharex=True, sharey="col")
     axes = np.atleast_2d(axes)
 
     # Discrete colormap for quantiles (skip black)
-    cmap = ListedColormap(wong[1:n_q+1])
+    cmap = ListedColormap(wong[1 : n_q + 1])
     boundaries = np.arange(-0.5, n_q + 0.5, 1)
     norm = BoundaryNorm(boundaries, cmap.N)
 
@@ -425,8 +402,8 @@ def plotHyperFRCFullExp_avgWindows(
 
         # Remove top and right spines
         for ax in (ax_ent, ax_q):
-            ax.spines['top'].set_visible(False)
-            ax.spines['right'].set_visible(False)
+            ax.spines["top"].set_visible(False)
+            ax.spines["right"].set_visible(False)
 
         # ---- Entropy time series (left column) ----
         # Single continuous line for all trials
@@ -435,29 +412,29 @@ def plotHyperFRCFullExp_avgWindows(
             ent_combined[b],
             color=wong[0],
             linewidth=1,
-            linestyle='-',
+            linestyle="-",
         )
         # Overlay markers by trial type, but do not re-draw the line
         for k in range(n_types):
             mask = tt_seq == k
             if not np.any(mask):
                 continue
-            mk = marker_map.get(k, 'o')
+            mk = marker_map.get(k, "o")
             ax_ent.plot(
                 time_index[mask],
                 ent_combined[b, mask],
                 color=wong[0],
                 marker=mk,
-                linestyle='None',
+                linestyle="None",
                 markersize=6,
             )
 
-        ax_ent.set_ylabel('Entropy')
+        ax_ent.set_ylabel("Entropy")
 
         if band_labels is not None:
-            ax_ent.set_title(band_labels[b], loc='left')
+            ax_ent.set_title(band_labels[b], loc="left")
         else:
-            ax_ent.set_title(f'Band {b}', loc='left')
+            ax_ent.set_title(f"Band {b}", loc="left")
 
         # ---- Quantiles time series (right column) ----
         # One line per quantile index across all trials
@@ -468,30 +445,30 @@ def plotHyperFRCFullExp_avgWindows(
                 quant_combined[b, :, q_idx],
                 color=color,
                 linewidth=1,
-                linestyle='-',
+                linestyle="-",
             )
             # Overlay markers by trial type along that line
             for k in range(n_types):
                 mask = tt_seq == k
                 if not np.any(mask):
                     continue
-                mk = marker_map.get(k, 'o')
+                mk = marker_map.get(k, "o")
                 ax_q.plot(
                     time_index[mask],
                     quant_combined[b, mask, q_idx],
                     color=color,
                     marker=mk,
-                    linestyle='None',
+                    linestyle="None",
                     markersize=6,
                 )
 
-        ax_q.set_ylabel('Quantile')
+        ax_q.set_ylabel("Quantile")
 
         # X-label only on last band row
         if b == n_bands - 1:
             for ax in (ax_ent, ax_q):
-                ax.tick_params(axis='x', labelbottom=True)
-                ax.set_xlabel('Trial', labelpad=10)
+                ax.tick_params(axis="x", labelbottom=True)
+                ax.set_xlabel("Trial", labelpad=10)
 
     if title is not None:
         fig.suptitle(title, y=0.99)
@@ -506,48 +483,40 @@ def plotHyperFRCFullExp_avgWindows(
 
         cax = inset_axes(
             ax_q,
-            width="1.5%",   # narrow
-            height="80%",   # tall
+            width="1.5%",  # narrow
+            height="80%",  # tall
             loc="center right",
-            borderpad=1.0
+            borderpad=1.0,
         )
         cbar = fig.colorbar(sm, cax=cax, boundaries=boundaries, ticks=np.arange(n_q))
         if q_labels is not None:
             cbar.set_ticklabels(q_labels)
-            cbar.set_label('Quantile', fontsize=8)
+            cbar.set_label("Quantile", fontsize=8)
         else:
-            cbar.set_ticklabels([f'Q{q_idx + 1}' for q_idx in range(n_q)])
-            cbar.set_label('Quantile index', fontsize=8)
+            cbar.set_ticklabels([f"Q{q_idx + 1}" for q_idx in range(n_q)])
+            cbar.set_label("Quantile index", fontsize=8)
         cbar.ax.tick_params(labelsize=7)
 
         # Per-row legend inset (same style as colorbars)
         ax_ent = axes[b, 0]
 
         legend_ax = inset_axes(
-            ax_ent,                    # anchor to entropy plot (left column)
-            width="3%",                # narrow width  
-            height="25%",              # short height
+            ax_ent,  # anchor to entropy plot (left column)
+            width="3%",  # narrow width
+            height="25%",  # short height
             loc="center right",
-            borderpad=1.0
+            borderpad=1.0,
         )
 
         # Create legend in the inset axes
         legend_handles = []
         for k in range(n_types):
-            mk = marker_map.get(k, 'o')
+            mk = marker_map.get(k, "o")
             lbl = type_labels[k] if k < len(type_labels) else f"Type {k}"
-            legend_handles.append(
-                Line2D([], [], color='k', marker=mk, linestyle='None',
-                    markersize=6, label=lbl)
-            )
+            legend_handles.append(Line2D([], [], color="k", marker=mk, linestyle="None", markersize=6, label=lbl))
 
-        legend_ax.legend(
-            handles=legend_handles,
-            title='Trial\ntype',
-            fontsize=6,
-            loc='center'
-        )
-        legend_ax.axis('off')  # hide the inset axes frame/ticks
+        legend_ax.legend(handles=legend_handles, title="Trial\ntype", fontsize=6, loc="center")
+        legend_ax.axis("off")  # hide the inset axes frame/ticks
 
     # # ---- Marker legend for trial types (shared) ----
     # legend_handles = []
@@ -573,12 +542,11 @@ def plotHyperFRCFullExp_avgWindows(
 
 
 # ======== #
-# Plotting # 
-# ======== # 
+# Plotting #
+# ======== #
 
 # Loop over dyads
 for dyad in tqdm(config["dyads"], desc="Dyads"):
-
     # Data path for shot times
     Spath = path.abspath(path.join(config["behav_loc"], f"exp{dyad_date_map[dyad]}"))
 
@@ -591,10 +559,19 @@ for dyad in tqdm(config["dyads"], desc="Dyads"):
 
     # Loop over trial types
     for trial_type in tqdm(config["trial_types"], desc="Trial Types"):
-
         # Data paths
-        Hpath = path.abspath(path.join(config["result_loc"], f"CCORR_FRC_entropy_dyad_{dyad}_trial_type_{trial_type}_config_{config["config_id"]}.npy"))
-        Qpath = path.abspath(path.join(config["result_loc"], f"CCORR_FRC_quantiles_dyad_{dyad}_trial_type_{trial_type}_config_{config["config_id"]}.npy"))
+        Hpath = path.abspath(
+            path.join(
+                config["result_loc"],
+                f"CCORR_FRC_entropy_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy",
+            )
+        )
+        Qpath = path.abspath(
+            path.join(
+                config["result_loc"],
+                f"CCORR_FRC_quantiles_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy",
+            )
+        )
 
         # Load data
         Hvals = np.load(Hpath)
@@ -603,21 +580,51 @@ for dyad in tqdm(config["dyads"], desc="Dyads"):
         Qlist.append(Qvals)
 
         # Plot
-        f, _ = plotHyperFRC(Hvals, Qvals, title=f"Dyad: {dyad}, Trial Type: {trial_type}", band_labels=config["freq_bands"], q_labels=config["quantiles"])
+        f, _ = plotHyperFRC(
+            Hvals,
+            Qvals,
+            title=f"Dyad: {dyad}, Trial Type: {trial_type}",
+            band_labels=config["freq_bands"],
+            q_labels=config["quantiles"],
+        )
 
         # Plot paths
-        figpath = path.abspath(path.join(hyperviz, f"CCORR_FRC_ent_quant_dyad_{dyad}_trial_type_{trial_type}_config_{config["config_id"]}.png"))
+        figpath = path.abspath(
+            path.join(
+                hyperviz, f"CCORR_FRC_ent_quant_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.png"
+            )
+        )
 
         # Save the figure
         f.savefig(figpath, bbox_inches="tight")
 
     # Plot full experiment
-    ffull, _ = plotHyperFRCFullExp(Hlist, Qlist, Svals, title=f"Dyad: {dyad}", band_labels=config["freq_bands"], q_labels=config["quantiles"], type_labels=trial_type_map)
-    ffull_avg, _ = plotHyperFRCFullExp_avgWindows(Hlist, Qlist, Svals, title=f"Dyad: {dyad}", band_labels=config["freq_bands"], q_labels=config["quantiles"], type_labels=trial_type_map)
+    ffull, _ = plotHyperFRCFullExp(
+        Hlist,
+        Qlist,
+        Svals,
+        title=f"Dyad: {dyad}",
+        band_labels=config["freq_bands"],
+        q_labels=config["quantiles"],
+        type_labels=trial_type_map,
+    )
+    ffull_avg, _ = plotHyperFRCFullExp_avgWindows(
+        Hlist,
+        Qlist,
+        Svals,
+        title=f"Dyad: {dyad}",
+        band_labels=config["freq_bands"],
+        q_labels=config["quantiles"],
+        type_labels=trial_type_map,
+    )
 
     # Plot paths
-    fullfigpath = path.abspath(path.join(hyperviz, f"CCORR_FRC_ent_quant_dyad_{dyad}_full_exp_config_{config["config_id"]}.png"))
-    fullavgfigpath = path.abspath(path.join(hyperviz, f"CCORR_FRC_ent_quant_dyad_{dyad}_full_exp_trial_avg_config_{config["config_id"]}.png"))
+    fullfigpath = path.abspath(
+        path.join(hyperviz, f"CCORR_FRC_ent_quant_dyad_{dyad}_full_exp_config_{config['config_id']}.png")
+    )
+    fullavgfigpath = path.abspath(
+        path.join(hyperviz, f"CCORR_FRC_ent_quant_dyad_{dyad}_full_exp_trial_avg_config_{config['config_id']}.png")
+    )
 
     # Save the figure
     ffull.savefig(fullfigpath, bbox_inches="tight")

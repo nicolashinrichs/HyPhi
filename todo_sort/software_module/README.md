@@ -49,7 +49,7 @@ pt, Gt = genTVSW(n, k, trez, minpow, maxpow, seed_val)
 ptw, Gtw = genTVWeightedSW(n, k, ε, trez, minpow, maxpow, seed_val)
 ```
 
-### Computing Graph Curvatures 
+### Computing Graph Curvatures
 
 Below, we demonstrate the method for computing the edge Forman-Ricci curvatures of single networks and arrays of networks. The Ollivier-Ricci curvature case is more complicated and will be reserved for a separate tutorial.
 
@@ -59,19 +59,19 @@ All functions utilized in this example are defined in `GraphCurvatures.py`.
 
 from GraphCurvatures import *
 
-# Compute the Forman-Ricci curvature for a 
+# Compute the Forman-Ricci curvature for a
 # single weighted network (same for unweighted)
 # The "method_val" argument can be '1d' or 'augmented'
-# FRC is a new network where edges have the property "formanCurvature" 
+# FRC is a new network where edges have the property "formanCurvature"
 FRC = getFRC(Gw, method_val="1d")
 
 # Extract the Forman-Ricci curvatures of the network into an array
 curvatures = extractCurvatures(FRC, curvature="formanCurvature")
 
-# Compute the Forman-Ricci curvature for an array 
+# Compute the Forman-Ricci curvature for an array
 # of weighted small world networks (same for unweighted)
-# The "method_val" argument can be '1d' or 'augmented' 
-# FRCt is a list of new networks where edges have the property "formanCurvature" 
+# The "method_val" argument can be '1d' or 'augmented'
+# FRCt is a list of new networks where edges have the property "formanCurvature"
 FRCt = getFRCVec(Gtw, method_val="1d")
 
 # Extract the Forman-Ricci curvatures of the networks into a list of arrays
@@ -80,7 +80,7 @@ curvatures_t = extractCurvaturesVec(FRCt, curvature="formanCurvature")
 
 ### Kernel Density Estimation of Graph Curvature Distributions
 
-We can compute nonparametric estimates of the graph curvature densities from the array of edge curvature values. This functionality is based heavily on the KDEpy package. 
+We can compute nonparametric estimates of the graph curvature densities from the array of edge curvature values. This functionality is based heavily on the KDEpy package.
 
 All functions utilized in this example are defined in `DensityEstimation.py`.
 
@@ -91,18 +91,18 @@ from DensityEstimation import *
 # Parameters for the kernel density estimation
 kernel_type = "gaussian"    # Gaussian kernel
 bw = "ISJ"                  # Sheather-Jones algorithm to optimize bandwidth
-norm = 2                    # Exponent for the vector norm 
+norm = 2                    # Exponent for the vector norm
 
-# Fit the TreeKDE estimator  
+# Fit the TreeKDE estimator
 # We use the TreeKDE because it is faster than naive
 # But unlike the FFTKDE, we can evaluate at arbitrary points
-f = TreeKDE(kernel=kernel_type, bw=bw, norm=norm).fit(curvatures)  
+f = TreeKDE(kernel=kernel_type, bw=bw, norm=norm).fit(curvatures)
 
-# Evaluate KDE at the original data points  
-fvals = f.evaluate(curvatures) 
+# Evaluate KDE at the original data points
+fvals = f.evaluate(curvatures)
 ```
 
-### Computing Entropies and Quantiles of Graph Curvature Distributions 
+### Computing Entropies and Quantiles of Graph Curvature Distributions
 
 We can compute entropies and quantiles of the graph curvature distributions. There are many methods available for computing the entropy, of which the most robust is the Kozachenko-Leonenko nearest neighbor estimator.
 
@@ -124,7 +124,7 @@ H = getEntropyKozachenko(FRC, curvature="formanCurvature", num_nn=nn_val)
 # We first need to create a lambda function for the estimator we want to use
 # vecEntropy is really just a parallelized wrapper around an estimator instance
 hKL = lambda X: getEntropyKozachenko(X, curvature="formanCurvature", num_nn=nn_val)
-# Now we pass this lambda function to a parallelized entropy function 
+# Now we pass this lambda function to a parallelized entropy function
 Ht = vecEntropy(FRCt, estim=hKL)
 
 # We can also get quantiles of the curvature distribution

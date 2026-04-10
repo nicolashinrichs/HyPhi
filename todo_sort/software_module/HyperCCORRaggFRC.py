@@ -1,19 +1,20 @@
 # ============= #
-# Preliminaries # 
-# ============= # 
+# Preliminaries #
+# ============= #
 
+import json
+import sys
+
+import dcor
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+from dcor import EstimationStatistic
 from Entropies import *
 from FileIO import *
-import sys
-from tqdm import tqdm
-from scipy.stats import energy_distance
-import dcor
-from dcor import EstimationStatistic
-from statsmodels.stats.multitest import multipletests
-import json
-import matplotlib.pyplot as plt
-import matplotlib as mpl
 from joblib import Parallel, delayed
+from scipy.stats import energy_distance
+from statsmodels.stats.multitest import multipletests
+from tqdm import tqdm
 from tqdm_joblib import tqdm_joblib
 
 # Path variables
@@ -21,8 +22,8 @@ basepath = path.dirname(__file__)
 configpath = path.abspath(path.join(basepath, "..", "experiments", "analysis"))
 
 # ========================== #
-# Load CCORR Analysis Config # 
-# ========================== # 
+# Load CCORR Analysis Config #
+# ========================== #
 
 # Analysis configuration file
 configfile = path.abspath(path.join(configpath, sys.argv[1]))
@@ -34,62 +35,140 @@ config = loadConfig(configfile)
 makeDir(path.abspath(config["pooled_result_loc"]))
 
 # ================================= #
-# Aggregate Curvature Distributions # 
-# ================================= # 
+# Aggregate Curvature Distributions #
+# ================================= #
 
 # Type of curvature
 curv_type = sys.argv[2]
 assert curv_type in ["FRC", "AFRC"], f"Curvature type ({curv_type}) must be one of (FRC, AFRC)!"
 
+
 # Construct data path by curvature type
 def dataPathConstructor(dyad, trial_type, curvature, config):
     if curvature == "FRC":
-        return path.abspath(path.join(config["result_loc"], f"CCORR_FRC_matrix_dyad_{dyad}_trial_type_{trial_type}_config_{config["config_id"]}.npy"))
-    elif curvature == "AFRC":
-        return path.abspath(path.join(config["result_loc"], f"CCORR_aug_FRC_matrix_dyad_{dyad}_trial_type_{trial_type}_config_{config["config_id"]}.npy"))
+        return path.abspath(
+            path.join(
+                config["result_loc"],
+                f"CCORR_FRC_matrix_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy",
+            )
+        )
+    if curvature == "AFRC":
+        return path.abspath(
+            path.join(
+                config["result_loc"],
+                f"CCORR_aug_FRC_matrix_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy",
+            )
+        )
 
 
 # Construct data path by curvature type
 def resultPathConstructor(dyad, trial_type, curvature, config, pooling):
     assert pooling in ["trial", "window"]
     if curvature == "FRC":
-        FRCpath = path.abspath(path.join(config["pooled_result_loc"], f"CCORR_FRC_{pooling}_pooling_matrix_dyad_{dyad}_trial_type_{trial_type}_config_{config["config_id"]}.npy"))
-        Hpath = path.abspath(path.join(config["pooled_result_loc"], f"CCORR_FRC_{pooling}_pooling_entropy_dyad_{dyad}_trial_type_{trial_type}_config_{config["config_id"]}.npy"))
-        Qpath = path.abspath(path.join(config["pooled_result_loc"], f"CCORR_FRC_{pooling}_pooling_quantiles_dyad_{dyad}_trial_type_{trial_type}_config_{config["config_id"]}.npy"))
+        FRCpath = path.abspath(
+            path.join(
+                config["pooled_result_loc"],
+                f"CCORR_FRC_{pooling}_pooling_matrix_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy",
+            )
+        )
+        Hpath = path.abspath(
+            path.join(
+                config["pooled_result_loc"],
+                f"CCORR_FRC_{pooling}_pooling_entropy_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy",
+            )
+        )
+        Qpath = path.abspath(
+            path.join(
+                config["pooled_result_loc"],
+                f"CCORR_FRC_{pooling}_pooling_quantiles_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy",
+            )
+        )
     elif curvature == "AFRC":
-        FRCpath = path.abspath(path.join(config["pooled_result_loc"], f"CCORR_aug_FRC_{pooling}_pooling_matrix_dyad_{dyad}_trial_type_{trial_type}_config_{config["config_id"]}.npy"))
-        Hpath = path.abspath(path.join(config["pooled_result_loc"], f"CCORR_aug_FRC_{pooling}_pooling_entropy_dyad_{dyad}_trial_type_{trial_type}_config_{config["config_id"]}.npy"))
-        Qpath = path.abspath(path.join(config["pooled_result_loc"], f"CCORR_aug_FRC_{pooling}_pooling_quantiles_dyad_{dyad}_trial_type_{trial_type}_config_{config["config_id"]}.npy"))
+        FRCpath = path.abspath(
+            path.join(
+                config["pooled_result_loc"],
+                f"CCORR_aug_FRC_{pooling}_pooling_matrix_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy",
+            )
+        )
+        Hpath = path.abspath(
+            path.join(
+                config["pooled_result_loc"],
+                f"CCORR_aug_FRC_{pooling}_pooling_entropy_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy",
+            )
+        )
+        Qpath = path.abspath(
+            path.join(
+                config["pooled_result_loc"],
+                f"CCORR_aug_FRC_{pooling}_pooling_quantiles_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy",
+            )
+        )
     return FRCpath, Hpath, Qpath
 
 
 def dyadPooledPathConstructor(trial_type, curvature, config, pooling):
     assert pooling in ["trial", "window"]
     if curvature == "FRC":
-        FRCpath = path.abspath(path.join(config["pooled_result_loc"], f"CCORR_FRC_{pooling}_pooling_matrix_dyad_pooled_trial_type_{trial_type}_config_{config["config_id"]}.npy"))
-        Hpath = path.abspath(path.join(config["pooled_result_loc"], f"CCORR_FRC_{pooling}_pooling_entropy_dyad_pooled_trial_type_{trial_type}_config_{config["config_id"]}.npy"))
-        Qpath = path.abspath(path.join(config["pooled_result_loc"], f"CCORR_FRC_{pooling}_pooling_quantiles_dyad_pooled_trial_type_{trial_type}_config_{config["config_id"]}.npy"))
+        FRCpath = path.abspath(
+            path.join(
+                config["pooled_result_loc"],
+                f"CCORR_FRC_{pooling}_pooling_matrix_dyad_pooled_trial_type_{trial_type}_config_{config['config_id']}.npy",
+            )
+        )
+        Hpath = path.abspath(
+            path.join(
+                config["pooled_result_loc"],
+                f"CCORR_FRC_{pooling}_pooling_entropy_dyad_pooled_trial_type_{trial_type}_config_{config['config_id']}.npy",
+            )
+        )
+        Qpath = path.abspath(
+            path.join(
+                config["pooled_result_loc"],
+                f"CCORR_FRC_{pooling}_pooling_quantiles_dyad_pooled_trial_type_{trial_type}_config_{config['config_id']}.npy",
+            )
+        )
     elif curvature == "AFRC":
-        FRCpath = path.abspath(path.join(config["pooled_result_loc"], f"CCORR_aug_FRC_{pooling}_pooling_matrix_dyad_pooled_trial_type_{trial_type}_config_{config["config_id"]}.npy"))
-        Hpath = path.abspath(path.join(config["pooled_result_loc"], f"CCORR_aug_FRC_{pooling}_pooling_entropy_dyad_pooled_trial_type_{trial_type}_config_{config["config_id"]}.npy"))
-        Qpath = path.abspath(path.join(config["pooled_result_loc"], f"CCORR_aug_FRC_{pooling}_pooling_quantiles_dyad_pooled_trial_type_{trial_type}_config_{config["config_id"]}.npy"))
+        FRCpath = path.abspath(
+            path.join(
+                config["pooled_result_loc"],
+                f"CCORR_aug_FRC_{pooling}_pooling_matrix_dyad_pooled_trial_type_{trial_type}_config_{config['config_id']}.npy",
+            )
+        )
+        Hpath = path.abspath(
+            path.join(
+                config["pooled_result_loc"],
+                f"CCORR_aug_FRC_{pooling}_pooling_entropy_dyad_pooled_trial_type_{trial_type}_config_{config['config_id']}.npy",
+            )
+        )
+        Qpath = path.abspath(
+            path.join(
+                config["pooled_result_loc"],
+                f"CCORR_aug_FRC_{pooling}_pooling_quantiles_dyad_pooled_trial_type_{trial_type}_config_{config['config_id']}.npy",
+            )
+        )
     return FRCpath, Hpath, Qpath
 
 
 def fullyPooledPathConstructor(trial_type, curvature, config):
     if curvature == "FRC":
-        FRCpath = path.abspath(path.join(config["pooled_result_loc"], f"CCORR_FRC_matrix_fully_pooled_trial_type_{trial_type}_config_{config["config_id"]}.npy"))
+        FRCpath = path.abspath(
+            path.join(
+                config["pooled_result_loc"],
+                f"CCORR_FRC_matrix_fully_pooled_trial_type_{trial_type}_config_{config['config_id']}.npy",
+            )
+        )
     elif curvature == "AFRC":
-        FRCpath = path.abspath(path.join(config["pooled_result_loc"], f"CCORR_aug_FRC_matrix_fully_pooled_trial_type_{trial_type}_config_{config["config_id"]}.npy"))
+        FRCpath = path.abspath(
+            path.join(
+                config["pooled_result_loc"],
+                f"CCORR_aug_FRC_matrix_fully_pooled_trial_type_{trial_type}_config_{config['config_id']}.npy",
+            )
+        )
     return FRCpath
 
 
 # Load data
 data = {
-    d: {
-        tt: np.load(dataPathConstructor(d, tt, curv_type, config))
-        for tt in config["trial_types"]
-    }
+    d: {tt: np.load(dataPathConstructor(d, tt, curv_type, config)) for tt in config["trial_types"]}
     for d in config["dyads"]
 }
 
@@ -238,19 +317,19 @@ fully_pooled_across_everything = {}
 for tt in config["trial_types"]:
     # Start from original data across all dyads
     all_dyad_data = [data[d][tt] for d in config["dyads"]]  # list of (8,30,4,128,128)
-    
+
     # Stack dyads: (10, 8, 30, 4, 128, 128)
     stacked = np.stack(all_dyad_data, axis=0)
-    
+
     # Reorder to (8, 10, 30, 4, 128, 128)
     reordered = np.transpose(stacked, (1, 0, 2, 3, 4, 5))
-    
+
     # Flatten all dimensions after freq: (8, 10*30*4*128*128)
     fully_pooled = reordered.reshape(8, -1)
-    
+
     fully_pooled_across_everything[tt] = fully_pooled
 
-    # Save data 
+    # Save data
     FRCpath = fullyPooledPathConstructor(tt, curv_type, config)
     np.save(FRCpath, fully_pooled)
 
@@ -268,17 +347,18 @@ for tt in config["trial_types"]:
 # print("Per-dyad window-pooled shape:", pooled_windows_per_dyad[dyads[0]][example_tt].shape)
 # print("Across-dyad trial-pooled shape:", trial_pooled_across_dyads[example_tt].shape)
 # print("Across-dyad window-pooled shape:", window_pooled_across_dyads[example_tt].shape)
-# print("Fully pooled shape (all dyads/trials/windows):", 
+# print("Fully pooled shape (all dyads/trials/windows):",
 #       fully_pooled_across_everything[example_tt].shape)
 # # Expected: (8, 10*30*4*128*128) = (8, 19660800)
 
 # ================== #
-# Hypothesis Testing # 
-# ================== # 
+# Hypothesis Testing #
+# ================== #
 
 # Assume fully_pooled_across_everything from previous script
 # Shape: fully_pooled_across_everything[tt][freq, flattened_curvs]
 # flattened_curvs has shape (10*30*4*128*128,)
+
 
 def single_permutation_perm(all_c, split_sizes, test_statistic):
     """Single permutation computation (pure function for parallelization)"""
@@ -288,53 +368,56 @@ def single_permutation_perm(all_c, split_sizes, test_statistic):
 
 
 def fast_energy_test_parallel(curvs, n_perm=1000, sample_size=50000, n_jobs=-1):
-    """Parallelized energy distance test"""
+    """Run parallelized energy distance test."""
     # Downsample first
-    sampled_curvs = [c[np.random.choice(len(c), min(sample_size, len(c)), replace=False)] 
-                    for c in curvs]
-    
+    sampled_curvs = [c[np.random.choice(len(c), min(sample_size, len(c)), replace=False)] for c in curvs]
+
     def test_statistic(data_list):
-        dists = [energy_distance(data_list[i], data_list[j]) 
-                for i in range(len(data_list)) for j in range(i+1, len(data_list))]
+        dists = [
+            energy_distance(data_list[i], data_list[j])
+            for i in range(len(data_list))
+            for j in range(i + 1, len(data_list))
+        ]
         return np.mean(dists)
-    
+
     obs_stat = test_statistic(sampled_curvs)
-    
+
     # Parallel permutations
     all_c = np.concatenate(sampled_curvs)
     split_sizes = [len(c) for c in sampled_curvs]
-    
-    perm_stats = Parallel(n_jobs=n_jobs, backend='threading')(
-        delayed(single_permutation_perm)(all_c.copy(), split_sizes, test_statistic) 
-        for _ in range(n_perm)
+
+    perm_stats = Parallel(n_jobs=n_jobs, backend="threading")(
+        delayed(single_permutation_perm)(all_c.copy(), split_sizes, test_statistic) for _ in range(n_perm)
     )
-    
+
     p_value = np.mean(np.array(perm_stats) >= obs_stat)
-    return {'observed_statistic': obs_stat, 'p_value': p_value}
+    return {"observed_statistic": obs_stat, "p_value": p_value}
 
 
 # Updated main functions
-def test_trial_types_per_freq(fully_pooled, trial_types, freq_bands, 
-                            n_perm=1000, sample_size=50000, n_jobs=-1):
+def test_trial_types_per_freq(fully_pooled, trial_types, freq_bands, n_perm=1000, sample_size=50000, n_jobs=-1):
     results = []
     for f in tqdm(range(len(freq_bands)), desc="Frequency Bands, Omnibus"):
         curvs = [fully_pooled[tt][f, :] for tt in trial_types]
         r = fast_energy_test_parallel(curvs, n_perm, sample_size, n_jobs)
-        results.append({
-            'frequency_band': freq_bands[f],
-            'observed_statistic': r['observed_statistic'],
-            'p_value': r['p_value'],
-            'significant': r['p_value'] < 0.05
-        })
+        results.append(
+            {
+                "frequency_band": freq_bands[f],
+                "observed_statistic": r["observed_statistic"],
+                "p_value": r["p_value"],
+                "significant": r["p_value"] < 0.05,
+            }
+        )
     return results
+
 
 # def test_trial_types_per_freq(fully_pooled, trial_types, freq_bands, n_perm=10000, alpha=0.05):
 #     results = []
-    
+
 #     for f in tqdm(range(len(freq_bands)), desc="Frequency Bands, Omnibus"):  # frequency bands
 #         # Extract curvatures for all 3 trial types at this freq
 #         curvs = [fully_pooled[tt][f, :] for tt in trial_types]
-        
+
 #         # Test statistic: mean pairwise energy distance between trial types
 #         def test_statistic(data_list):
 #             dists = []
@@ -343,59 +426,59 @@ def test_trial_types_per_freq(fully_pooled, trial_types, freq_bands,
 #                     d = energy_distance(data_list[i], data_list[j])
 #                     dists.append(d)
 #             return np.mean(dists)
-        
+
 #         obs_stat = test_statistic(curvs)
-        
+
 #         # Permutation test: shuffle trial type labels across all data
 #         all_c = np.concatenate(curvs)
 #         perm_stats = []
-        
+
 #         for _ in tqdm(range(n_perm), desc="Permutations, Omnibus"):
 #             np.random.shuffle(all_c)  # permutes across trial types
 #             perm_curvs = np.split(all_c, np.cumsum([len(c) for c in curvs])[:-1])
 #             perm_stat = test_statistic(perm_curvs)
 #             perm_stats.append(perm_stat)
-        
+
 #         p_value = np.mean(np.array(perm_stats) >= obs_stat)
 #         significant = p_value < alpha
-        
+
 #         results.append({
 #             'frequency_band': freq_bands[f],
 #             'observed_statistic': obs_stat,
 #             'p_value': p_value,
 #             'significant': significant
 #         })
-    
+
 #     return results
 
 # def test_trial_types_per_freq(fully_pooled, trial_types, freq_bands, n_perm=10000, alpha=0.05):
 #     results = []
-    
+
 #     for f in tqdm(range(len(freq_bands)), desc="Frequency Bands, Omnibus"):
 #         # Extract curvatures for all 3 trial types at this freq
 #         curvs = [fully_pooled[tt][f, :] for tt in trial_types]
-        
+
 #         # Use dcor's energy_test for omnibus test (k>=2 samples)
 #         test_result = dcor.homogeneity.energy_test(
-#             *curvs, 
+#             *curvs,
 #             num_resamples=n_perm,
 #             exponent=1.0,  # Euclidean distance,
 #             estimation_stat=EstimationStatistic.U_STATISTIC,
 #             n_jobs=8
 #         )
-        
+
 #         # Extract results (matches your original format)
 #         obs_stat = float(test_result.statistic)
 #         p_value = float(test_result.pvalue)
 #         significant = p_value < alpha
-        
+
 #         results.append({
 #             'frequency_band': freq_bands[f],
 #             'observed_statistic': obs_stat,
 #             'p_value': p_value,
 #             'significant': significant
 #         })
-    
+
 #     return results
 
 
@@ -415,21 +498,21 @@ def test_trial_types_per_freq(fully_pooled, trial_types, freq_bands,
 #     for f in tqdm(range(len(freq_bands)), desc="Frequency Bands, Pairwise"):  # frequency bands
 #         # Extract curvatures for all 3 trial types at this freq
 #         curvs = [fully_pooled[tt][f, :] for tt in trial_types]
-        
+
 #         for (i,j), label in tqdm(zip(pairs, pair_labels), desc="Pairs"):
 #             # Observed energy distance
 #             obs_d = energy_distance(curvs[i], curvs[j])
-            
+
 #             # Permutation test
 #             all_c_pair = np.concatenate([curvs[i], curvs[j]])
 #             perm_ds = []
-            
+
 #             for _ in tqdm(range(n_perm), desc="Permutations, Pairwise"):
 #                 np.random.shuffle(all_c_pair)
-#                 perm_d = energy_distance(all_c_pair[:len(curvs[i])], 
+#                 perm_d = energy_distance(all_c_pair[:len(curvs[i])],
 #                                        all_c_pair[len(curvs[i]):])
 #                 perm_ds.append(perm_d)
-            
+
 #             p_val = np.mean(np.array(perm_ds) >= obs_d)
 #             significant = p_val < alpha
 
@@ -440,12 +523,12 @@ def test_trial_types_per_freq(fully_pooled, trial_types, freq_bands,
 #             'p_value': p_val,
 #             'significant': significant
 #         })
-    
+
 #     return results
 
 # def pairwise_energy_tests(fully_pooled, trial_types, freq_bands, n_perm=10000, alpha=0.05):
 #     """
-#     Run 3 pairwise energy distance tests per frequency band (24 total tests) 
+#     Run 3 pairwise energy distance tests per frequency band (24 total tests)
 #     using dcor.energy_test. Returns same format as original.
 #     """
 #     results = []
@@ -458,17 +541,17 @@ def test_trial_types_per_freq(fully_pooled, trial_types, freq_bands,
 #     for f in tqdm(range(len(freq_bands)), desc="Frequency Bands, Pairwise"):
 #         # Extract curvatures for all 3 trial types at this freq
 #         curvs = [fully_pooled[tt][f, :] for tt in trial_types]
-        
+
 #         for (i,j), label in tqdm(zip(pairs, pair_labels), desc="Pairs"):
 #             # Use dcor's energy_test for 2-sample test
 #             test_result = dcor.homogeneity.energy_test(
-#                 curvs[i], curvs[j], 
+#                 curvs[i], curvs[j],
 #                 num_resamples=n_perm,
 #                 exponent=1.0,  # Euclidean distance
 #                 estimation_stat=EstimationStatistic.U_STATISTIC,
 #                 n_jobs=8
 #             )
-            
+
 #             # Extract results (matches your exact output format)
 #             obs_d = float(test_result.statistic)
 #             p_val = float(test_result.pvalue)
@@ -481,97 +564,111 @@ def test_trial_types_per_freq(fully_pooled, trial_types, freq_bands,
 #                 'p_value': p_val,
 #                 'significant': significant
 #             })
-    
+
 #     return results
 
-def pairwise_energy_tests(fully_pooled, trial_types, freq_bands, 
-                         n_perm=1000, sample_size=50000, n_jobs=-1):
+
+def pairwise_energy_tests(fully_pooled, trial_types, freq_bands, n_perm=1000, sample_size=50000, n_jobs=-1):
     """
     24 pairwise tests with parallelization + single tqdm progress bar
     """
+
     def single_pair_test(f, i, j):
         # Downsample for speed
-        curvs = [fully_pooled[tt][f, np.random.choice(len(fully_pooled[tt][f]), 
-                                                     sample_size, replace=False)] 
-                for tt in trial_types]
-        
+        curvs = [
+            fully_pooled[tt][f, np.random.choice(len(fully_pooled[tt][f]), sample_size, replace=False)]
+            for tt in trial_types
+        ]
+
         obs_d = energy_distance(curvs[i], curvs[j])
-        
+
         # Parallel permutations for this pair
         all_c_pair = np.concatenate([curvs[i], curvs[j]])
         na = len(curvs[i])
-        
-        perm_ds = Parallel(n_jobs=n_jobs, backend='threading')(
-            delayed(lambda x: energy_distance(x[:na], x[na:]))(
-                np.random.permutation(all_c_pair)
-            ) for _ in range(n_perm)
+
+        perm_ds = Parallel(n_jobs=n_jobs, backend="threading")(
+            delayed(lambda x: energy_distance(x[:na], x[na:]))(np.random.permutation(all_c_pair))
+            for _ in range(n_perm)
         )
-        
+
         p_val = np.mean(np.array(perm_ds) >= obs_d)
         return {
-            'frequency_band': freq_bands[f],
-            'pair': f"{trial_types[i]}-{trial_types[j]}",
-            'observed_statistic': float(obs_d),
-            'p_value': float(p_val),
-            'significant': p_val < 0.05
+            "frequency_band": freq_bands[f],
+            "pair": f"{trial_types[i]}-{trial_types[j]}",
+            "observed_statistic": float(obs_d),
+            "p_value": float(p_val),
+            "significant": p_val < 0.05,
         }
-    
+
     # All 24 test combinations (8 freq × 3 pairs)
-    pairs = [(0,1), (0,2), (1,2)]
-    all_tests = [(f, i, j) for f in range(len(freq_bands)) for i,j in pairs]
-    
+    pairs = [(0, 1), (0, 2), (1, 2)]
+    all_tests = [(f, i, j) for f in range(len(freq_bands)) for i, j in pairs]
+
     # Single progress bar for ALL 24 tests!
     with tqdm_joblib(desc="Pairwise Tests (24 total)", total=len(all_tests)):
-        results = Parallel(n_jobs=n_jobs, backend='threading')(
-            delayed(single_pair_test)(*test) for test in all_tests
-        )
-    
+        results = Parallel(n_jobs=n_jobs, backend="threading")(delayed(single_pair_test)(*test) for test in all_tests)
+
     return results
 
 
 # Run omnibus analysis
-results = test_trial_types_per_freq(fully_pooled_across_everything, config["trial_types"], config["freq_bands"], n_perm=config["nhst_perm"], sample_size=config["nhst_subsample"])
+results = test_trial_types_per_freq(
+    fully_pooled_across_everything,
+    config["trial_types"],
+    config["freq_bands"],
+    n_perm=config["nhst_perm"],
+    sample_size=config["nhst_subsample"],
+)
 print("Uncorrected omnibus results:")
 for r in results:
-    print(f"Freq {r['frequency_band']}: stat={r['observed_statistic']:.4f}, p={r['p_value']:.4f}, sig={r['significant']}")
+    print(
+        f"Freq {r['frequency_band']}: stat={r['observed_statistic']:.4f}, p={r['p_value']:.4f}, sig={r['significant']}"
+    )
 
 # Correct for multiple testing while maintaining good statistical power
 
 # Get your 8 p-values from original per-frequency tests
-p_values = [r['p_value'] for r in results]
+p_values = [r["p_value"] for r in results]
 
 # Holm-Bonferroni (step-down)
-rejected, p_corrected, _, _ = multipletests(p_values, 
-                                            alpha=0.05, 
-                                            method='holm')
+rejected, p_corrected, _, _ = multipletests(p_values, alpha=0.05, method="holm")
 
 print("Omnibus results after correcting for multiple comparisons:")
 for f, (reject, p_corr) in enumerate(zip(rejected, p_corrected)):
     print(f"Freq {results[f]['frequency_band']}: p={p_values[f]:.4f} → p_corr={p_corr:.4f}, sig={reject}")
 
 # Run pairwise tests
-results_pair = pairwise_energy_tests(fully_pooled_across_everything, config["trial_types"], config["freq_bands"], n_perm=config["nhst_perm"], sample_size=config["nhst_subsample"])
+results_pair = pairwise_energy_tests(
+    fully_pooled_across_everything,
+    config["trial_types"],
+    config["freq_bands"],
+    n_perm=config["nhst_perm"],
+    sample_size=config["nhst_subsample"],
+)
 print("Uncorrected pairwise results:")
 for r in results_pair:
-    print(f"Freq {r['frequency_band']}, Pair {r['pair']}: stat={r['observed_statistic']:.4f}, p={r['p_value']:.4f}, sig={r['significant']}")
+    print(
+        f"Freq {r['frequency_band']}, Pair {r['pair']}: stat={r['observed_statistic']:.4f}, p={r['p_value']:.4f}, sig={r['significant']}"
+    )
 
 # Correct for multiple testing while maintaining good statistical power
 
 # Get your 3 p-values from each original per-frequency tests, 24 in total
-p_values_pair = [r['p_value'] for r in results_pair]
+p_values_pair = [r["p_value"] for r in results_pair]
 
 # Holm-Bonferroni (step-down)
-rejected_pair, p_corrected_pair, _, _ = multipletests(p_values_pair, 
-                                                      alpha=0.05, 
-                                                      method='holm')
+rejected_pair, p_corrected_pair, _, _ = multipletests(p_values_pair, alpha=0.05, method="holm")
 
 print("Pairwise results after correcting for multiple comparisons:")
 for f, (reject, p_corr) in enumerate(zip(rejected_pair, p_corrected_pair)):
-    print(f"Freq {results_pair[f]['frequency_band']}, Pair {results_pair[f]['pair']}: p={p_values_pair[f]:.4f} → p_corr={p_corr:.4f}, sig={reject}")
+    print(
+        f"Freq {results_pair[f]['frequency_band']}, Pair {results_pair[f]['pair']}: p={p_values_pair[f]:.4f} → p_corr={p_corr:.4f}, sig={reject}"
+    )
 
 # Summary
 significant_pairs = sum(rejected_pair)
 print(f"\n{significant_pairs}/24 pairwise tests significant (Holm-corrected)")
+
 
 # Function to save results
 def save_hypothesis_test_results_json(
@@ -582,7 +679,7 @@ def save_hypothesis_test_results_json(
     rejected_pair,
     p_corrected_pair,
     config,
-    json_path
+    json_path,
 ):
     """
     Save omnibus and pairwise test results (with Holm-corrected p-values) to JSON.
@@ -626,8 +723,8 @@ def save_hypothesis_test_results_json(
         Config with at least "trial_types" and "freq_bands".
     json_path : str
         Path to output JSON file.
-    """
 
+    """
     # Build omnibus results keyed by frequency band
     omnibus_out = {}
     for i, r in enumerate(results_omnibus):
@@ -671,7 +768,12 @@ def save_hypothesis_test_results_json(
 
 
 # Save the results
-fullpoolstats = path.abspath(path.join(configpath, f"fully_pooled_{curv_type}_energy_stat_trial_types_n_perm_{config["nhst_perm"]}_ sample_size_{config["nhst_subsample"]}.json"))
+fullpoolstats = path.abspath(
+    path.join(
+        configpath,
+        f"fully_pooled_{curv_type}_energy_stat_trial_types_n_perm_{config['nhst_perm']}_ sample_size_{config['nhst_subsample']}.json",
+    )
+)
 
 _ = save_hypothesis_test_results_json(
     results_omnibus=results,
@@ -681,5 +783,5 @@ _ = save_hypothesis_test_results_json(
     rejected_pair=rejected_pair,
     p_corrected_pair=p_corrected_pair,
     config=config,
-    json_path=fullpoolstats
+    json_path=fullpoolstats,
 )
