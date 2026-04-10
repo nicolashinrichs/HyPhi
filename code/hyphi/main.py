@@ -1,16 +1,32 @@
+"""
+Main entry for hyphi.
+
+Run the Hyphi pipeline end-to-end, orchestrating data loading, preprocessing, analyses, and benchmarking.
+
+Years: 2026
+"""
+
+# %% Import
 import logging
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+from hyphi.configs import config, params, paths
+
+# %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 logger = logging.getLogger(__name__)
 
+
+# %% Functions >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
+
+
 def run_pipeline():
+    """Run the whole pipeline using hyphi."""
     logger.info("Starting HyPhi end-to-end pipeline...")
 
     # 1. Data Preparation
     logger.info("Step 1: Data Preparation & Graph Construction")
     # TODO: Load raw EEG/timeseries data using io.py
     # TODO: Perform sliding-window filtering and phase correlation to construct graphs
-    # example: 
+    # example:
     # from hyphi.io import load_connectivity_data
     # from hyphi.analyses import build_sliding_window_graphs
     # data = load_connectivity_data("data/raw_data.pkl")
@@ -52,5 +68,11 @@ def run_pipeline():
 
     logger.info("Pipeline completed successfully.")
 
+
+# %% __main__  >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
+
 if __name__ == "__main__":
+    # Run main
     run_pipeline()
+
+# o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o END
