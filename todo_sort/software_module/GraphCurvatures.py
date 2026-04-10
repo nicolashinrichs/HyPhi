@@ -1,6 +1,6 @@
 # ============= #
-# Preliminaries # 
-# ============= # 
+# Preliminaries #
+# ============= #
 
 import networkx as nx
 import numpy as np
@@ -11,6 +11,7 @@ from GraphRicciCurvature.FormanRicci import FormanRicci
 # ================ #
 # Graph Curvatures #
 # ================ #
+
 
 def getFRC(G, method_val="1d"):
     # Initialize Forman-Ricci Curvature class

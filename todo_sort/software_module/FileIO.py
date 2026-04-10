@@ -1,11 +1,12 @@
 # ============= #
-# Preliminaries # 
-# ============= # 
+# Preliminaries #
+# ============= #
 
 import tomllib
 import os
 from os import path
 import pickle
+
 
 # Function to load analysis configurations
 def loadConfig(config_file):

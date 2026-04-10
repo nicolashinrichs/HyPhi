@@ -1,6 +1,6 @@
 # ============= #
-# Preliminaries # 
-# ============= # 
+# Preliminaries #
+# ============= #
 
 from Entropies import *
 from GraphSimulations import *

@@ -1,6 +1,6 @@
 # ============= #
-# Preliminaries # 
-# ============= # 
+# Preliminaries #
+# ============= #
 
 from Entropies import *
 from FileIO import *
@@ -12,8 +12,8 @@ basepath = path.dirname(__file__)
 configpath = path.abspath(path.join(basepath, "..", "experiments", "analysis"))
 
 # ========================== #
-# Load CCORR Analysis Config # 
-# ========================== # 
+# Load CCORR Analysis Config #
+# ========================== #
 
 # Analysis configuration file
 configfile = path.abspath(path.join(configpath, sys.argv[1]))
@@ -32,8 +32,8 @@ elif curv_type == "AFRC":
 makeDir(config["kuramoto_result_loc"])
 
 # =================== #
-# Load + Analyze Data # 
-# =================== # 
+# Load + Analyze Data #
+# =================== #
 
 num_nets = len(config["num_kuramotos"])
 
@@ -61,9 +61,24 @@ for num in tqdm(config["num_kuramotos"], desc="Kuramoto Simulations"):
     # Save data by condition
 
     # First, construct save paths
-    FRCpath = path.abspath(path.join(config["kuramoto_result_loc"], f"Kuramoto_PLV_{cmethod}_FRC_matrix_cond_{num}_config_{config["config_id"]}.npy"))
-    Hpath = path.abspath(path.join(config["kuramoto_result_loc"], f"Kuramoto_PLV_{cmethod}_FRC_entropy_cond_{num}_config_{config["config_id"]}.npy"))
-    Qpath = path.abspath(path.join(config["kuramoto_result_loc"], f"Kuramoto_PLV_{cmethod}_FRC_quantiles_cond_{num}_config_{config["config_id"]}.npy"))
+    FRCpath = path.abspath(
+        path.join(
+            config["kuramoto_result_loc"],
+            f"Kuramoto_PLV_{cmethod}_FRC_matrix_cond_{num}_config_{config['config_id']}.npy",
+        )
+    )
+    Hpath = path.abspath(
+        path.join(
+            config["kuramoto_result_loc"],
+            f"Kuramoto_PLV_{cmethod}_FRC_entropy_cond_{num}_config_{config['config_id']}.npy",
+        )
+    )
+    Qpath = path.abspath(
+        path.join(
+            config["kuramoto_result_loc"],
+            f"Kuramoto_PLV_{cmethod}_FRC_quantiles_cond_{num}_config_{config['config_id']}.npy",
+        )
+    )
 
     # Now save the NPY files
     np.save(FRCpath, FRCvals)
