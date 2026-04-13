@@ -31,7 +31,7 @@ configfile = path.abspath(path.join(configpath, sys.argv[1]))
 config = loadConfig(configfile)
 
 # If the pooled results directory doesn't exist, make it
-makeDir(path.abspath(config["pooled_result_loc"]))
+makeDir(path.abspath(config['pooled_result_loc']))
 
 # ================================= #
 # Aggregate Curvature Distributions # 
@@ -44,43 +44,43 @@ assert curv_type in ["FRC", "AFRC"], f"Curvature type ({curv_type}) must be one 
 # Construct data path by curvature type
 def dataPathConstructor(dyad, trial_type, curvature, config):
     if curvature == "FRC":
-        return path.abspath(path.join(config["result_loc"], f"CCORR_FRC_matrix_dyad_{dyad}_trial_type_{trial_type}_config_{config["config_id"]}.npy"))
+        return path.abspath(path.join(config['result_loc'], f"CCORR_FRC_matrix_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy"))
     elif curvature == "AFRC":
-        return path.abspath(path.join(config["result_loc"], f"CCORR_aug_FRC_matrix_dyad_{dyad}_trial_type_{trial_type}_config_{config["config_id"]}.npy"))
+        return path.abspath(path.join(config['result_loc'], f"CCORR_aug_FRC_matrix_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy"))
 
 
 # Construct data path by curvature type
 def resultPathConstructor(dyad, trial_type, curvature, config, pooling):
     assert pooling in ["trial", "window"]
     if curvature == "FRC":
-        FRCpath = path.abspath(path.join(config["pooled_result_loc"], f"CCORR_FRC_{pooling}_pooling_matrix_dyad_{dyad}_trial_type_{trial_type}_config_{config["config_id"]}.npy"))
-        Hpath = path.abspath(path.join(config["pooled_result_loc"], f"CCORR_FRC_{pooling}_pooling_entropy_dyad_{dyad}_trial_type_{trial_type}_config_{config["config_id"]}.npy"))
-        Qpath = path.abspath(path.join(config["pooled_result_loc"], f"CCORR_FRC_{pooling}_pooling_quantiles_dyad_{dyad}_trial_type_{trial_type}_config_{config["config_id"]}.npy"))
+        FRCpath = path.abspath(path.join(config['pooled_result_loc'], f"CCORR_FRC_{pooling}_pooling_matrix_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy"))
+        Hpath = path.abspath(path.join(config['pooled_result_loc'], f"CCORR_FRC_{pooling}_pooling_entropy_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy"))
+        Qpath = path.abspath(path.join(config['pooled_result_loc'], f"CCORR_FRC_{pooling}_pooling_quantiles_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy"))
     elif curvature == "AFRC":
-        FRCpath = path.abspath(path.join(config["pooled_result_loc"], f"CCORR_aug_FRC_{pooling}_pooling_matrix_dyad_{dyad}_trial_type_{trial_type}_config_{config["config_id"]}.npy"))
-        Hpath = path.abspath(path.join(config["pooled_result_loc"], f"CCORR_aug_FRC_{pooling}_pooling_entropy_dyad_{dyad}_trial_type_{trial_type}_config_{config["config_id"]}.npy"))
-        Qpath = path.abspath(path.join(config["pooled_result_loc"], f"CCORR_aug_FRC_{pooling}_pooling_quantiles_dyad_{dyad}_trial_type_{trial_type}_config_{config["config_id"]}.npy"))
+        FRCpath = path.abspath(path.join(config['pooled_result_loc'], f"CCORR_aug_FRC_{pooling}_pooling_matrix_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy"))
+        Hpath = path.abspath(path.join(config['pooled_result_loc'], f"CCORR_aug_FRC_{pooling}_pooling_entropy_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy"))
+        Qpath = path.abspath(path.join(config['pooled_result_loc'], f"CCORR_aug_FRC_{pooling}_pooling_quantiles_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy"))
     return FRCpath, Hpath, Qpath
 
 
 def dyadPooledPathConstructor(trial_type, curvature, config, pooling):
     assert pooling in ["trial", "window"]
     if curvature == "FRC":
-        FRCpath = path.abspath(path.join(config["pooled_result_loc"], f"CCORR_FRC_{pooling}_pooling_matrix_dyad_pooled_trial_type_{trial_type}_config_{config["config_id"]}.npy"))
-        Hpath = path.abspath(path.join(config["pooled_result_loc"], f"CCORR_FRC_{pooling}_pooling_entropy_dyad_pooled_trial_type_{trial_type}_config_{config["config_id"]}.npy"))
-        Qpath = path.abspath(path.join(config["pooled_result_loc"], f"CCORR_FRC_{pooling}_pooling_quantiles_dyad_pooled_trial_type_{trial_type}_config_{config["config_id"]}.npy"))
+        FRCpath = path.abspath(path.join(config['pooled_result_loc'], f"CCORR_FRC_{pooling}_pooling_matrix_dyad_pooled_trial_type_{trial_type}_config_{config['config_id']}.npy"))
+        Hpath = path.abspath(path.join(config['pooled_result_loc'], f"CCORR_FRC_{pooling}_pooling_entropy_dyad_pooled_trial_type_{trial_type}_config_{config['config_id']}.npy"))
+        Qpath = path.abspath(path.join(config['pooled_result_loc'], f"CCORR_FRC_{pooling}_pooling_quantiles_dyad_pooled_trial_type_{trial_type}_config_{config['config_id']}.npy"))
     elif curvature == "AFRC":
-        FRCpath = path.abspath(path.join(config["pooled_result_loc"], f"CCORR_aug_FRC_{pooling}_pooling_matrix_dyad_pooled_trial_type_{trial_type}_config_{config["config_id"]}.npy"))
-        Hpath = path.abspath(path.join(config["pooled_result_loc"], f"CCORR_aug_FRC_{pooling}_pooling_entropy_dyad_pooled_trial_type_{trial_type}_config_{config["config_id"]}.npy"))
-        Qpath = path.abspath(path.join(config["pooled_result_loc"], f"CCORR_aug_FRC_{pooling}_pooling_quantiles_dyad_pooled_trial_type_{trial_type}_config_{config["config_id"]}.npy"))
+        FRCpath = path.abspath(path.join(config['pooled_result_loc'], f"CCORR_aug_FRC_{pooling}_pooling_matrix_dyad_pooled_trial_type_{trial_type}_config_{config['config_id']}.npy"))
+        Hpath = path.abspath(path.join(config['pooled_result_loc'], f"CCORR_aug_FRC_{pooling}_pooling_entropy_dyad_pooled_trial_type_{trial_type}_config_{config['config_id']}.npy"))
+        Qpath = path.abspath(path.join(config['pooled_result_loc'], f"CCORR_aug_FRC_{pooling}_pooling_quantiles_dyad_pooled_trial_type_{trial_type}_config_{config['config_id']}.npy"))
     return FRCpath, Hpath, Qpath
 
 
 def fullyPooledPathConstructor(trial_type, curvature, config):
     if curvature == "FRC":
-        FRCpath = path.abspath(path.join(config["pooled_result_loc"], f"CCORR_FRC_matrix_fully_pooled_trial_type_{trial_type}_config_{config["config_id"]}.npy"))
+        FRCpath = path.abspath(path.join(config['pooled_result_loc'], f"CCORR_FRC_matrix_fully_pooled_trial_type_{trial_type}_config_{config['config_id']}.npy"))
     elif curvature == "AFRC":
-        FRCpath = path.abspath(path.join(config["pooled_result_loc"], f"CCORR_aug_FRC_matrix_fully_pooled_trial_type_{trial_type}_config_{config["config_id"]}.npy"))
+        FRCpath = path.abspath(path.join(config['pooled_result_loc'], f"CCORR_aug_FRC_matrix_fully_pooled_trial_type_{trial_type}_config_{config['config_id']}.npy"))
     return FRCpath
 
 
@@ -88,27 +88,27 @@ def fullyPooledPathConstructor(trial_type, curvature, config):
 data = {
     d: {
         tt: np.load(dataPathConstructor(d, tt, curv_type, config))
-        for tt in config["trial_types"]
+        for tt in config['trial_types']
     }
-    for d in config["dyads"]
+    for d in config['dyads']
 }
 
 # # Containers for pooled data per dyad and trial type
 # pooled_trials_per_dyad = {d: {} for d in dyads}        # (8, 4, 30*128*128)
 # pooled_windows_per_dyad = {d: {} for d in dyads}       # (8, 30, 4*128*128)
 
-# pooled_trials_per_dyad_entropy = {d: {tt: np.zeros((8, 4)) for tt in config["trial_types"]} for d in config["dyads"]}
-# pooled_windows_per_dyad_entropy = {d: {tt: np.zeros((8, 30)) for tt in config["trial_types"]} for d in config["dyads"]}
+# pooled_trials_per_dyad_entropy = {d: {tt: np.zeros((8, 4)) for tt in config['trial_types']} for d in config['dyads']}
+# pooled_windows_per_dyad_entropy = {d: {tt: np.zeros((8, 30)) for tt in config['trial_types']} for d in config['dyads']}
 
-# pooled_trials_per_dyad_quantiles = {d: {tt: np.zeros((8, 4, 5)) for tt in config["trial_types"]} for d in config["dyads"]}
-# pooled_windows_per_dyad_quantiles = {d: {tt: np.zeros((8, 30, 5)) for tt in config["trial_types"]} for d in config["dyads"]}
+# pooled_trials_per_dyad_quantiles = {d: {tt: np.zeros((8, 4, 5)) for tt in config['trial_types']} for d in config['dyads']}
+# pooled_windows_per_dyad_quantiles = {d: {tt: np.zeros((8, 30, 5)) for tt in config['trial_types']} for d in config['dyads']}
 
 # # ------------------------------------------------------------------
 # # 1. Pool trials within each dyad × trial_type
 # #    Result: (8, 4, 30 * 128 * 128)
 # # ------------------------------------------------------------------
-# for d in config["dyads"]:
-#     for tt in config["trial_types"]:
+# for d in config['dyads']:
+#     for tt in config['trial_types']:
 #         # X has shape (8, 30, 4, 128, 128)
 #         X = data[d][tt]
 
@@ -126,7 +126,7 @@ data = {
 #             for w in range(4):
 #                 # Kozachenko entropy
 #                 pooled_trials_per_dyad_entropy[d][tt][f, w] = im.entropy(pooled_trials[f, w], approach="metric", k=4)
-#                 pooled_trials_per_dyad_quantiles[d][tt][f, w] = np.quantile(pooled_trials[f, w], config["quantiles"])
+#                 pooled_trials_per_dyad_quantiles[d][tt][f, w] = np.quantile(pooled_trials[f, w], config['quantiles'])
 
 #         # File paths
 #         FRCpath, Hpath, Qpath = resultPathConstructor(d, tt, curv_type, config, "trial")
@@ -157,7 +157,7 @@ data = {
 #             for tr in range(30):
 #                 # Kozachenko entropy
 #                 pooled_windows_per_dyad_entropy[d][tt][f, tr] = im.entropy(pooled_windows[f, tr], approach="metric", k=4)
-#                 pooled_windows_per_dyad_quantiles[d][tt][f, tr] = np.quantile(pooled_windows[f, tr], config["quantiles"])
+#                 pooled_windows_per_dyad_quantiles[d][tt][f, tr] = np.quantile(pooled_windows[f, tr], config['quantiles'])
 
 #         # File paths
 #         FRCpath, Hpath, Qpath = resultPathConstructor(d, tt, curv_type, config, "window")
@@ -177,11 +177,11 @@ data = {
 # trial_pooled_across_dyads = {}   # one array per trial type
 # window_pooled_across_dyads = {}  # one array per trial type
 
-# pooled_trials_entropy = {tt: np.zeros((8, 4)) for tt in config["trial_types"]}
-# pooled_windows_entropy = {tt: np.zeros((8, 30)) for tt in config["trial_types"]}
+# pooled_trials_entropy = {tt: np.zeros((8, 4)) for tt in config['trial_types']}
+# pooled_windows_entropy = {tt: np.zeros((8, 30)) for tt in config['trial_types']}
 
-# pooled_trials_quantiles = {tt: np.zeros((8, 4, 5)) for tt in config["trial_types"]}
-# pooled_windows_quantiles = {tt: np.zeros((8, 30, 5)) for tt in config["trial_types"]}
+# pooled_trials_quantiles = {tt: np.zeros((8, 4, 5)) for tt in config['trial_types']}
+# pooled_windows_quantiles = {tt: np.zeros((8, 30, 5)) for tt in config['trial_types']}
 
 # for tt in trial_types:
 #     # Collect per-dyad arrays for this trial type
@@ -213,13 +213,13 @@ data = {
 #         for w in range(4):
 #             # Kozachenko entropy
 #             pooled_trials_entropy[tt][f, w] = im.entropy(trial_merged[f, w, :], approach="metric", k=4)
-#             pooled_trials_quantiles[tt][f, w] = np.quantile(trial_merged[f, w, :], config["quantiles"])
+#             pooled_trials_quantiles[tt][f, w] = np.quantile(trial_merged[f, w, :], config['quantiles'])
 
 #         # By trial
 #         for tr in range(30):
 #             # Kozachenko entropy
 #             pooled_windows_entropy[tt][f, tr] = im.entropy(window_merged[f, tr, :], approach="metric", k=4)
-#             pooled_windows_quantiles[tt][f, tr] = np.quantile(window_merged[f, tr, :], config["quantiles"])
+#             pooled_windows_quantiles[tt][f, tr] = np.quantile(window_merged[f, tr, :], config['quantiles'])
 
 #     # File paths
 #     FRCpath, Hpath, Qpath = resultPathConstructor(d, tt, curv_type, config, "window")
@@ -235,9 +235,9 @@ data = {
 # ------------------------------------------------------------------
 fully_pooled_across_everything = {}
 
-for tt in config["trial_types"]:
+for tt in config['trial_types']:
     # Start from original data across all dyads
-    all_dyad_data = [data[d][tt] for d in config["dyads"]]  # list of (8,30,4,128,128)
+    all_dyad_data = [data[d][tt] for d in config['dyads']]  # list of (8,30,4,128,128)
     
     # Stack dyads: (10, 8, 30, 4, 128, 128)
     stacked = np.stack(all_dyad_data, axis=0)
@@ -530,7 +530,7 @@ def pairwise_energy_tests(fully_pooled, trial_types, freq_bands,
 
 
 # Run omnibus analysis
-results = test_trial_types_per_freq(fully_pooled_across_everything, config["trial_types"], config["freq_bands"], n_perm=config["nhst_perm"], sample_size=config["nhst_subsample"])
+results = test_trial_types_per_freq(fully_pooled_across_everything, config['trial_types'], config['freq_bands'], n_perm=config['nhst_perm'], sample_size=config['nhst_subsample'])
 print("Uncorrected omnibus results:")
 for r in results:
     print(f"Freq {r['frequency_band']}: stat={r['observed_statistic']:.4f}, p={r['p_value']:.4f}, sig={r['significant']}")
@@ -550,7 +550,7 @@ for f, (reject, p_corr) in enumerate(zip(rejected, p_corrected)):
     print(f"Freq {results[f]['frequency_band']}: p={p_values[f]:.4f} → p_corr={p_corr:.4f}, sig={reject}")
 
 # Run pairwise tests
-results_pair = pairwise_energy_tests(fully_pooled_across_everything, config["trial_types"], config["freq_bands"], n_perm=config["nhst_perm"], sample_size=config["nhst_subsample"])
+results_pair = pairwise_energy_tests(fully_pooled_across_everything, config['trial_types'], config['freq_bands'], n_perm=config['nhst_perm'], sample_size=config['nhst_subsample'])
 print("Uncorrected pairwise results:")
 for r in results_pair:
     print(f"Freq {r['frequency_band']}, Pair {r['pair']}: stat={r['observed_statistic']:.4f}, p={r['p_value']:.4f}, sig={r['significant']}")
@@ -658,8 +658,8 @@ def save_hypothesis_test_results_json(
     output = {
         "description": "Energy-distance omnibus and pairwise tests with Holm correction",
         "alpha": 0.05,
-        "trial_types": config["trial_types"],
-        "freq_bands": config["freq_bands"],
+        "trial_types": config['trial_types'],
+        "freq_bands": config['freq_bands'],
         "omnibus": omnibus_out,
         "pairwise": pairwise_out,
     }
@@ -671,7 +671,7 @@ def save_hypothesis_test_results_json(
 
 
 # Save the results
-fullpoolstats = path.abspath(path.join(configpath, f"fully_pooled_{curv_type}_energy_stat_trial_types_n_perm_{config["nhst_perm"]}_ sample_size_{config["nhst_subsample"]}.json"))
+fullpoolstats = path.abspath(path.join(configpath, f"fully_pooled_{curv_type}_energy_stat_trial_types_n_perm_{config['nhst_perm']}_ sample_size_{config['nhst_subsample']}.json"))
 
 _ = save_hypothesis_test_results_json(
     results_omnibus=results,

@@ -47,15 +47,15 @@ configfile = path.abspath(path.join(configpath, sys.argv[1]))
 config = loadConfig(configfile)
 
 # Create map between dyads and dates
-dyad_date_map = dict(zip(config["dyads"], config["dyad_dates"]))
+dyad_date_map = dict(zip(config['dyads'], config['dyad_dates']))
 
 # Create map between trial types and numeric identifiers
 # Map to 0, 1, 2 instead of 1, 2, 3 for later
-trial_type_ids = list(np.array(config["trial_type_ids"]) - 1)
-trial_type_map = dict(zip(trial_type_ids, config["trial_types"]))
+trial_type_ids = list(np.array(config['trial_type_ids']) - 1)
+trial_type_map = dict(zip(trial_type_ids, config['trial_types']))
 
 # Visualization path variables
-hyperviz = path.abspath(config["aug_viz_loc"])
+hyperviz = path.abspath(config['aug_viz_loc'])
 makeDir(hyperviz)
 
 # ======== #
@@ -577,10 +577,10 @@ def plotHyperFRCFullExp_avgWindows(
 # ======== # 
 
 # Loop over dyads
-for dyad in tqdm(config["dyads"], desc="Dyads"):
+for dyad in tqdm(config['dyads'], desc="Dyads"):
 
     # Data path for shot times
-    Spath = path.abspath(path.join(config["behav_loc"], f"exp{dyad_date_map[dyad]}"))
+    Spath = path.abspath(path.join(config['behav_loc'], f"exp{dyad_date_map[dyad]}"))
 
     # Load shot time data
     Svals = sp.io.loadmat(Spath)["trialtype"].flatten()
@@ -590,11 +590,11 @@ for dyad in tqdm(config["dyads"], desc="Dyads"):
     Qlist = []
 
     # Loop over trial types
-    for trial_type in tqdm(config["trial_types"], desc="Trial Types"):
+    for trial_type in tqdm(config['trial_types'], desc="Trial Types"):
 
         # Data paths
-        Hpath = path.abspath(path.join(config["result_loc"], f"CCORR_aug_FRC_entropy_dyad_{dyad}_trial_type_{trial_type}_config_{config["config_id"]}.npy"))
-        Qpath = path.abspath(path.join(config["result_loc"], f"CCORR_aug_FRC_quantiles_dyad_{dyad}_trial_type_{trial_type}_config_{config["config_id"]}.npy"))
+        Hpath = path.abspath(path.join(config['result_loc'], f"CCORR_aug_FRC_entropy_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy"))
+        Qpath = path.abspath(path.join(config['result_loc'], f"CCORR_aug_FRC_quantiles_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy"))
 
         # Load data
         Hvals = np.load(Hpath)
@@ -603,21 +603,21 @@ for dyad in tqdm(config["dyads"], desc="Dyads"):
         Qlist.append(Qvals)
 
         # Plot
-        f, _ = plotHyperFRC(Hvals, Qvals, title=f"Dyad: {dyad}, Trial Type: {trial_type}", band_labels=config["freq_bands"], q_labels=config["quantiles"])
+        f, _ = plotHyperFRC(Hvals, Qvals, title=f"Dyad: {dyad}, Trial Type: {trial_type}", band_labels=config['freq_bands'], q_labels=config['quantiles'])
 
         # Plot paths
-        figpath = path.abspath(path.join(hyperviz, f"CCORR_aug_FRC_ent_quant_dyad_{dyad}_trial_type_{trial_type}_config_{config["config_id"]}.png"))
+        figpath = path.abspath(path.join(hyperviz, f"CCORR_aug_FRC_ent_quant_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.png"))
 
         # Save the figure
         f.savefig(figpath, bbox_inches="tight")
 
     # Plot full experiment
-    ffull, _ = plotHyperFRCFullExp(Hlist, Qlist, Svals, title=f"Dyad: {dyad}", band_labels=config["freq_bands"], q_labels=config["quantiles"], type_labels=trial_type_map)
-    ffull_avg, _ = plotHyperFRCFullExp_avgWindows(Hlist, Qlist, Svals, title=f"Dyad: {dyad}", band_labels=config["freq_bands"], q_labels=config["quantiles"], type_labels=trial_type_map)
+    ffull, _ = plotHyperFRCFullExp(Hlist, Qlist, Svals, title=f"Dyad: {dyad}", band_labels=config['freq_bands'], q_labels=config['quantiles'], type_labels=trial_type_map)
+    ffull_avg, _ = plotHyperFRCFullExp_avgWindows(Hlist, Qlist, Svals, title=f"Dyad: {dyad}", band_labels=config['freq_bands'], q_labels=config['quantiles'], type_labels=trial_type_map)
 
     # Plot paths
-    fullfigpath = path.abspath(path.join(hyperviz, f"CCORR_aug_FRC_ent_quant_dyad_{dyad}_full_exp_config_{config["config_id"]}.png"))
-    fullavgfigpath = path.abspath(path.join(hyperviz, f"CCORR_aug_FRC_ent_quant_dyad_{dyad}_full_exp_trial_avg_config_{config["config_id"]}.png"))
+    fullfigpath = path.abspath(path.join(hyperviz, f"CCORR_aug_FRC_ent_quant_dyad_{dyad}_full_exp_config_{config['config_id']}.png"))
+    fullavgfigpath = path.abspath(path.join(hyperviz, f"CCORR_aug_FRC_ent_quant_dyad_{dyad}_full_exp_trial_avg_config_{config['config_id']}.png"))
 
     # Save the figure
     ffull.savefig(fullfigpath, bbox_inches="tight")
