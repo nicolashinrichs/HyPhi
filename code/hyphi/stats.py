@@ -5,11 +5,8 @@ Years: 2026
 """
 
 # %% Import
-from turtle import st
-
 import numpy as np
 import pandas as pd
-import statsmodels.api as sm
 import statsmodels.formula.api as smf
 
 # %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
@@ -37,7 +34,7 @@ def hierarchical_permutation_test(
     data, condition_col: str = "condition", group_col: str = "dyad", n_perms: int = 1000
 ):
     """
-    Run permutation loop.
+    Run the permutation loop.
 
     Skeleton for a hierarchical permutation test that shuffles conditions
     at the highest level (e.g., dyad) rather than pooling trials or windows.

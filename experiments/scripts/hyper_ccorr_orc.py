@@ -1,30 +1,23 @@
-# ============= #
-# Preliminaries #
-# ============= #
+# %% Import
 
-from Entropies import *
-from FileIO import *
+from hyphi.modeling.entropies import *
+from hyphi.io import *
 import sys
 from tqdm import tqdm
 import scipy as sp
 import multiprocessing
 from concurrent.futures import ThreadPoolExecutor
 import threading
-from queue import Queue
 
-# Path variables
-basepath = path.dirname(__file__)
-configpath = path.abspath(path.join(basepath, "..", "experiments", "analysis"))
+from hyphi.configs import paths
+from hyphi.modeling.graph_curvatures import get_orc
 
-# ========================== #
-# Load CCORR Data and Config #
-# ========================== #
-
+# %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 # Analysis configuration file
-configfile = path.abspath(path.join(configpath, sys.argv[1]))
+config_file = os.path.join(paths.experiments.configs, sys.argv[1])
 
 # Load the configuration parameters into a dictionary
-config = loadConfig(configfile)
+config = load_config(config_file)
 
 # Load the CCORR data tensors from .mat files
 # We store data for each trial type separately
@@ -33,7 +26,7 @@ for dyad in config["dyads"]:
     ccorr_data[dyad] = {}
 
     # Construct file path for dyad
-    dyad_file = path.abspath(path.join(config["data_loc"], f"CCORR_{dyad}.mat"))
+    dyad_file = os.path.abspath(os.path.join(config["data_loc"], f"CCORR_{dyad}.mat"))
 
     # Load dyad CCORR dictionary
     dyad_ccorr = sp.io.loadmat(dyad_file)
@@ -70,11 +63,9 @@ for dyad in config["dyads"]:
         ccorr_data[dyad][trial_type] = ccorr_mat
 
 # If the results directory doesn't exist, make it
-makeDir(path.abspath(config["result_loc"]))
+make_dir(os.path.abspath(config["result_loc"]))
 
-# ========================= #
-# Windowed CCORR Curvatures #
-# ========================= #
+# %% Functions >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
 # Data structures to hold curvatures + entropy and quantiles of curvatures
 # We will do it like this:
@@ -135,17 +126,17 @@ def freqBandAnalysis(freq_data, band_idx, config, progress_queue):
                         # Loop over windows
                         for window in range(config["num_windows"]):
                             # Compute Forman-Ricci curvatures across windows for this trial and frequency band
-                            ORC = getORC(Gt[window], alpha_val=alph, power_val=powr)
+                            ORC = get_orc(Gt[window], alpha_val=alph, power_val=powr)
 
                             # Convert IBCs (networkx graphs) with window curvatures to window curvature matrices
                             ORCvals[trial, window, :, :] = nx.attr_matrix(ORC, edge_attr="ricciCurvature")[0]
 
                             # Get entropy
-                            H = getEntropyKozachenko(ORC, curvature="ricciCurvature")
+                            H = get_entropy_kozachenko(ORC, curvature="ricciCurvature")
                             Hvals[trial, window] = H.copy()
 
                             # Get quantiles
-                            Q = getQuantiles(ORC, qs=config["quantiles"], curvature="ricciCurvature")
+                            Q = get_quantiles(ORC, qs=config["quantiles"], curvature="ricciCurvature")
                             Qvals[trial, window, :] = Q.copy()
 
                             # Send progress update
@@ -159,20 +150,20 @@ def freqBandAnalysis(freq_data, band_idx, config, progress_queue):
                     # Save data by frequency band, dyad, trial type, alpha value, and power value
 
                     # First, construct save paths
-                    ORCpath = path.abspath(
-                        path.join(
+                    ORCpath = os.path.abspath(
+                        os.path.join(
                             config["result_loc"],
                             f"CCORR_ORC_matrix_freq_{config['freq_bands'][band_idx]}_dyad_{dyad}_trial_type_{trial_type}_alpha_{alph}_power_{powr}_config_{config['config_id']}.npy",
                         )
                     )
-                    Hpath = path.abspath(
-                        path.join(
+                    Hpath = os.path.abspath(
+                        os.path.join(
                             config["result_loc"],
                             f"CCORR_ORC_entropy_freq_{config['freq_bands'][band_idx]}_dyad_{dyad}_trial_type_{trial_type}_alpha_{alph}_power_{powr}_config_{config['config_id']}.npy",
                         )
                     )
-                    Qpath = path.abspath(
-                        path.join(
+                    Qpath = os.path.abspath(
+                        os.path.join(
                             config["result_loc"],
                             f"CCORR_ORC_quantiles_freq_{config['freq_bands'][band_idx]}_dyad_{dyad}_trial_type_{trial_type}_alpha_{alph}_power_{powr}_config_{config['config_id']}.npy",
                         )
@@ -198,59 +189,64 @@ def progress_monitor(progress_queue, total_networks, pbar):
             break
 
 
-# Prepare the data by organizing by frequency band for parallelization
-tqdm.write("Organizing data by frequency band for parallelization...")
+if __name__ == "__main__":
+    # Prepare the data by organizing by frequency band for parallelization
+    tqdm.write("Organizing data by frequency band for parallelization...")
 
-# Loop over frequency bands
-freq_data = []
-for freq in tqdm(range(config["num_freqs"]), desc="Frequency Bands"):
-    freq_org = {}
+    # Loop over frequency bands
+    freq_data = []
+    for freq in tqdm(range(config["num_freqs"]), desc="Frequency Bands"):
+        freq_org = {}
 
-    # Loop over dyads
-    for dyad in tqdm(config["dyads"], desc="Dyads"):
-        freq_org[dyad] = {}
+        # Loop over dyads
+        for dyad in tqdm(config["dyads"], desc="Dyads"):
+            freq_org[dyad] = {}
 
-        # Loop over trial types
-        for trial_type in tqdm(config["trial_types"], desc="Trial Types"):
-            freq_org[dyad][trial_type] = ccorr_data[dyad][trial_type][freq, :, :, :, :]
+            # Loop over trial types
+            for trial_type in tqdm(config["trial_types"], desc="Trial Types"):
+                freq_org[dyad][trial_type] = ccorr_data[dyad][trial_type][freq, :, :, :, :]
 
-    freq_data.append(freq_org)
+        freq_data.append(freq_org)
 
-# Get total number of dyad-trial type-trial-window-ORC hyperparameter combos
-total_networks = (
-    len(config["dyads"])
-    * len(config["trial_types"])
-    * config["num_trials"]
-    * config["num_windows"]
-    * len(config["orc_alphas"])
-    * len(config["orc_powers"])
-)
-tqdm.write(f"Total number of network-hyperparameter combos to be evaluated: {total_networks}")
-
-# ORC computation parallelized over frequency bands
-tqdm.write("Starting ORC computations...")
-
-# Nested progress tracking
-manager = multiprocessing.Manager()
-progress_queue = manager.Queue()
-
-# Inner progress bar for networks within bands
-with tqdm(total=len(freq_data) * total_networks, desc="Networks") as inner_pbar:
-    # Start progress monitor
-    monitor = threading.Thread(
-        target=progress_monitor, args=(progress_queue, len(freq_data) * total_networks, inner_pbar)
+    # Get total number of dyad-trial type-trial-window-ORC hyperparameter combos
+    total_networks = (
+        len(config["dyads"])
+        * len(config["trial_types"])
+        * config["num_trials"]
+        * config["num_windows"]
+        * len(config["orc_alphas"])
+        * len(config["orc_powers"])
     )
-    monitor.start()
+    tqdm.write(f"Total number of network-hyperparameter combos to be evaluated: {total_networks}")
 
-    with ThreadPoolExecutor(max_workers=8) as executor:
-        # Arguments to pass in
-        args = [(band_data, band_idx, config, progress_queue) for band_idx, band_data in enumerate(freq_data)]
+    # ORC computation parallelized over frequency bands
+    tqdm.write("Starting ORC computations...")
 
-        # This single tqdm tracks frequency band progress
-        band_results = list(
-            tqdm(
-                executor.map(lambda x: freqBandAnalysis(*x), args), total=len(args), desc="Processing frequency bands"
-            )
+    # Nested progress tracking
+    manager = multiprocessing.Manager()
+    progress_queue = manager.Queue()
+
+    # Inner progress bar for networks within bands
+    with tqdm(total=len(freq_data) * total_networks, desc="Networks") as inner_pbar:
+        # Start progress monitor
+        monitor = threading.Thread(
+            target=progress_monitor, args=(progress_queue, len(freq_data) * total_networks, inner_pbar)
         )
+        monitor.start()
 
-    monitor.join()
+        with ThreadPoolExecutor(max_workers=8) as executor:
+            # Arguments to pass in
+            args = [(band_data, band_idx, config, progress_queue) for band_idx, band_data in enumerate(freq_data)]
+
+            # This single tqdm tracks frequency band progress
+            band_results = list(
+                tqdm(
+                    executor.map(lambda x: freqBandAnalysis(*x), args),
+                    total=len(args),
+                    desc="Processing frequency bands",
+                )
+            )
+
+        monitor.join()
+
+# o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o END

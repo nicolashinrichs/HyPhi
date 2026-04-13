@@ -1,5 +1,5 @@
 """
-Analyses module for HyPhi: Graph curvature and entropy computations.
+Analyzes module for HyPhi: Graph curvature and entropy computations.
 
 Years: 2026
 """
@@ -7,7 +7,6 @@ Years: 2026
 # %% Import
 import networkx as nx
 import numpy as np
-import numpy.typing as npt
 from GraphRicciCurvature.FormanRicci import FormanRicci
 from GraphRicciCurvature.OllivierRicci import OllivierRicci
 from KDEpy import FFTKDE, NaiveKDE, TreeKDE

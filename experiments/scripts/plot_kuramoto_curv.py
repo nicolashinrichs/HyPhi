@@ -1,8 +1,7 @@
-# ============= #
-# Preliminaries #
-# ============= #
+"""TODO: add docstring"""
 
-from FileIO import *
+# %% Import
+import os
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
@@ -10,9 +9,11 @@ import matplotlib as mpl
 from matplotlib.gridspec import GridSpec
 import matplotlib.cm as cm
 import matplotlib.colors as mpc
-from matplotlib.transforms import ScaledTranslation
-from tqdm import tqdm
 
+from hyphi.configs import paths
+from hyphi.io import load_config, make_dir
+
+# %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 # Colorblind friendly palette (8 colors) to set the color cycle of plots (Bang Wong's palette)
 wong = ["#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7"]
 
@@ -29,19 +30,11 @@ params = {
 }
 plt.rcParams.update(params)
 
-# Path variables
-basepath = path.dirname(__file__)
-configpath = path.abspath(path.join(basepath, "..", "experiments", "analysis"))
-
-# ========================== #
-# Load CCORR Analysis Config #
-# ========================== #
-
 # Analysis configuration file
-configfile = path.abspath(path.join(configpath, sys.argv[1]))
+config_file = os.path.join(paths.experiments.configs, sys.argv[1])
 
 # Load the configuration parameters into a dictionary
-config = loadConfig(configfile)
+config = load_config(config_file)
 
 # Type of curvature
 curv_type = sys.argv[2]
@@ -51,45 +44,9 @@ if curv_type == "FRC":
 elif curv_type == "AFRC":
     cmethod = "augmented"
 
-makeDir(config["kuramoto_viz_loc"])
+make_dir(config["kuramoto_viz_loc"])
 
-# ========= #
-# Load Data #
-# ========= #
-
-# Array to hold entropy and quantiles of replications
-Hreps = np.zeros((len(config["num_kuramotos"]), config["kuramoto_time"]))
-Qreps = np.zeros((len(config["num_kuramotos"]), config["kuramoto_time"], len(config["quantiles"])))
-
-for num in config["num_kuramotos"]:
-    # Load data
-    Hpath = path.abspath(
-        path.join(
-            config["kuramoto_result_loc"],
-            f"Kuramoto_PLV_{cmethod}_FRC_entropy_cond_{num}_config_{config['config_id']}.npy",
-        )
-    )
-    Qpath = path.abspath(
-        path.join(
-            config["kuramoto_result_loc"],
-            f"Kuramoto_PLV_{cmethod}_FRC_quantiles_cond_{num}_config_{config['config_id']}.npy",
-        )
-    )
-    if num == "avg":
-        Havg = np.load(Hpath)
-        Qavg = np.load(Qpath)
-    else:
-        Hreps[num, :] = np.load(Hpath)
-        Qreps[num, :, :] = np.load(Qpath)
-
-# Get the quantiles over replications
-rep_qvals = np.array([0.05, 0.5, 0.95])
-HQs = np.quantile(Hreps, rep_qvals, axis=0)
-QQs = np.quantile(Qreps, rep_qvals, axis=0)
-
-# ======== #
-# Plotting #
-# ======== #
+# %% Functions >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
 
 def plotKuramotos(tt, HQs, Havg, QQs, Qavg, qvals):
@@ -138,8 +95,43 @@ def plotKuramotos(tt, HQs, Havg, QQs, Qavg, qvals):
     return fig
 
 
-# Final plot
-time_axis = np.array(range(len(Havg)))
-f = plotKuramotos(time_axis, HQs, Havg, QQs, Qavg, config["quantiles"])
-kurviz = path.abspath(path.join(config["kuramoto_viz_loc"], f"kuramoto_PLV_{curv_type}.png"))
-f.savefig(kurviz, bbox_inches="tight")
+# %% __main__  >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
+
+if __name__ == "__main__":
+    # Array to hold entropy and quantiles of replications
+    Hreps = np.zeros((len(config["num_kuramotos"]), config["kuramoto_time"]))
+    Qreps = np.zeros((len(config["num_kuramotos"]), config["kuramoto_time"], len(config["quantiles"])))
+
+    for num in config["num_kuramotos"]:
+        # Load data
+        Hpath = os.path.abspath(
+            os.path.join(
+                config["kuramoto_result_loc"],
+                f"Kuramoto_PLV_{cmethod}_FRC_entropy_cond_{num}_config_{config['config_id']}.npy",
+            )
+        )
+        Qpath = os.path.abspath(
+            os.path.join(
+                config["kuramoto_result_loc"],
+                f"Kuramoto_PLV_{cmethod}_FRC_quantiles_cond_{num}_config_{config['config_id']}.npy",
+            )
+        )
+        if num == "avg":
+            Havg = np.load(Hpath)
+            Qavg = np.load(Qpath)
+        else:
+            Hreps[num, :] = np.load(Hpath)
+            Qreps[num, :, :] = np.load(Qpath)
+
+    # Get the quantiles over replications
+    rep_qvals = np.array([0.05, 0.5, 0.95])
+    HQs = np.quantile(Hreps, rep_qvals, axis=0)
+    QQs = np.quantile(Qreps, rep_qvals, axis=0)
+
+    # Final plot
+    time_axis = np.array(range(len(Havg)))
+    f = plotKuramotos(time_axis, HQs, Havg, QQs, Qavg, config["quantiles"])
+    kurviz = os.path.abspath(os.path.join(config["kuramoto_viz_loc"], f"kuramoto_PLV_{curv_type}.png"))
+    f.savefig(kurviz, bbox_inches="tight")
+
+# o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o END

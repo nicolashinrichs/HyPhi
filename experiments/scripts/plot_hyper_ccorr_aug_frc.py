@@ -1,20 +1,22 @@
-# ============= #
-# Preliminaries #
-# ============= #
+# %% Import
 
-from FileIO import *
+import os
 import numpy as np
 import scipy as sp
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import matplotlib.cm as cm
-import matplotlib.colors as mpc
 from matplotlib.colors import ListedColormap, BoundaryNorm
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from matplotlib.lines import Line2D  # for custom legend handles
 from tqdm import tqdm
-from os import path
+
 import sys
+
+from hyphi.configs import paths
+from hyphi.io import load_config, make_dir
+
+# %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
 # Colorblind friendly palette (8 colors) to set the color cycle of plots (Bang Wong's palette)
 wong = ["#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7"]
@@ -32,19 +34,11 @@ params = {
 }
 plt.rcParams.update(params)
 
-# Path variables
-basepath = path.dirname(__file__)
-configpath = path.abspath(path.join(basepath, "..", "experiments", "analysis"))
-
-# ========================== #
-# Load CCORR Analysis Config #
-# ========================== #
-
 # Analysis configuration file
-configfile = path.abspath(path.join(configpath, sys.argv[1]))
+config_file = os.path.join(paths.experiments.configs, sys.argv[1])
 
 # Load the configuration parameters into a dictionary
-config = loadConfig(configfile)
+config = load_config(config_file)
 
 # Create map between dyads and dates
 dyad_date_map = dict(zip(config["dyads"], config["dyad_dates"]))
@@ -55,12 +49,10 @@ trial_type_ids = list(np.array(config["trial_type_ids"]) - 1)
 trial_type_map = dict(zip(trial_type_ids, config["trial_types"]))
 
 # Visualization path variables
-hyperviz = path.abspath(config["viz_loc"])
-makeDir(hyperviz)
+hyperviz = os.path.abspath(config["aug_viz_loc"])
+make_dir(hyperviz)
 
-# ======== #
-# Plotting #
-# ======== #
+# %% Functions >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
 
 def plotHyperFRC(entropy, quantiles, title=None, band_labels=None, window_labels=None, q_labels=None):
@@ -161,7 +153,7 @@ def plotHyperFRCFullExp(
 ):
     """
     For each trial type k (0,1,2):
-      entropy_list[k][b, i, w]   shape (8, 30, 4)
+      entropy_list[k][b, i, w] shape (8, 30, 4)
       quantiles_list[k][b, i, w, q] shape (8, 30, 4, 5)
 
     trial_type_seq[t] gives chronological trial type for t in 0..89.
@@ -332,7 +324,7 @@ def plotHyperFRCFullExp_avgWindows(
     type_labels=None,
 ):
     """
-    Same as plotHyperFRCFullExp, but averages across the 4 windows within each trial.
+    Same as plot_hyper_frc_full_exp, but averages across the 4 windows within each trial.
     Resulting time axis has 90 points (one per trial). Marker shape encodes trial type.
     """
 
@@ -541,14 +533,12 @@ def plotHyperFRCFullExp_avgWindows(
     return fig, axes
 
 
-# ======== #
-# Plotting #
-# ======== #
+# %% __main__  >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
 # Loop over dyads
 for dyad in tqdm(config["dyads"], desc="Dyads"):
     # Data path for shot times
-    Spath = path.abspath(path.join(config["behav_loc"], f"exp{dyad_date_map[dyad]}"))
+    Spath = os.path.abspath(os.path.join(config["behav_loc"], f"exp{dyad_date_map[dyad]}"))
 
     # Load shot time data
     Svals = sp.io.loadmat(Spath)["trialtype"].flatten()
@@ -560,16 +550,16 @@ for dyad in tqdm(config["dyads"], desc="Dyads"):
     # Loop over trial types
     for trial_type in tqdm(config["trial_types"], desc="Trial Types"):
         # Data paths
-        Hpath = path.abspath(
-            path.join(
+        Hpath = os.path.abspath(
+            os.path.join(
                 config["result_loc"],
-                f"CCORR_FRC_entropy_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy",
+                f"CCORR_aug_FRC_entropy_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy",
             )
         )
-        Qpath = path.abspath(
-            path.join(
+        Qpath = os.path.abspath(
+            os.path.join(
                 config["result_loc"],
-                f"CCORR_FRC_quantiles_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy",
+                f"CCORR_aug_FRC_quantiles_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy",
             )
         )
 
@@ -589,9 +579,10 @@ for dyad in tqdm(config["dyads"], desc="Dyads"):
         )
 
         # Plot paths
-        figpath = path.abspath(
-            path.join(
-                hyperviz, f"CCORR_FRC_ent_quant_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.png"
+        figpath = os.path.abspath(
+            os.path.join(
+                hyperviz,
+                f"CCORR_aug_FRC_ent_quant_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.png",
             )
         )
 
@@ -619,13 +610,17 @@ for dyad in tqdm(config["dyads"], desc="Dyads"):
     )
 
     # Plot paths
-    fullfigpath = path.abspath(
-        path.join(hyperviz, f"CCORR_FRC_ent_quant_dyad_{dyad}_full_exp_config_{config['config_id']}.png")
+    fullfigpath = os.path.abspath(
+        os.path.join(hyperviz, f"CCORR_aug_FRC_ent_quant_dyad_{dyad}_full_exp_config_{config['config_id']}.png")
     )
-    fullavgfigpath = path.abspath(
-        path.join(hyperviz, f"CCORR_FRC_ent_quant_dyad_{dyad}_full_exp_trial_avg_config_{config['config_id']}.png")
+    fullavgfigpath = os.path.abspath(
+        os.path.join(
+            hyperviz, f"CCORR_aug_FRC_ent_quant_dyad_{dyad}_full_exp_trial_avg_config_{config['config_id']}.png"
+        )
     )
 
     # Save the figure
     ffull.savefig(fullfigpath, bbox_inches="tight")
     ffull_avg.savefig(fullavgfigpath, bbox_inches="tight")
+
+# o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o END

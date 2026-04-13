@@ -1,43 +1,42 @@
-# ============= #
-# Preliminaries #
-# ============= #
+"""TODO: add docstring"""
 
+# %% Import
+import os
 import numpy as np
-from FileIO import *
 import sys
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 
-# Path variables
-basepath = path.dirname(__file__)
-configpath = path.abspath(path.join(basepath, "..", "experiments", "analysis"))
+from hyphi.configs import paths
+from hyphi.io import load_config, make_dir
 
-# ========================== #
-# Load CCORR Analysis Config #
-# ========================== #
-
+# %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 # Analysis configuration file
-configfile = path.abspath(path.join(configpath, sys.argv[1]))
+config_file = os.path.join(paths.experiments.configs, sys.argv[1])
 
 # Load the configuration parameters into a dictionary
-config = loadConfig(configfile)
+config = load_config(config_file)
 
 # Type of curvature
 curv_type = sys.argv[2]
 assert curv_type in ["FRC", "AFRC"], f"Curvature type ({curv_type}) must be one of (FRC, AFRC)!"
 
 
-def fullyPooledPathConstructor(trial_type, curvature, config):
+# %% Functions >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
+
+
+def fully_pooled_path_constructor(trial_type, curvature, config):
+    """TODO: add docstring"""
     if curvature == "FRC":
-        FRCpath = path.abspath(
-            path.join(
+        FRCpath = os.path.abspath(
+            os.path.join(
                 config["pooled_result_loc"],
                 f"CCORR_FRC_matrix_fully_pooled_trial_type_{trial_type}_config_{config['config_id']}.npy",
             )
         )
     elif curvature == "AFRC":
-        FRCpath = path.abspath(
-            path.join(
+        FRCpath = os.path.abspath(
+            os.path.join(
                 config["pooled_result_loc"],
                 f"CCORR_aug_FRC_matrix_fully_pooled_trial_type_{trial_type}_config_{config['config_id']}.npy",
             )
@@ -45,13 +44,6 @@ def fullyPooledPathConstructor(trial_type, curvature, config):
     return FRCpath
 
 
-data = {}
-for tt in config["trial_types"]:
-    FRCpath = fullyPooledPathConstructor(tt, curv_type, config)
-    data[tt] = np.load(FRCpath)
-
-
-# Downsample first
 def downsample_fully_pooled(fully_pooled, sample_size=100_000):
     """
     Downsample all trial type matrices in fully_pooled dict.
@@ -83,36 +75,8 @@ def downsample_fully_pooled(fully_pooled, sample_size=100_000):
     return fully_pooled_small
 
 
-# Usage (do this ONCE at the start):
-data_downsamp = downsample_fully_pooled(data, sample_size=200_000)
-
-# ======== #
-# Plotting #
-# ======== #
-
-# Visualization path variables
-hyperviz = path.abspath(config["pool_viz_loc"])
-makeDir(hyperviz)
-
-# Colorblind friendly palette (8 colors) to set the color cycle of plots (Bang Wong's palette)
-wong = ["#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7"]
-
-# Set Matplotlib rc params
-params = {
-    "axes.labelsize": 20,
-    "axes.unicode_minus": False,
-    "axes.titlesize": 20,
-    "legend.fontsize": 12,
-    "xtick.labelsize": 12,
-    "ytick.labelsize": 12,
-    "font.family": "sans-serif",
-    "axes.prop_cycle": mpl.cycler(color=wong),
-}
-plt.rcParams.update(params)
-
-
-# Function to plot ECDFs
 def plot_all_bands_ecdf(fully_pooled, curvature, trial_types=config["trial_types"], band_names=config["freq_bands"]):
+    """Plot ECDFs."""
     n_bands = 8
     fig, axes = plt.subplots(2, 4, figsize=(16, 6), sharex=True, sharey=True)
     axes = axes.ravel()
@@ -137,9 +101,42 @@ def plot_all_bands_ecdf(fully_pooled, curvature, trial_types=config["trial_types
     return fig
 
 
-# Plot ECDFs
-fullpool_ecdfs = plot_all_bands_ecdf(data_downsamp, curv_type)
+# %% __main__  >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
-# Save figure
-figpath = path.abspath(path.join(hyperviz, f"fully_pooled_{curv_type}_ecdfs.png"))
-fullpool_ecdfs.savefig(figpath, bbox_inches="tight")
+if __name__ == "__main__":
+    data = {}
+    for tt in config["trial_types"]:
+        FRCpath = fully_pooled_path_constructor(tt, curv_type, config)
+        data[tt] = np.load(FRCpath)
+
+    # Usage (do this ONCE at the start):
+    data_downsamp = downsample_fully_pooled(data, sample_size=200_000)  # downsample first
+
+    # Visualization path variables
+    hyperviz = os.path.abspath(config["pool_viz_loc"])
+    make_dir(hyperviz)
+
+    # Colorblind friendly palette (8 colors) to set the color cycle of plots (Bang Wong's palette)
+    wong = ["#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7"]
+
+    # Set Matplotlib rc params
+    params = {
+        "axes.labelsize": 20,
+        "axes.unicode_minus": False,
+        "axes.titlesize": 20,
+        "legend.fontsize": 12,
+        "xtick.labelsize": 12,
+        "ytick.labelsize": 12,
+        "font.family": "sans-serif",
+        "axes.prop_cycle": mpl.cycler(color=wong),
+    }
+    plt.rcParams.update(params)
+
+    # Plot ECDFs
+    fullpool_ecdfs = plot_all_bands_ecdf(data_downsamp, curv_type)
+
+    # Save figure
+    figpath = os.path.abspath(os.path.join(hyperviz, f"fully_pooled_{curv_type}_ecdfs.png"))
+    fullpool_ecdfs.savefig(figpath, bbox_inches="tight")
+
+# o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o END

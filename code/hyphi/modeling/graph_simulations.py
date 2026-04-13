@@ -1,16 +1,12 @@
-# ============= #
-# Preliminaries #
-# ============= #
+# %% Import
 
 import numpy as np
 import networkx as nx
 
-# ================ #
-# Small World Sims #
-# ================ #
+# %% Functions >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
 
-def genWeightedSW(n: int, k: int, p: float, ε: float, seed_val: int = 42):
+def gen_weighted_sw(n: int, k: int, p: float, ε: float, seed_val: int = 42):
     # Generate a small world network using Watts-Strogatz
     G = nx.watts_strogatz_graph(n, k, p, seed=seed_val)
 
@@ -31,22 +27,24 @@ def genWeightedSW(n: int, k: int, p: float, ε: float, seed_val: int = 42):
     return G
 
 
-def genTVWeightedSW(n: int, k: int, ε: float, trez: int, minpow: float | int, maxpow: float | int, seed_val: int = 42):
+def gen_tv_weighted_sw(
+    n: int, k: int, ε: float, trez: int, minpow: float | int, maxpow: float | int, seed_val: int = 42
+):
     # "Time" / probability points for simulation
     pt = np.logspace(minpow, maxpow, trez)
 
     # Initialize empty list for graphs
-    Gt = []
+    gt = []
 
     # Simulate
     for t in range(trez):
-        Gt.append(genWeightedSW(n, k, pt[t], ε, seed_val=seed_val))
+        gt.append(gen_weighted_sw(n, k, pt[t], ε, seed_val=seed_val))
 
     # Return time series of graphs
-    return pt, Gt
+    return pt, gt
 
 
-def genTVSW(n: int, k: int, trez: int, minpow: float | int, maxpow: float | int, seed_val: int = 42):
+def gen_tv_sw(n: int, k: int, trez: int, minpow: float | int, maxpow: float | int, seed_val: int = 42):
     # "Time" / probability points for simulation
     pt = np.logspace(minpow, maxpow, trez)
 
@@ -61,9 +59,12 @@ def genTVSW(n: int, k: int, trez: int, minpow: float | int, maxpow: float | int,
     return pt, Gt
 
 
-def genNatureSW(seed_val: int = 42):
-    return genTVSW(1000, 50, 100, -4, 0, seed_val=seed_val)
+def gen_nature_sw(seed_val: int = 42):
+    return gen_tv_sw(1000, 50, 100, -4, 0, seed_val=seed_val)
 
 
-def genNeuRepsWSW(seed_val: int = 42):
-    return genTVWeightedSW(1000, 50, 1.0, 100, -4, 0, seed_val=seed_val)
+def gen_neureps_wsw(seed_val: int = 42):
+    return gen_tv_weighted_sw(1000, 50, 1.0, 100, -4, 0, seed_val=seed_val)
+
+
+# o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o END

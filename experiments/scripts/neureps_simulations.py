@@ -1,9 +1,7 @@
-# ============= #
-# Preliminaries #
-# ============= #
+"""TODO: add docstring"""
 
-from Entropies import *
-from GraphSimulations import *
+# %% Import
+import os
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from matplotlib.gridspec import GridSpec
@@ -11,7 +9,15 @@ import matplotlib.cm as cm
 import matplotlib.colors as mpc
 from matplotlib.transforms import ScaledTranslation
 from tqdm import tqdm
-from os import path
+import numpy as np
+import networkx as nx
+
+from hyphi.configs import paths
+from hyphi.modeling.entropies import vec_entropy, vec_quantiles
+from hyphi.modeling.graph_curvatures import get_frc_vec
+from hyphi.modeling.graph_simulations import gen_neureps_wsw, gen_tv_weighted_sw
+
+# from hyphi.modeling.graph_simulations import
 
 # Colorblind friendly palette (8 colors) to set the color cycle of plots (Bang Wong's palette)
 wong = ["#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7"]
@@ -29,48 +35,21 @@ params = {
 }
 plt.rcParams.update(params)
 
+
+# %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 # Path variables
-basepath = path.dirname(__file__)
-vizpath = path.abspath(path.join(basepath, "..", "experiments", "figures"))
-neurepsviz = path.abspath(path.join(vizpath, "NeuReps_2025_Figure.png"))
-
-# ========================= #
-# Weighted Small World Sims #
-# ========================= #
-
-# Array to hold entropy and quantiles of replications
-Hreps = np.zeros((200, 100))
-Qreps = np.zeros((200, 100, 5))
-
-for n in tqdm(range(200)):
-    # Generate weighted small world networks
-    pt, Gt = genNeuRepsWSW(seed_val=n)
-
-    # Compute Forman-Ricci curvatures
-    FRCt = getFRCVec(Gt)
-
-    # Get entropy
-    Ht = vecEntropy(FRCt)
-    Hreps[n, :] = Ht.copy()
-
-    # Get quantiles
-    qvals = np.array([0.05, 0.25, 0.5, 0.75, 0.95])
-    Qt = vecQuantiles(FRCt, qs=qvals)
-    Qreps[n, :, :] = Qt.copy()
-
-# Get the quantiles over replications
-rep_qvals = np.array([0.05, 0.5, 0.95])
-HQs = np.quantile(Hreps, rep_qvals, axis=0)
-QQs = np.quantile(Qreps, rep_qvals, axis=0)
-
-# ======== #
-# Plotting #
-# ======== #
+viz_path = paths.experiments.figures
+neureps_viz = os.path.join(viz_path, "NeuReps_2025_Figure.png")
 
 
-def NeuRepsFig():
+# %% Functions >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
+
+
+def neureps_fig():
+    """Generate NeuReps figure."""
     # Generate smaller graphs for plotting
-    ptf, Gtf = genTVWeightedSW(100, 5, 1.0, 4, -4, 0)
+    ptf, Gtf = gen_tv_weighted_sw(100, 5, 1.0, 4, -4, 0)
+
     # Get edge weights
     weights = np.array([[G[u][v]["weight"] for u, v in G.edges()] for G in Gtf])
     # Normalize weights for width (e.g., scale to a desired range)
@@ -106,7 +85,7 @@ def NeuRepsFig():
         # Label
         gaxs[j].set_title(rf"$p = {ptf[j]:.3f}$")
         # Use ScaledTranslation to put the label
-        # - at the top left corner (axes fraction (0, 1)),
+        # - in the top left corner (axes fraction (0, 1)),
         # - offset 20 pixels left and 7 pixels up (offset points (-20, +7)),
         # i.e. just outside the axes.
         gaxs[j].text(
@@ -188,6 +167,36 @@ def NeuRepsFig():
     return fig
 
 
-# Final plot
-f = NeuRepsFig()
-f.savefig(neurepsviz, bbox_inches="tight")
+# %% __main__  >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
+
+if __name__ == "__main__":
+    # Array to hold entropy and quantiles of replications
+    Hreps = np.zeros((200, 100))
+    Qreps = np.zeros((200, 100, 5))
+
+    for n in tqdm(range(200)):
+        # Generate weighted small world networks
+        pt, Gt = gen_neureps_wsw(seed_val=n)
+
+        # Compute Forman-Ricci curvatures
+        FRCt = get_frc_vec(Gt)
+
+        # Get entropy
+        Ht = vec_entropy(FRCt)
+        Hreps[n, :] = Ht.copy()
+
+        # Get quantiles
+        qvals = np.array([0.05, 0.25, 0.5, 0.75, 0.95])
+        Qt = vec_quantiles(FRCt, qs=qvals)
+        Qreps[n, :, :] = Qt.copy()
+
+    # Get the quantiles over replications
+    rep_qvals = np.array([0.05, 0.5, 0.95])
+    HQs = np.quantile(Hreps, rep_qvals, axis=0)
+    QQs = np.quantile(Qreps, rep_qvals, axis=0)
+
+    # Final plot
+    f = neureps_fig()
+    f.savefig(neureps_viz, bbox_inches="tight")
+
+# o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o END

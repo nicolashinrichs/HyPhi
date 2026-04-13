@@ -1,60 +1,53 @@
-# ============= #
-# Preliminaries #
-# ============= #
+# %% Import
 
+import os
 import json
 import sys
 
-import dcor
-import matplotlib as mpl
-import matplotlib.pyplot as plt
+import dcor  # TODO: add as dependency
 from dcor import EstimationStatistic
-from Entropies import *
-from FileIO import *
+from hyphi.io import path, load_config, make_dir
+import numpy as np
 from joblib import Parallel, delayed
 from scipy.stats import energy_distance
 from statsmodels.stats.multitest import multipletests
 from tqdm import tqdm
-from tqdm_joblib import tqdm_joblib
+from tqdm_joblib import tqdm_joblib  # TODO: add as dependency
 
-# Path variables
-basepath = path.dirname(__file__)
-configpath = path.abspath(path.join(basepath, "..", "experiments", "analysis"))
+from hyphi.configs import paths
 
-# ========================== #
-# Load CCORR Analysis Config #
-# ========================== #
+
+# %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
 # Analysis configuration file
-configfile = path.abspath(path.join(configpath, sys.argv[1]))
+config_file = os.path.join(paths.experiments.configs, sys.argv[1])
 
 # Load the configuration parameters into a dictionary
-config = loadConfig(configfile)
+config = load_config(config_file)
 
 # If the pooled results directory doesn't exist, make it
-makeDir(path.abspath(config["pooled_result_loc"]))
-
-# ================================= #
-# Aggregate Curvature Distributions #
-# ================================= #
+make_dir(os.path.abspath(config["pooled_result_loc"]))
 
 # Type of curvature
 curv_type = sys.argv[2]
 assert curv_type in ["FRC", "AFRC"], f"Curvature type ({curv_type}) must be one of (FRC, AFRC)!"
 
 
+# %% Functions >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
+
+
 # Construct data path by curvature type
 def dataPathConstructor(dyad, trial_type, curvature, config):
     if curvature == "FRC":
-        return path.abspath(
-            path.join(
+        return os.path.abspath(
+            os.path.join(
                 config["result_loc"],
                 f"CCORR_FRC_matrix_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy",
             )
         )
     if curvature == "AFRC":
-        return path.abspath(
-            path.join(
+        return os.path.abspath(
+            os.path.join(
                 config["result_loc"],
                 f"CCORR_aug_FRC_matrix_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy",
             )
@@ -65,32 +58,32 @@ def dataPathConstructor(dyad, trial_type, curvature, config):
 def resultPathConstructor(dyad, trial_type, curvature, config, pooling):
     assert pooling in ["trial", "window"]
     if curvature == "FRC":
-        FRCpath = path.abspath(
-            path.join(
+        FRCpath = os.path.abspath(
+            os.path.join(
                 config["pooled_result_loc"],
                 f"CCORR_FRC_{pooling}_pooling_matrix_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy",
             )
         )
-        Hpath = path.abspath(
-            path.join(
+        Hpath = os.path.abspath(
+            os.path.join(
                 config["pooled_result_loc"],
                 f"CCORR_FRC_{pooling}_pooling_entropy_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy",
             )
         )
-        Qpath = path.abspath(
-            path.join(
+        Qpath = os.path.abspath(
+            os.path.join(
                 config["pooled_result_loc"],
                 f"CCORR_FRC_{pooling}_pooling_quantiles_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy",
             )
         )
     elif curvature == "AFRC":
-        FRCpath = path.abspath(
-            path.join(
+        FRCpath = os.path.abspath(
+            os.path.join(
                 config["pooled_result_loc"],
                 f"CCORR_aug_FRC_{pooling}_pooling_matrix_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy",
             )
         )
-        Hpath = path.abspath(
+        Hpath = os.path.abspath(
             path.join(
                 config["pooled_result_loc"],
                 f"CCORR_aug_FRC_{pooling}_pooling_entropy_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy",
@@ -351,10 +344,6 @@ for tt in config["trial_types"]:
 #       fully_pooled_across_everything[example_tt].shape)
 # # Expected: (8, 10*30*4*128*128) = (8, 19660800)
 
-# ================== #
-# Hypothesis Testing #
-# ================== #
-
 # Assume fully_pooled_across_everything from previous script
 # Shape: fully_pooled_across_everything[tt][freq, flattened_curvs]
 # flattened_curvs has shape (10*30*4*128*128,)
@@ -611,6 +600,8 @@ def pairwise_energy_tests(fully_pooled, trial_types, freq_bands, n_perm=1000, sa
     return results
 
 
+# %% __main__  >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
+
 # Run omnibus analysis
 results = test_trial_types_per_freq(
     fully_pooled_across_everything,
@@ -770,7 +761,7 @@ def save_hypothesis_test_results_json(
 # Save the results
 fullpoolstats = path.abspath(
     path.join(
-        configpath,
+        config_path,
         f"fully_pooled_{curv_type}_energy_stat_trial_types_n_perm_{config['nhst_perm']}_ sample_size_{config['nhst_subsample']}.json",
     )
 )
@@ -785,3 +776,5 @@ _ = save_hypothesis_test_results_json(
     config=config,
     json_path=fullpoolstats,
 )
+
+# o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o END
