@@ -25,16 +25,16 @@ config = loadConfig(configfile)
 # Load the CCORR data tensors from .mat files
 # We store data for each trial type separately
 ccorr_data = {}
-for dyad in config["dyads"]:
+for dyad in config['dyads']:
     # Construct file path for dyad
-    dyad_file = path.abspath(path.join(config["data_loc"], f"CCORR_{dyad}.mat"))
+    dyad_file = path.abspath(path.join(config['data_loc'], f"CCORR_{dyad}.mat"))
     # Load dyad CCORR dictionary
     dyad_ccorr = sp.io.loadmat(dyad_file)
     # Throw away unused metadata, keep only CCORR matrices by trial type
-    ccorr_data[dyad] = {trial_type: dyad_ccorr[f"CCORR_{trial_type}"] for trial_type in config["trial_types"]}
+    ccorr_data[dyad] = {trial_type: dyad_ccorr[f"CCORR_{trial_type}"] for trial_type in config['trial_types']}
 
 # If the results directory doesn't exist, make it
-makeDir(path.abspath(config["result_loc"]))
+makeDir(path.abspath(config['result_loc']))
 
 # ========================= #
 # Windowed CCORR Curvatures # 
@@ -52,24 +52,24 @@ makeDir(path.abspath(config["result_loc"]))
 # 8 [frequency bands] x 30 [trials] x 4 [consecutive windows] x 5 [quantiles]
 
 # Loop over dyads
-for dyad in tqdm(config["dyads"], desc="Dyads"):
+for dyad in tqdm(config['dyads'], desc="Dyads"):
 
     # Loop over trial types
-    for trial_type in tqdm(config["trial_types"], desc="Trial Types"):
+    for trial_type in tqdm(config['trial_types'], desc="Trial Types"):
 
         # Extract the CCORR matrices for this dyad and trial type
         ccorr_mat = ccorr_data[dyad][trial_type]
-        assert ccorr_mat.shape == (config["num_freqs"], 
-                                   config["num_trials"]*config["num_windows"], 
-                                   config["num_channels"],
-                                   config["num_channels"]), f"CCORR tensor for dyad {dyad} does not match expected shape!"
+        assert ccorr_mat.shape == (config['num_freqs'], 
+                                   config['num_trials']*config['num_windows'], 
+                                   config['num_channels'],
+                                   config['num_channels']), f"CCORR tensor for dyad {dyad} does not match expected shape!"
 
         # Start by reshaping the CCORR matrices so they can be indexed by frequency band, trial, and window
-        ccorr_mat = ccorr_mat.reshape(config["num_freqs"], 
-                                      config["num_trials"], 
-                                      config["num_windows"], 
-                                      config["num_channels"], 
-                                      config["num_channels"])
+        ccorr_mat = ccorr_mat.reshape(config['num_freqs'], 
+                                      config['num_trials'], 
+                                      config['num_windows'], 
+                                      config['num_channels'], 
+                                      config['num_channels'])
 
         # Forman-Ricci curvature expects only positive weights, so we need to map the CCORR values
         # to positive values. There are a few ways to do this, but the one that makes the most sense
@@ -82,26 +82,26 @@ for dyad in tqdm(config["dyads"], desc="Dyads"):
         ccorr_mat = np.abs(ccorr_mat)
 
         # Allocate memory
-        FRCvals = np.zeros((config["num_freqs"], 
-                            config["num_trials"], 
-                            config["num_windows"], 
-                            config["num_channels"], 
-                            config["num_channels"]))
+        FRCvals = np.zeros((config['num_freqs'], 
+                            config['num_trials'], 
+                            config['num_windows'], 
+                            config['num_channels'], 
+                            config['num_channels']))
 
-        Hvals = np.zeros((config["num_freqs"], 
-                        config["num_trials"], 
-                        config["num_windows"]))
+        Hvals = np.zeros((config['num_freqs'], 
+                        config['num_trials'], 
+                        config['num_windows']))
 
-        Qvals = np.zeros((config["num_freqs"], 
-                        config["num_trials"], 
-                        config["num_windows"],
-                        len(config["quantiles"])))
+        Qvals = np.zeros((config['num_freqs'], 
+                        config['num_trials'], 
+                        config['num_windows'],
+                        len(config['quantiles'])))
 
         # Loop over trials
-        for trial in tqdm(range(config["num_trials"]), desc="Trials"):
+        for trial in tqdm(range(config['num_trials']), desc="Trials"):
 
             # Loop over frequency bands
-            for freq in tqdm(range(config["num_freqs"]), desc="Frequency Bands"):
+            for freq in tqdm(range(config['num_freqs']), desc="Frequency Bands"):
 
                 # CCORR matrices for this trial and frequency band
                 ccorr_trial = ccorr_mat[freq, trial, :, :, :]
@@ -121,15 +121,15 @@ for dyad in tqdm(config["dyads"], desc="Dyads"):
                 Hvals[freq, trial, :] = Ht.copy()
 
                 # Get quantiles
-                Qt = vecQuantiles(FRCt, qs=config["quantiles"])
+                Qt = vecQuantiles(FRCt, qs=config['quantiles'])
                 Qvals[freq, trial, :, :] = Qt.copy()
 
         # Save data by dyad and trial type
 
         # First, construct save paths
-        FRCpath = path.abspath(path.join(config["result_loc"], f"CCORR_aug_FRC_matrix_dyad_{dyad}_trial_type_{trial_type}_config_{config["config_id"]}.npy"))
-        Hpath = path.abspath(path.join(config["result_loc"], f"CCORR_aug_FRC_entropy_dyad_{dyad}_trial_type_{trial_type}_config_{config["config_id"]}.npy"))
-        Qpath = path.abspath(path.join(config["result_loc"], f"CCORR_aug_FRC_quantiles_dyad_{dyad}_trial_type_{trial_type}_config_{config["config_id"]}.npy"))
+        FRCpath = path.abspath(path.join(config['result_loc'], f"CCORR_aug_FRC_matrix_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy"))
+        Hpath = path.abspath(path.join(config['result_loc'], f"CCORR_aug_FRC_entropy_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy"))
+        Qpath = path.abspath(path.join(config['result_loc'], f"CCORR_aug_FRC_quantiles_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy"))
 
         # Now save the NPY files
         np.save(FRCpath, FRCvals)

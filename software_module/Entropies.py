@@ -5,7 +5,10 @@
 from typing import List
 import numpy.typing as npt
 from collections.abc import Callable
-import ray
+try:
+    import ray
+except Exception:
+    ray = None
 
 from scipy.stats import differential_entropy
 import infomeasure as im
@@ -84,21 +87,32 @@ def getEntropyTsallis(G: nx.classes.graph.Graph, curvature: str = "formanCurvatu
     return im.entropy(curvatures, approach="tsallis", q=order, k=num_nn)
 
 
-def vecEntropy(Gt: npt.NDArray[nx.classes.graph.Graph] | List[nx.classes.graph.Graph], estim: Callable = getEntropyKozachenko) -> npt.NDArray[float]:
-    # Define remote function for Ray
-    @ray.remote
-    def par_estim(g):
-        return estim(g)
+def vecEntropy(
+    Gt: npt.NDArray[nx.classes.graph.Graph] | List[nx.classes.graph.Graph],
+    estim: Callable = getEntropyKozachenko,
+    use_ray: bool = False,
+) -> npt.NDArray[float]:
+    """Vectorized entropy over a graph series.
 
-    # Get Ray futures (object references)     
-    H_refs = [par_estim.remote(G) for G in Gt]
+    Defaults to sequential execution to avoid Ray runtime issues on
+    constrained/shared systems. Set use_ray=True to opt into Ray.
+    """
+    if use_ray and ray is not None:
+        if not ray.is_initialized():
+            ray.init(ignore_reinit_error=True, include_dashboard=False, log_to_driver=False)
 
-    # Get entropy results
-    H_map = ray.get(H_refs)
+        @ray.remote
+        def par_estim(g):
+            return estim(g)
 
-    ray.shutdown()
+        try:
+            refs = [par_estim.remote(G) for G in Gt]
+            return np.array(ray.get(refs))
+        finally:
+            if ray.is_initialized():
+                ray.shutdown()
 
-    return np.array(list(H_map))
+    return np.array([estim(G) for G in Gt])
 
 
 def getQuantiles(G: nx.classes.graph.Graph, qs: npt.NDArray[float] | List[float], curvature: str = "formanCurvature") -> npt.NDArray[float]:
