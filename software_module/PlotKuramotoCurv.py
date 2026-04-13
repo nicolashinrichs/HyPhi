@@ -51,20 +51,20 @@ if curv_type == "FRC":
 elif curv_type == "AFRC":
     cmethod = "augmented"
 
-makeDir(config["kuramoto_viz_loc"])
+makeDir(config['kuramoto_viz_loc'])
 
 # ========= #
 # Load Data # 
 # ========= # 
 
 # Array to hold entropy and quantiles of replications
-Hreps = np.zeros((len(config["num_kuramotos"]), config["kuramoto_time"]))
-Qreps = np.zeros((len(config["num_kuramotos"]), config["kuramoto_time"], len(config["quantiles"])))
+Hreps = np.zeros((len(config['num_kuramotos']), config['kuramoto_time']))
+Qreps = np.zeros((len(config['num_kuramotos']), config['kuramoto_time'], len(config['quantiles'])))
 
-for num in config["num_kuramotos"]:
+for num in config['num_kuramotos']:
     # Load data
-    Hpath = path.abspath(path.join(config["kuramoto_result_loc"], f"Kuramoto_PLV_{cmethod}_FRC_entropy_cond_{num}_config_{config["config_id"]}.npy"))
-    Qpath = path.abspath(path.join(config["kuramoto_result_loc"], f"Kuramoto_PLV_{cmethod}_FRC_quantiles_cond_{num}_config_{config["config_id"]}.npy"))
+    Hpath = path.abspath(path.join(config['kuramoto_result_loc'], f"Kuramoto_PLV_{cmethod}_FRC_entropy_cond_{num}_config_{config['config_id']}.npy"))
+    Qpath = path.abspath(path.join(config['kuramoto_result_loc'], f"Kuramoto_PLV_{cmethod}_FRC_quantiles_cond_{num}_config_{config['config_id']}.npy"))
     if num == "avg":
         Havg = np.load(Hpath)
         Qavg = np.load(Qpath)
@@ -129,6 +129,6 @@ def plotKuramotos(tt, HQs, Havg, QQs, Qavg, qvals):
 
 # Final plot
 time_axis = np.array(range(len(Havg)))
-f = plotKuramotos(time_axis, HQs, Havg, QQs, Qavg, config["quantiles"])
-kurviz = path.abspath(path.join(config["kuramoto_viz_loc"], f"kuramoto_PLV_{curv_type}.png"))
+f = plotKuramotos(time_axis, HQs, Havg, QQs, Qavg, config['quantiles'])
+kurviz = path.abspath(path.join(config['kuramoto_viz_loc'], f"kuramoto_PLV_{curv_type}.png"))
 f.savefig(kurviz, bbox_inches="tight")

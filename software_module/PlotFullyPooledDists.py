@@ -28,14 +28,14 @@ assert curv_type in ["FRC", "AFRC"], f"Curvature type ({curv_type}) must be one 
 
 def fullyPooledPathConstructor(trial_type, curvature, config):
     if curvature == "FRC":
-        FRCpath = path.abspath(path.join(config["pooled_result_loc"], f"CCORR_FRC_matrix_fully_pooled_trial_type_{trial_type}_config_{config["config_id"]}.npy"))
+        FRCpath = path.abspath(path.join(config['pooled_result_loc'], f"CCORR_FRC_matrix_fully_pooled_trial_type_{trial_type}_config_{config['config_id']}.npy"))
     elif curvature == "AFRC":
-        FRCpath = path.abspath(path.join(config["pooled_result_loc"], f"CCORR_aug_FRC_matrix_fully_pooled_trial_type_{trial_type}_config_{config["config_id"]}.npy"))
+        FRCpath = path.abspath(path.join(config['pooled_result_loc'], f"CCORR_aug_FRC_matrix_fully_pooled_trial_type_{trial_type}_config_{config['config_id']}.npy"))
     return FRCpath
 
 
 data = {}
-for tt in config["trial_types"]:
+for tt in config['trial_types']:
     FRCpath = fullyPooledPathConstructor(tt, curv_type, config)
     data[tt] = np.load(FRCpath)
 
@@ -79,7 +79,7 @@ data_downsamp = downsample_fully_pooled(data, sample_size=200_000)
 # ======== # 
 
 # Visualization path variables
-hyperviz = path.abspath(config["pool_viz_loc"])
+hyperviz = path.abspath(config['pool_viz_loc'])
 makeDir(hyperviz)
 
 # Colorblind friendly palette (8 colors) to set the color cycle of plots (Bang Wong's palette)
@@ -99,7 +99,7 @@ params = {
 plt.rcParams.update(params)
 
 # Function to plot ECDFs
-def plot_all_bands_ecdf(fully_pooled, curvature, trial_types=config["trial_types"], band_names=config["freq_bands"]):
+def plot_all_bands_ecdf(fully_pooled, curvature, trial_types=config['trial_types'], band_names=config['freq_bands']):
     n_bands = 8
     fig, axes = plt.subplots(2, 4, figsize=(16, 6), sharex=True, sharey=True)
     axes = axes.ravel()
