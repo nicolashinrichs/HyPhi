@@ -1,2 +1,8 @@
 src/hyphi/__pycache__/*.pyc
 *.pyc
+.ipynb_checkpoints/
+software_module/.ipynb_checkpoints/
+results/
+data/*.npy
+data_8node/
+ricci_flow_analysis.py.bak
