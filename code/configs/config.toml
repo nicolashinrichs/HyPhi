@@ -13,6 +13,11 @@ PROJECT_NAME = "HyPhi" # used for paths, logging, etc. Must be capitalized as th
 DATA = "./data"
 RESULTS = "./results"
 CACHE = "./data/cache"
+EXPERIMENTS = "./experiments"
+
+[paths.experiments]
+configs = "./experiments/configs"
+figures = "./experiments/figures"
 
 [paths.results]
 visualizations = "./results/datavisualization"

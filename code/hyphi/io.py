@@ -8,9 +8,7 @@ Years: 2026
 import os
 import pickle
 import tomllib
-from os import path
-
-import networkx as nx
+import os
 
 # %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 pass
@@ -27,9 +25,9 @@ def load_config(config_file: str) -> dict:
 
 
 def make_dir(dirpath: str) -> None:
-    """Create directory if it does not exist."""
-    if not path.exists(dirpath):
-        os.makedirs(dirpath)
+    """Create a directory if it does not exist."""
+    if not os.path.exists(dirpath):
+        os.make_dirs(dirpath)
 
 
 def load_network_pkl(pkl_file: str):
@@ -41,7 +39,7 @@ def load_network_pkl(pkl_file: str):
 
 def save_network_pkl(data, pkl_file: str) -> None:
     """Save data to a pickle file."""
-    make_dir(path.dirname(pkl_file) or ".")
+    make_dir(os.path.dirname(pkl_file) or ".")
     with open(pkl_file, mode="wb") as fp:
         pickle.dump(data, fp)
 

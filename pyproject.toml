@@ -43,6 +43,7 @@ dependencies = [  # TODO: specify the versions, ideally "package==version", or r
     "statsmodels",
     "scikit-learn",
     "toml>=0.10; python_version < '3.11'",
+    "scipy-stubs~=1.17.1",
 ]
 
 # Following can be co-installed with `pip install -e .[develop]`

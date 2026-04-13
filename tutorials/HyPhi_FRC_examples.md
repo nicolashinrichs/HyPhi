@@ -26,7 +26,7 @@ G = nx.watts_strogatz_graph(n, k, p, seed=seed_val)
 
 # Generate a single weighted small world network
 # Gw is a networkx graph
-Gw = genWeightedSW(n, k, p, ε, seed_val)
+Gw = gen_weighted_sw(n, k, p, ε, seed_val)
 
 # Parameters for "time varying" small world networks
 minpow = -4     # Exponent for lower bound of rewiring probability
@@ -37,13 +37,13 @@ trez = 1000     # Number of sample points for rewiring probability
 # Where the rewiring probability evolves from 10^minpow to 10^maxpow
 # pt is the array of rewiring probabilities
 # Gt is a list of networkx graphs at those rewiring probabilities
-pt, Gt = genTVSW(n, k, trez, minpow, maxpow, seed_val)
+pt, Gt = gen_tv_sw(n, k, trez, minpow, maxpow, seed_val)
 
 # Generate a sequence of "time varying" unweighted small world networks
 # Where the rewiring probability evolves from 10^minpow to 10^maxpow
 # ptw is the array of rewiring probabilities
 # Gtw is a list of networkx graphs at those rewiring probabilities
-ptw, Gtw = genTVWeightedSW(n, k, ε, trez, minpow, maxpow, seed_val)
+ptw, Gtw = gen_tv_weighted_sw(n, k, ε, trez, minpow, maxpow, seed_val)
 ```
 
 ## Computing Graph Curvatures
@@ -56,19 +56,19 @@ Below, we demonstrate the method for computing the edge Forman-Ricci curvatures 
 # single weighted network (same for unweighted)
 # The "method_val" argument can be '1d' or 'augmented'
 # FRC is a new network where edges have the property "formanCurvature"
-FRC = getFRC(Gw, method_val="1d")
+FRC = get_frc(Gw, method_val="1d")
 
 # Extract the Forman-Ricci curvatures of the network into an array
-curvatures = extractCurvatures(FRC, curvature="formanCurvature")
+curvatures = extract_curvatures(FRC, curvature="formanCurvature")
 
 # Compute the Forman-Ricci curvature for an array
 # of weighted small world networks (same for unweighted)
 # The "method_val" argument can be '1d' or 'augmented'
 # FRCt is a list of new networks where edges have the property "formanCurvature"
-FRCt = getFRCVec(Gtw, method_val="1d")
+FRCt = get_frc_vec(Gtw, method_val="1d")
 
 # Extract the Forman-Ricci curvatures of the networks into a list of arrays
-curvatures_t = extractCurvaturesVec(FRC, curvature="formanCurvature")
+curvatures_t = extract_curvatures_vec(FRC, curvature="formanCurvature")
 ```
 
 ## Kernel Density Estimation of Graph Curvature Distributions
@@ -104,12 +104,12 @@ nn_val = 4
 
 # Get the Kozachenko-Leonenko estimate of the entropy of the Forman-Ricci curvatures
 # Single network case
-H = getEntropyKozachenko(Gw, curvature="formanCurvature", num_nn=nn_val)
+H = get_entropy_kozachenko(Gw, curvature="formanCurvature", num_nn=nn_val)
 
 # Get the Kozachenko-Leonenko estimate of the entropy of the Forman-Ricci curvatures
 # Array of multiple networks
 # We first need to create a lambda function for the estimator we want to use
-hKL = lambda X: getEntropyKozachenko(X, curvature="formanCurvature", num_nn=nn_val)
+hKL = lambda X: get_entropy_kozachenko(X, curvature="formanCurvature", num_nn=nn_val)
 # Now we pass this lambda function to a parallelized entropy function
-Ht = vecEntropy(Gtw, estim=hKL)
+Ht = vec_entropy(Gtw, estim=hKL)
 ```
