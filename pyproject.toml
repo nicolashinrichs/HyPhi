@@ -1,0 +1,306 @@
+# Check this for proper formatting: https://packaging.python.org/en/latest/specifications/declaring-project-metadata/#declaring-project-metadata
+[project]
+name = "hyphi"
+version = "1.2.0"
+description = "A Python package for hyperscanning data analysis via geometric entropy."
+readme = "README.md"
+requires-python = ">=3.11" # TODO: check if old Python versions need to be supported (ideally keep it as high as possible)
+license = { file = "LICENSE" }
+authors = [
+    { name = "Nicolas Hinrichs", email = "hinrichs@cbs.mpg.de" }, # TODO: add authors
+]
+maintainers = [
+    { name = "Nicolas Hinrichs", email = "hinrichs@cbs.mpg.de" }, # TODO: add maintainers
+    { name = "Simon M. Hofmann", email = "simon.hofmann@cbs.mpg.de" },
+    { name = "Nahid Torbati", email = "torbati@cbs.mpg.de" },
+]
+keywords = ["hyperscanning", "geometry", "Ricci", "connectome"] # TODO: add/adapt keywords
+
+# Check for classifiers: https://pypi.org/classifiers/
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11", # TODO: remove versions not supported
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+]
+
+# Similar to a requirements.txt file, fill in the dependencies your project requires
+# Install the project code as a Python module with `pip install -e .` or other package managers (e.g., conda, uv, pixi)
+dependencies = [
+    "numpy>=1.24,<2.0",
+    "scipy>=1.10,<2.0",
+    "networkx>=3.0,<4.0",
+    "pandas>=2.0,<3.0",
+    "matplotlib>=3.7,<4.0",
+    "tqdm>=4.60,<5.0",
+    "GraphRicciCurvature==0.5.3.1", # Graph curvature (critical — pin to avoid API breaks)
+    "KDEpy>=1.1,<2.0",  # Density estimation
+    "infomeasure>=0.2,<1.0", # Entropy / information measures
+    "ray>=2.0,<3.0", # Parallel computation
+    "jax>=0.4,<1.0", # Kuramoto simulations (JAX-based mean-field)
+    "jaxlib>=0.4,<1.0",
+    "jitcdde>=1.8,<2.0", # Delayed DDE Kuramoto (connectome model)
+    "symengine>=0.11,<1.0",
+    "mne>=1.5,<2.0", # EEG forward modelling
+    "astropy>=5.0,<7.0", # Circular statistics
+    "statsmodels>=0.14,<1.0", # Statistics & machine learning
+    "scikit-learn>=1.3,<2.0",
+    "tomli>=2.0,<3.0; python_version < '3.11'", # Configuration  # TODO: could be removed if Python>=3.11
+    "ipykernel",
+    "scipy-stubs~=1.17.1",
+]
+
+# Following can be co-installed with `pip install -e .[develop]`
+[project.optional-dependencies]
+develop = [
+    "ruff>=0.15.10,<1",
+    "pytest>=9.0.3,<10",
+    "pytest-cov>=7.1.0,<8",
+    "ty>=0.0.29,<0.2.0",
+    "bumpver>=2025.1131,<2026",
+]
+
+notebook = [
+    "marimo>=0.23.0,<1",
+    "jupyterlab>=4.5.6,<5",
+]
+
+[project.urls]
+# homepage = "https://www.hyphi.org" # TODO: change to actual homepage and uncomment
+# documentation = "https://readthedocs.org" # TODO: change to actual documentation  and uncomment
+repository = "https://github.com/nicolashinrichs/HyPhi/"
+# Consider other URLs: pre-registration, data repository, etc.
+
+# Entry points for the project
+# For a command line interface (CLI) [uncomment and/or adopt the following if needed]
+# [project.scripts]
+# hyphi = "hyphi.main:run_pipeline"
+
+[tool.setuptools]
+platforms = [
+    "unix",
+    "linux",
+    "osx",
+    "cygwin",
+    "win32",
+] # TODO: keep only intended platforms
+zip-safe = false
+
+# To automatically find the package(s) (Beta feature (Oct, 2022)):
+[tool.setuptools.packages.find]
+where = ["code"]
+include = [
+    "hyphi",
+    "hyphi.*",
+]
+exclude = ["tests", "notebooks", "configs"]
+
+# Include non-python files in the package (uncomment if needed)
+# [tool.setuptools.package_data]
+# hyphi = ["*.txt", "*.rst"]
+
+# Exclude specific non-python files in the package (uncomment if needed)
+# [tool.setuptools.exclude-package-data]
+# hyphi = [".gitattributes"]
+
+# ALL ABOVE IS AN ADAPTATION OF THE FORMER setup.cfg
+# ALL BELOW WAS ALREADY PART OF pyproject.toml [Oct, 2022]
+
+[build-system]
+requires = ["setuptools>=62.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+#addopts = "--cov=hyphi"
+testpaths = ["code/tests"]
+
+[tool.mypy]
+mypy_path = "code"
+check_untyped_defs = true
+disallow_any_generics = true
+ignore_missing_imports = true
+no_implicit_optional = true
+show_error_codes = true
+strict_equality = true
+warn_redundant_casts = true
+warn_return_any = true
+warn_unreachable = true
+warn_unused_configs = true
+no_implicit_reexport = true
+
+[tool.coverage.run] # https://coverage.readthedocs.io/en/latest/config.html
+data_file = "code/tests/.coverage"
+
+[tool.coverage.report]
+exclude_lines = ["if __name__ == .__main__.:", "if TYPE_CHECKING:", "@abstract"]
+
+[tool.coverage.html]
+directory = "code/tests/coverage_html_report"
+
+[tool.ruff]
+src = ["code/hyphi", "code/notebooks", "code/tests"]
+include = ["*.py", "*.pyi", "**/pyproject.toml", "*.ipynb"]
+
+# Exclude a variety of commonly ignored directories:
+extend-exclude = [
+    "code/configs",
+    "data",
+    "literature",
+    "organisation",
+    "publications",
+    "results",
+]
+
+line-length = 119 # same as flake8 & black
+target-version = "py312" # assume Python 3.12
+output-format = "concise" # or "grouped", "full", ...
+# preview = true # true: Ruff will use unstable rules and fixes; default: false
+
+fix = false # true: Ruff will try to fix certain errors automatically
+
+respect-gitignore = true # files & folder ignored in gitignore are ignored by ruff as well [default: true]
+
+[tool.ruff.lint]
+# Select rules / linters to apply
+select = [ # add /comment-out rules (the list below does not contain all rules)
+    # "ALL", # all rules
+    "D",   # pydocstyle
+    "E",   # pycodestyle [default]
+    "F",   # Pyflakes [default]
+    "I",   # isort imports
+    "RUF", # ruff specific
+    "UP",  # pyupgrade [default]
+    "W",   # pycodestyle: warning
+    "C90", # mccabe
+    "N",   # pep8-naming
+    # "ANN", # flake8-annotations (toggle on if you intend to work with type annotations)
+    "S",   # flake8-bandit
+    "BLE", # flake8-blind-except
+    "B",   # flake8-bugbear
+    "A",   # flake8-builtins
+    "COM", # flake8-commas
+    "C4",  # flake8-comprehensions
+    # "EM", # flake8-errmsg
+    # "FA", # flake8-future-annotations (see ANN above)
+    "ISC", # flake8-implicit-str-concat
+    # "ICN", # flake8-import-conventions
+    "G",   # flake8-logging-format
+    "INP", # flake8-no-pep420
+    "PT",  # flake8-pytest-style
+    "Q",   # flake8-quotes
+    "RET", # flake8-return
+    "SIM", # flake8-simplify
+    "TCH", # flake8-type-checking
+    "ARG", # flake8-unused-arguments
+    "PTH", # flake8-use-pathlib
+    "TD",  # flake8-todos
+    "FIX", # flake8-fixme
+    "ERA", # eradicate
+    "PD",  # pandas-vet
+    "PL",  # Pylint
+    "NPY", # NumPy-specific rules
+] # run `ruff linter` to see all rules; run e.g., `ruff rule ERA001` to see specs of a specific rule
+
+# List of rules to consider non-autofix-able.
+unfixable = [ # either with fix = true or when `ruff . --fix` is executed
+    "ERA001", # found commented-out code
+    "F401",   # unused imports
+    "RUF100", # `noqa` directives that are no longer applicable
+]
+
+# Ignore specific rules (e.g., "ANN102") or the whole set of a rule (e.g., "ANN")
+ignore = [
+    "ANN401", # flake8-annotations: Any
+    "COM812", # Trailing comma missing
+    "D203",   # 1 blank line required before class docstring: incompatible with D211 (=no blank line required)
+    "D212",   # multi-line-summary-first-line incompatible with D213 (=should start at the second line)
+    "DTZ005", # timezone-naive datetime
+    "E402",   # Module level import not at top of the file (covert by ISORT)
+    # "E501",  # Ignore line-length since we use 119
+    # "ERA001",  # Found commented-out code
+    "ISC001",  # single-line-implicit-string-concatenation [toogle if you use `ruff format`]
+    "S301",   # suspicious-pickle-usage
+    "TD002",  # Missing author in To-Do
+    "TD003",  # Missing issue link on the line following a To-Do
+]
+
+# ignore-init-module-imports = true # void automatically removing unused imports in __init__.py
+
+# Ignore specific rules in specific files
+[tool.ruff.lint.extend-per-file-ignores]
+"__init__.py" = ["F401", "D104"]
+"configs.py" = ["UP036", "UP038"]
+"*.ipynb" = ["D100"]                            # ignore docsstring in notebooks
+"code/tests/*.py" = ["S101", "PLC2701", "N802"] # ignore assert statements in tests, private name imports, & lowercase (tearDown, setUp)
+
+[tool.ruff.format]
+# Check: https://docs.astral.sh/ruff/settings/#format
+# quote-style = "single"  # default: "double"
+# indent-style = "tab"  # Use tabs instead of 4 space indentation.
+# skip-magic-trailing-comma = true  # default: false
+docstring-code-format = true # default: false
+# docstring-code-line-length = 80
+# preview = true  # true: Ruff will use unstable rules for formatting; default: false
+
+# Configure specific linters
+[tool.ruff.lint.flake8-annotations]
+allow-star-arg-any = true
+ignore-fully-untyped = true
+suppress-none-returning = true
+
+[tool.ruff.lint.flake8-comprehensions]
+allow-dict-calls-with-keyword-arguments = true
+
+[tool.ruff.lint.flake8-type-checking]
+# quote-annotations = true # default: false
+
+[tool.ruff.lint.isort]
+known-local-folder = ["code/hyphi"]
+# known-first-party = ...
+
+[tool.ruff.lint.mccabe]
+# Flag errors (`C901`) whenever the complexity level exceeds x.
+max-complexity = 10 # default x: 10
+
+[tool.ruff.lint.pep8-naming]
+ignore-names = [] # fill with specific class, function, variable names
+
+[tool.ruff.lint.pydocstyle]
+# convention = "google"  # "numpy", "pep257"
+
+[tool.ruff.lint.pylint]
+max-args = 5          # default: 5
+max-branches = 12     # default: 12
+max-locals = 15       # default: 15
+max-returns = 6       # default: 6
+max-statements = 50   # default: 50
+max-nested-blocks = 5 # default: 5
+# allow-magic-value-types = ["int"]
+
+[tool.ty.src]
+include = ["code/hyphi", "code/notebooks", "code/tests"]
+exclude = [
+    "code/hyphi/configs.py",
+]
+
+[tool.ty.terminal]
+output-format = "concise" # or "full"
+
+# For instance, run in shell: bumpver update --patch --no-fetch --dry
+[tool.bumpver]
+current_version = "1.2.0"
+version_pattern = "MAJOR.MINOR.PATCH"
+pre_commit_hook = "scripts/badge.sh"
+commit_message = "bump version {old_version} -> {new_version}"
+commit = true
+tag = true
+push = false
+
+[tool.bumpver.file_patterns]
+"pyproject.toml" = ['current_version = "{version}"', '^version = "{version}"']
+"README.md" = ['version-v.{version}']
