@@ -17,12 +17,12 @@ import argparse
 import json
 import pickle
 import sys
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Dict, Iterable, List
+from typing import Dict, List
 
 import networkx as nx
 import numpy as np
-
 
 # %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 PROJECT_ROOT = Path(__file__).resolve().parent
@@ -81,7 +81,7 @@ def save_pickle(obj, path: Path) -> None:
         pickle.dump(obj, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 
-def load_graph_series(pkl_path: Path) -> List[nx.Graph]:
+def load_graph_series(pkl_path: Path) -> list[nx.Graph]:
     with pkl_path.open("rb") as f:
         series = pickle.load(f)
     if not isinstance(series, list) or not series:
@@ -89,8 +89,8 @@ def load_graph_series(pkl_path: Path) -> List[nx.Graph]:
     return series
 
 
-def parse_run_ids(raw_runs: Iterable[object]) -> List[int]:
-    run_ids: List[int] = []
+def parse_run_ids(raw_runs: Iterable[object]) -> list[int]:
+    run_ids: list[int] = []
     for item in raw_runs:
         if isinstance(item, int):
             run_ids.append(item)
@@ -99,7 +99,7 @@ def parse_run_ids(raw_runs: Iterable[object]) -> List[int]:
     return run_ids
 
 
-def phase_windows_from_array(arr: np.ndarray, win_size: int, win_stride: int) -> List[np.ndarray]:
+def phase_windows_from_array(arr: np.ndarray, win_size: int, win_stride: int) -> list[np.ndarray]:
     arr = np.asarray(arr)
     if arr.ndim == 3:
         # Supports (W, N, T) and (W, T, N).
@@ -114,14 +114,14 @@ def phase_windows_from_array(arr: np.ndarray, win_size: int, win_stride: int) ->
     if phases.shape[0] > phases.shape[1]:
         phases = phases.T
 
-    windows: List[np.ndarray] = []
+    windows: list[np.ndarray] = []
     _, n_time = phases.shape
     for start in range(0, n_time - win_size + 1, win_stride):
         windows.append(phases[:, start : start + win_size])
     return windows
 
 
-def load_phase_windows(phase_path: Path, win_size: int, win_stride: int) -> List[np.ndarray]:
+def load_phase_windows(phase_path: Path, win_size: int, win_stride: int) -> list[np.ndarray]:
     suffix = phase_path.suffix.lower()
     if suffix == ".npy":
         arr = np.load(phase_path, allow_pickle=True)
@@ -139,7 +139,7 @@ def load_phase_windows(phase_path: Path, win_size: int, win_stride: int) -> List
 
 
 def simulate_missing_phase_files(
-    missing_runs: List[int],
+    missing_runs: list[int],
     phase_dir: Path,
     phase_pattern: str,
     data_dir: Path,
@@ -152,8 +152,8 @@ def simulate_missing_phase_files(
     omega_std: float,
     seed_base: int,
 ) -> None:
-    from jax import random
     import jax.numpy as jnp
+    from jax import random
     from software_module.KuramotoSimulations import (
         getPLVGraphs,
         kuramotoVectorField,
@@ -222,7 +222,7 @@ def attach_connectome_weights(
     graph: nx.Graph,
     connectome_w: np.ndarray,
     nodes_per_run: int,
-    run_ids: List[int],
+    run_ids: list[int],
 ) -> None:
     for u, v, data in graph.edges(data=True):
         run_idx_u = u // nodes_per_run
@@ -242,17 +242,17 @@ def attach_connectome_weights(
             data["source_run"] = -1
 
 
-def aggregate_window_graphs(window_graphs: List[nx.Graph]) -> nx.Graph:
+def aggregate_window_graphs(window_graphs: list[nx.Graph]) -> nx.Graph:
     return nx.disjoint_union_all(window_graphs)
 
 
-def build_merged_plv_graph(window_phases_by_run: List[np.ndarray], plv_threshold: float | None = None) -> nx.Graph:
+def build_merged_plv_graph(window_phases_by_run: list[np.ndarray], plv_threshold: float | None = None) -> nx.Graph:
     merged_phase_window = np.concatenate(window_phases_by_run, axis=0)
     C = compute_plv_matrix_window(merged_phase_window)
 
     # Optional sparsification to reduce runtime/memory on large merged graphs.
     if plv_threshold is not None:
-        C = np.where(C >= plv_threshold, C, 0.0)
+        C = np.where(plv_threshold <= C, C, 0.0)
 
     G = nx.from_numpy_array(C, create_using=nx.Graph)
     # Slightly cheaper downstream computations without self-loops.
@@ -303,7 +303,7 @@ def forman_ricci_flow(
     return G
 
 
-def edge_stats(graph: nx.Graph, key: str) -> Dict[str, float]:
+def edge_stats(graph: nx.Graph, key: str) -> dict[str, float]:
     vals = [float(d.get(key, 0.0)) for _, _, d in graph.edges(data=True)]
     arr = np.asarray(vals, dtype=float)
     if arr.size == 0:
@@ -313,7 +313,7 @@ def edge_stats(graph: nx.Graph, key: str) -> Dict[str, float]:
 
 def save_partition_visualization(
     graph: nx.Graph,
-    partitions: List[List[int]],
+    partitions: list[list[int]],
     name: str,
     save_path: Path,
     title: str,
@@ -446,8 +446,8 @@ def main() -> None:
         flush=True,
     )
 
-    phase_windows_by_run: Dict[int, List[np.ndarray]] = {}
-    series_by_run: Dict[int, List[nx.Graph]] = {}
+    phase_windows_by_run: dict[int, list[np.ndarray]] = {}
+    series_by_run: dict[int, list[nx.Graph]] = {}
 
     if args.graph_construction == "merge_graphs":
         for rid in runs:
@@ -486,7 +486,7 @@ def main() -> None:
                 seed_base=args.sim_seed_base,
             )
 
-        missing_phase_runs: List[int] = []
+        missing_phase_runs: list[int] = []
         for rid in runs:
             phase_path = phase_dir / args.phase_pattern.format(run=rid)
             if phase_path.exists():

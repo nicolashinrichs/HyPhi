@@ -1,8 +1,8 @@
 """TODO: add docstring."""
 
 # %% Import
-import numpy as np
 import networkx as nx
+import numpy as np
 
 # %% Functions >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 

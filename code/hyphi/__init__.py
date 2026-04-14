@@ -10,8 +10,8 @@ __version__ = version(distribution_name="hyphi")
 # (e.g., ``hyphi.simulation``).
 # TODO: Add or remove imports below as your project evolves — only expose what a package user should use.
 import hyphi.configs
-import hyphi.visualization
 import hyphi.modeling
 
 # import hyphi.preprocessing  # TODO: nothing here yet (remove / add)
 import hyphi.simulation
+import hyphi.visualization

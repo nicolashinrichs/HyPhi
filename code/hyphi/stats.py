@@ -20,7 +20,8 @@ pass
 
 
 def mixed_effects_test(data, formula, groups, re_formula=None):
-    """Run a linear mixed-effects model using statsmodels.
+    """
+    Run a linear mixed-effects model using statsmodels.
 
     This properly nests variance at the dyad/trial/window levels,
     addressing the pseudo-replication concern from reviewer feedback.
@@ -50,6 +51,7 @@ def mixed_effects_test(data, formula, groups, re_formula=None):
     >>> # data has columns: entropy, condition, dyad, trial, window
     >>> result = mixed_effects_test(data, "entropy ~ condition", groups="dyad")
     >>> print(result.summary())
+
     """
     if re_formula is None:
         re_formula = "1"
@@ -62,7 +64,8 @@ def mixed_effects_test(data, formula, groups, re_formula=None):
 def hierarchical_permutation_test(
     data, value_col, condition_col, group_cols, n_perms=2000, test_stat_fn=None, seed=42
 ):
-    """Hierarchical permutation test respecting nested structure.
+    """
+    Hierarchical permutation test respecting nested structure.
 
     Permutes condition labels within each group level, preserving the
     dependency structure (e.g., permute within dyads, not across them).
@@ -94,6 +97,7 @@ def hierarchical_permutation_test(
             'null_distribution': np.ndarray of shape (n_perms,),
             'p_value': float
         }
+
     """
     rng = np.random.default_rng(seed)
 
@@ -137,7 +141,8 @@ def hierarchical_permutation_test(
 
 
 def cohens_d(group_a, group_b):
-    """Compute Cohen's d effect size between two groups.
+    """
+    Compute Cohen's d effect size between two groups.
 
     Parameters
     ----------
@@ -148,6 +153,7 @@ def cohens_d(group_a, group_b):
     -------
     float
         Cohen's d (positive means group_a > group_b).
+
     """
     na, nb = len(group_a), len(group_b)
     mean_a, mean_b = np.mean(group_a), np.mean(group_b)

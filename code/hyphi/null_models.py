@@ -22,7 +22,8 @@ pass
 
 
 def phase_randomize(signal: np.ndarray, rng: np.random.Generator | None = None) -> np.ndarray:
-    """Phase randomization (amplitude-preserving surrogate).
+    """
+    Phase randomization (amplitude-preserving surrogate).
 
     Randomises the Fourier phases of a signal while preserving its
     power spectrum.  Works on each channel independently.
@@ -40,6 +41,7 @@ def phase_randomize(signal: np.ndarray, rng: np.random.Generator | None = None) 
     -------
     np.ndarray
         Surrogate signal with same shape and power spectrum as input.
+
     """
     if rng is None:
         rng = np.random.default_rng()
@@ -65,7 +67,8 @@ def phase_randomize(signal: np.ndarray, rng: np.random.Generator | None = None) 
 
 
 def circular_time_shift(signal: np.ndarray, min_shift: int = 1, rng: np.random.Generator | None = None) -> np.ndarray:
-    """Circular time-shift surrogate.
+    """
+    Circular time-shift surrogate.
 
     Applies a random circular shift to each channel independently,
     destroying temporal alignment while preserving autocorrelation.
@@ -83,6 +86,7 @@ def circular_time_shift(signal: np.ndarray, min_shift: int = 1, rng: np.random.G
     -------
     np.ndarray
         Circularly shifted surrogate.
+
     """
     if rng is None:
         rng = np.random.default_rng()
@@ -107,7 +111,8 @@ def circular_time_shift(signal: np.ndarray, min_shift: int = 1, rng: np.random.G
 
 
 def dyad_subject_swap(data_matrix: np.ndarray, rng: np.random.Generator | None = None) -> np.ndarray:
-    """Generate pseudo-dyads by shuffling subjects across real dyads.
+    """
+    Generate pseudo-dyads by shuffling subjects across real dyads.
 
     Swaps the second subject of each dyad with the second subject of
     a randomly chosen other dyad, breaking real dyad pairings while
@@ -124,6 +129,7 @@ def dyad_subject_swap(data_matrix: np.ndarray, rng: np.random.Generator | None =
     -------
     np.ndarray
         Shuffled data matrix with same shape.
+
     """
     if rng is None:
         rng = np.random.default_rng()
@@ -144,7 +150,8 @@ def dyad_subject_swap(data_matrix: np.ndarray, rng: np.random.Generator | None =
 def dyad_label_shuffle(
     entropy_series: np.ndarray, dyad_labels: np.ndarray, rng: np.random.Generator | None = None
 ) -> np.ndarray:
-    """Dyad-label shuffling control.
+    """
+    Dyad-label shuffling control.
 
     Shuffles dyad assignment labels while keeping the entropy time series
     intact, breaking the dyad-specific structure.
@@ -163,6 +170,7 @@ def dyad_label_shuffle(
     -------
     np.ndarray
         Shuffled dyad labels (same shape as *dyad_labels*).
+
     """
     if rng is None:
         rng = np.random.default_rng()

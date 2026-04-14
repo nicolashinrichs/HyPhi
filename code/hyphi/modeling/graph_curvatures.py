@@ -1,11 +1,12 @@
 """TODO: add description here"""
 
 # %% Import
-from typing import TYPE_CHECKING
-import numpy as np
 import math
-from GraphRicciCurvature.OllivierRicci import OllivierRicci
+from typing import TYPE_CHECKING
+
+import numpy as np
 from GraphRicciCurvature.FormanRicci import FormanRicci
+from GraphRicciCurvature.OllivierRicci import OllivierRicci
 
 if TYPE_CHECKING:
     import networkx as nx
@@ -14,7 +15,8 @@ if TYPE_CHECKING:
 
 
 def compute_frc(G, method="1d"):
-    """Compute Forman-Ricci curvature on graph G.
+    """
+    Compute Forman-Ricci curvature on graph G.
 
     Parameters
     ----------
@@ -27,6 +29,7 @@ def compute_frc(G, method="1d"):
     -------
     nx.Graph
         Graph with 'formanCurvature' edge attribute.
+
     """
     frc = FormanRicci(G, method=method)
     frc.compute_ricci_curvature()
@@ -79,7 +82,8 @@ def compute_afrc_vec(graphs):
 
 
 def compute_orc(G, alpha=0.5, base=math.e, exp_power=0, method="OTDSinkhornMix"):
-    """Compute Ollivier-Ricci curvature on graph G.
+    """
+    Compute Ollivier-Ricci curvature on graph G.
 
     Parameters
     ----------
@@ -98,6 +102,7 @@ def compute_orc(G, alpha=0.5, base=math.e, exp_power=0, method="OTDSinkhornMix")
     -------
     nx.Graph
         Graph with 'ricciCurvature' edge attribute.
+
     """
     orc = OllivierRicci(G, alpha=alpha, base=base, exp_power=exp_power, method=method)
     orc.compute_ricci_curvature()
@@ -110,7 +115,8 @@ def compute_orc_vec(graphs, alpha=0.5, base=math.e, exp_power=0, method="OTDSink
 
 
 def extract_curvature_matrices(graphs, curvature="formanCurvature"):
-    """Extract curvature adjacency matrices from a list of curvature-annotated graphs.
+    """
+    Extract curvature adjacency matrices from a list of curvature-annotated graphs.
 
     This centralises the duplicated `nx.attr_matrix` logic from
     HyperCCORRFRC.py, HyperCCORRAugFRC.py, and KuramotoFRC.py.
@@ -126,6 +132,7 @@ def extract_curvature_matrices(graphs, curvature="formanCurvature"):
     -------
     np.ndarray
         Array of shape (len(graphs), n_nodes, n_nodes).
+
     """
     matrices = []
     for G in graphs:

@@ -9,7 +9,6 @@ Years: 2024
 import itertools
 import os
 
-
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
@@ -64,6 +63,7 @@ def visualize_graph_with_curvature(
         Resolution for saving the figure.
     figsize : tuple, default=(8, 8)
         Size of the matplotlib figure.
+
     """
     # Compute layout (spring for consistency)
     pos = nx.spring_layout(graph, seed=42)
@@ -190,11 +190,13 @@ def visualize_graph_on_dataset_2d(G, dataset, colors=None, node_size=20, edge_si
     """
     Visualize a graph on a 2D dataset layout.
 
-    Parameters:
+    Parameters
+    ----------
     - G: networkx.Graph
       The graph to visualize.
     - dataset: np.ndarray
       A 2D NumPy array where each row represents a point (x, y).
+
     """
     # Extract 2D positions for nodes from the dataset
     pos = {i: (point[0], point[1]) for i, point in enumerate(dataset)}
@@ -233,12 +235,14 @@ def curvature_distribution(data_list, name_list, plot_name, save_path=None, save
     """
     Visualizes histograms of curvature distributions for multiple datasets.
 
-    Parameters:
+    Parameters
+    ----------
     - data_list: List of datasets (each dataset is a list or array of values).
     - name_list: List of names corresponding to each dataset.
     - plot_name: Name of the plot file (without extension).
     - save_path: Directory to save the plot (optional).
     - save: Boolean, if True saves the plot as a PNG file.
+
     """
     num_plots = len(data_list)
     fig, axes = plt.subplots(nrows=1, ncols=num_plots, figsize=(5 * num_plots, 4), sharex=True, sharey=True)
@@ -272,12 +276,14 @@ def heatmap_layers(data_list, name_list, plot_name, save_path=None, save=True):
     """
     Visualizes histograms of curvature distributions for multiple datasets.
 
-    Parameters:
+    Parameters
+    ----------
     - data_list: List of datasets (each dataset is a list or array of values).
     - name_list: List of names corresponding to each dataset.
     - plot_name: Name of the plot file (without extension).
     - save_path: Directory to save the plot (optional).
     - save: Boolean, if True saves the plot as a PNG file.
+
     """
     num_plots = len(data_list)
     fig, axes = plt.subplots(nrows=1, ncols=num_plots, figsize=(5 * num_plots, 4), sharex=True, sharey=True)
@@ -320,7 +326,6 @@ def visualize_graph_partitions_colors(graph: nx.Graph, partitions, name: str, sa
     Visualize a graph with nodes colored by community partitions and edges color-coded by curvature.
     Includes a discrete legend for node partitions and a horizontal color bar for edge curvature.
     """
-
     node_to_community = node_to_partition(partitions)
 
     unique_communities = sorted(set(node_to_community.values()))
