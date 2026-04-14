@@ -2,7 +2,7 @@
 
 - [ ] Check the minimal Python version (the higher the better)
 - [ ] Specify all dependencies with version in `pyproject.toml` (some missing deps are also mentioned in some scripts).
-  - [ ] `requirements.txt` and `environment.yml` are then redundant
+  - [x] `requirements.txt` and `environment.yml` are then redundant
 - [ ] Adapt/add docstrings to all functions and classes.
 - [ ] Also adapt/add docstrings at the beginning of each Python script
 - [ ] Go through README.md files to check *placeholder text* in italics and fill in the corresponding information.
