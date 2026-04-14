@@ -3,13 +3,14 @@
 # %% Import
 
 import numpy as np
-from KDEpy import NaiveKDE, TreeKDE, FFTKDE
+from KDEpy import FFTKDE, NaiveKDE, TreeKDE
 
 # %% Functions >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
 
 def select_kde(kernel_type="gaussian", bw="ISJ", norm=2, method="FFT"):
-    """Create a KDE estimator (unfitted).
+    """
+    Create a KDE estimator (unfitted).
 
     Parameters
     ----------
@@ -25,6 +26,7 @@ def select_kde(kernel_type="gaussian", bw="ISJ", norm=2, method="FFT"):
     Returns
     -------
     KDE estimator object (unfitted).
+
     """
     assert (bw in ["scott", "silverman", "ISJ"]) or isinstance(bw, (int, float)), f"BW {bw} not an approved type!"
     assert isinstance(norm, int)

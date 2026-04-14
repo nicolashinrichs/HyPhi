@@ -141,7 +141,7 @@ def _set_wd(new_dir: str | Path) -> None:
 
     :param new_dir: name of new working directory (must be in the project folder)
     """
-    if PROJECT_NAME not in str(os.path.cwd()):
+    if PROJECT_NAME not in str(Path.cwd()):
         msg = f"Current working dir '{Path.cwd()}' is outside of project '{PROJECT_NAME}'."
         raise OSError(msg)
 

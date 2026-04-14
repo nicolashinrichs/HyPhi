@@ -3,7 +3,8 @@
 # %% Import
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable
+from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from KDEpy import TreeKDE
 from scipy.stats import differential_entropy
@@ -16,7 +17,6 @@ if TYPE_CHECKING:
 
 import numpy as np
 
-
 # %% Functions >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
 
@@ -28,7 +28,8 @@ import numpy as np
 def entropy_vasicek(
     G: nx.classes.graph.Graph, curvature: str = "formanCurvature", window_length: int | None = None
 ) -> npt.number | npt.ndarray:
-    """Vasicek entropy estimator on graph curvatures.
+    """
+    Vasicek entropy estimator on graph curvatures.
 
     Parameters
     ----------
@@ -43,6 +44,7 @@ def entropy_vasicek(
     -------
     float
         Vasicek entropy estimate.
+
     """
     curvatures = extract_curvatures(G, curvature=curvature)
     kwargs: dict = {"method": "vasicek", "nan_policy": "omit"}
@@ -81,7 +83,8 @@ def entropy_kde_plugin(
     bw: str | float | int = "ISJ",
     norm: int = 2,
 ) -> float:
-    """Plugin entropy estimate using TreeKDE.
+    """
+    Plugin entropy estimate using TreeKDE.
 
     Parameters
     ----------
@@ -100,6 +103,7 @@ def entropy_kde_plugin(
     -------
     float
         Plugin entropy estimate: -E[log f(X)].
+
     """
     curvatures = extract_curvatures(G, curvature=curvature)
     f = TreeKDE(kernel=kernel_type, bw=bw, norm=norm).fit(curvatures)
@@ -152,7 +156,8 @@ def vec_entropy(
     estimator: Callable | None = None,
     parallel: bool = False,
 ) -> npt.NDArray[float]:
-    """Compute entropy over a list of curvature-annotated graphs.
+    """
+    Compute entropy over a list of curvature-annotated graphs.
 
     Parameters
     ----------
@@ -167,6 +172,7 @@ def vec_entropy(
     -------
     np.ndarray
         Array of entropy values.
+
     """
     if estimator is None:
         estimator = entropy_kozachenko

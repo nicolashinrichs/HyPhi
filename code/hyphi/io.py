@@ -5,9 +5,9 @@ Years: 2026
 """
 
 # %% Import
+import os
 import pickle
 import tomllib
-import os
 from pathlib import Path
 
 # %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o

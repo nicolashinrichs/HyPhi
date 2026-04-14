@@ -1,10 +1,10 @@
 """TODO: describe what this module does."""
 
 # %% Import
-from jax import random, jit, vmap, lax  # TODO: add as dependency
 import jax.numpy as jnp
-import numpy as np
 import networkx as nx
+import numpy as np
+from jax import jit, lax, random, vmap
 
 # %% Functions >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 

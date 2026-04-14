@@ -16,11 +16,11 @@ except ModuleNotFoundError:
 from GraphRicciCurvature.FormanRicci import FormanRicci  # noqa: F401
 from GraphRicciCurvature.OllivierRicci import OllivierRicci
 from pynndescent import NNDescent  # TODO: need to be added to depedencies
+from scipy import linalg
 from scipy.spatial.distance import cdist, pdist  # noqa: F401
 from scipy.stats import spearmanr
 from sklearn.metrics.pairwise import cosine_similarity, euclidean_distances
 from sklearn.neighbors import NearestNeighbors
-from scipy import linalg
 
 # %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 pass
@@ -519,14 +519,16 @@ def heat_kernel_distance(L1, L2):
     """
     Computes the diffusion distance between two Laplacian matrices using the heat kernel.
 
-    Parameters:
+    Parameters
+    ----------
     L1, L2: Laplacian matrices of the two graphs.
     t: Time parameter for the heat kernel (controls diffusion scale).
 
-    Returns:
+    Returns
+    -------
     The diffusion distance between the two graphs.
-    """
 
+    """
     evals1, evecs1 = linalg.eigh(L1)
     evals2, evecs2 = linalg.eigh(L2)
 
@@ -565,12 +567,15 @@ def kl_divergence(p, q):
     """
     Compute Kullback-Leibler Divergence between two probability distributions.
 
-    Parameters:
+    Parameters
+    ----------
     p (array-like): First probability distribution
     q (array-like): Second probability distribution
 
-    Returns:
+    Returns
+    -------
     float: KL divergence between p and q
+
     """
     # Convert inputs to numpy arrays
     p = np.asarray(p, dtype=np.float64)
@@ -616,16 +621,17 @@ def ricci_flow_metric(graph: nx.Graph) -> np.ndarray:
     """
     Compute the pairwise shortest path distance matrix for a weighted graph.
 
-    Parameters:
+    Parameters
     ----------
     graph : nx.Graph
         A NetworkX graph with weighted edges.
 
-    Returns:
+    Returns
     -------
     np.ndarray
         A symmetric matrix (n x n) where the element (i, j) represents
         the shortest path distance between nodes i and j.
+
     """
     num_nodes = graph.number_of_nodes()
     dist_matrix = np.zeros((num_nodes, num_nodes))

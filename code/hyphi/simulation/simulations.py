@@ -28,7 +28,8 @@ pass
 
 
 def load_connectome(pickle_path: str) -> tuple[np.ndarray, np.ndarray, list[str]]:
-    """Load structural connectivity and tract lengths from pickle.
+    """
+    Load structural connectivity and tract lengths from pickle.
 
     Parameters
     ----------
@@ -39,6 +40,7 @@ def load_connectome(pickle_path: str) -> tuple[np.ndarray, np.ndarray, list[str]
     -------
     tuple
         ``(W, tract, roi_names)`` — connectivity matrix, tract lengths, region labels.
+
     """
     import pickle
 
@@ -65,7 +67,8 @@ def create_virtual_partner_connectome(
     roi_names: list[str],
     C_inter: float = 0.0,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Expand a single-brain connectome (NxN) into a dual-brain connectome (2Nx2N).
+    """
+    Expand a single-brain connectome (NxN) into a dual-brain connectome (2Nx2N).
 
     Parameters
     ----------
@@ -82,6 +85,7 @@ def create_virtual_partner_connectome(
     -------
     tuple
         ``(W_vir, D_vir)`` — expanded 2Nx2N matrices.
+
     """
     n = W.shape[0]
     W_vir = np.zeros((2 * n, 2 * n))
@@ -123,7 +127,8 @@ def setup_delayed_kuramoto(
     noise_strength: float = 0.1,
     seed: int = 42,
 ) -> object:
-    """Set up the delayed Kuramoto DDE solver.
+    """
+    Set up the delayed Kuramoto DDE solver.
 
     Parameters
     ----------
@@ -165,6 +170,7 @@ def setup_delayed_kuramoto(
         solver.set_integration_parameters(rtol=0, atol=1e-5)
         solver.constant_past(initial_phases, time=0.0)
         solver.integrate_blindly(max_delay, 0.1)
+
     """
     raise NotImplementedError(
         "TODO: Insert original delayed Kuramoto DDE simulation logic. "
@@ -179,7 +185,8 @@ def run_delayed_kuramoto(
     n_osc: int,
     t_skip: float = 2.0,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Integrate the delayed Kuramoto model and return phase trajectories.
+    """
+    Integrate the delayed Kuramoto model and return phase trajectories.
 
     Parameters
     ----------
@@ -208,6 +215,7 @@ def run_delayed_kuramoto(
         r = |mean(exp(j * phases))|   # order parameter
 
     Return trimmed results after ``t_skip``.
+
     """
     raise NotImplementedError(
         "TODO: Insert original delayed Kuramoto integration loop. "
@@ -221,7 +229,8 @@ def run_delayed_kuramoto(
 
 
 def gen_weighted_sw(n: int, k: int, p: float, epsilon: float, seed: int = 42) -> nx.Graph:
-    """Generate a single weighted small-world graph.
+    """
+    Generate a single weighted small-world graph.
 
     Parameters
     ----------
@@ -240,6 +249,7 @@ def gen_weighted_sw(n: int, k: int, p: float, epsilon: float, seed: int = 42) ->
     -------
     nx.Graph
         Weighted Watts-Strogatz graph.
+
     """
     G = nx.watts_strogatz_graph(n, k, p, seed=seed)
     nx.set_node_attributes(G, values=1.0, name="weight")
@@ -262,7 +272,8 @@ def run_ws_sweep(
     n_reps: int = 200,
     seed_base: int = 0,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Run the Watts-Strogatz sweep across rewiring probabilities.
+    """
+    Run the Watts-Strogatz sweep across rewiring probabilities.
 
     Parameters
     ----------
@@ -286,6 +297,7 @@ def run_ws_sweep(
     tuple
         ``(pt, Hreps, Qreps)`` — probability grid, entropy array, quantile array.
         Shapes: ``pt (t_rez,)``, ``Hreps (n_reps, t_rez)``, ``Qreps (n_reps, t_rez, 5)``.
+
     """
     from hyphi.analyses import compute_frc_vec
     from hyphi.modeling.entropies import vec_entropy, vec_quantiles

@@ -39,7 +39,7 @@ Across simulated and empirical use cases, `HyPhi` follows the same high-level wo
 4. **Information-theoretic tracking**
    Entropy and quantiles of curvature distributions are used to detect regime shifts and phase transitions.
 
-Concrete implementations of this workflow are provided in the `software_module` and `tutorials` directories.
+Concrete implementations of this workflow are provided in the `experiments` and `tutorials` directories.
 
 ## Scientific Motivation
 

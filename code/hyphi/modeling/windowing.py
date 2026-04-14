@@ -5,8 +5,8 @@ Extracted from KuramotoSimulations.py and connectome_kuramoto.ipynb.
 """
 
 # %% Import
-import numpy as np
 import networkx as nx
+import numpy as np
 
 # %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 pass
@@ -15,7 +15,8 @@ pass
 
 
 def compute_plv_matrix(phase_window):
-    """Compute the PLV connectivity matrix for a single window.
+    """
+    Compute the PLV connectivity matrix for a single window.
 
     Parameters
     ----------
@@ -26,6 +27,7 @@ def compute_plv_matrix(phase_window):
     -------
     np.ndarray
         Symmetric PLV matrix of shape (N, N) with values in [0, 1].
+
     """
     N = phase_window.shape[0]
     # Vectorised PLV: PLV_ij = |mean(exp(j * (phi_i - phi_j)))|
@@ -45,7 +47,8 @@ def compute_plv_matrix(phase_window):
 
 
 def sliding_window_plv(phases, win_size, win_stride):
-    """Build a time series of PLV graphs using a sliding window.
+    """
+    Build a time series of PLV graphs using a sliding window.
 
     Parameters
     ----------
@@ -61,6 +64,7 @@ def sliding_window_plv(phases, win_size, win_stride):
     -------
     list[nx.Graph]
         List of weighted NetworkX graphs, one per window.
+
     """
     # Normalise to (N, T)
     if phases.ndim != 2:
@@ -83,7 +87,8 @@ def sliding_window_plv(phases, win_size, win_stride):
 
 
 def build_graphs_from_matrices(matrices):
-    """Convert a sequence of adjacency matrices to NetworkX graphs.
+    """
+    Convert a sequence of adjacency matrices to NetworkX graphs.
 
     Parameters
     ----------
@@ -94,6 +99,7 @@ def build_graphs_from_matrices(matrices):
     -------
     list[nx.Graph]
         List of weighted NetworkX graphs.
+
     """
     graphs = []
     for mat in matrices:

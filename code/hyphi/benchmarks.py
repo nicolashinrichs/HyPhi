@@ -21,7 +21,8 @@ pass
 
 
 def compute_plv(phases_i, phases_j):
-    """Compute Phase Locking Value between two phase time series.
+    """
+    Compute Phase Locking Value between two phase time series.
 
     Parameters
     ----------
@@ -32,12 +33,14 @@ def compute_plv(phases_i, phases_j):
     -------
     float
         PLV value in [0, 1].
+
     """
     return float(np.abs(np.mean(np.exp(1j * (phases_i - phases_j)))))
 
 
 def compute_wpli(phases_i, phases_j):
-    """Compute weighted Phase Lag Index (wPLI).
+    """
+    Compute weighted Phase Lag Index (wPLI).
 
     The wPLI is defined as:
         wPLI = |E[|Im(S)| * sign(Im(S))]| / E[|Im(S)|]
@@ -52,6 +55,7 @@ def compute_wpli(phases_i, phases_j):
     -------
     float
         wPLI value in [0, 1].
+
     """
     cross_spectrum = np.exp(1j * (phases_i - phases_j))
     imag_part = np.imag(cross_spectrum)
@@ -63,7 +67,8 @@ def compute_wpli(phases_i, phases_j):
 
 
 def compute_imaginary_coherence(signal_i, signal_j, fs, nperseg=None):
-    """Compute imaginary part of coherence between two signals.
+    """
+    Compute imaginary part of coherence between two signals.
 
     Parameters
     ----------
@@ -78,6 +83,7 @@ def compute_imaginary_coherence(signal_i, signal_j, fs, nperseg=None):
     -------
     tuple
         (freqs, imag_coh) — frequency array and imaginary coherence values.
+
     """
     from scipy.signal import csd, welch
 
@@ -98,7 +104,8 @@ def compute_imaginary_coherence(signal_i, signal_j, fs, nperseg=None):
 
 
 def compute_global_efficiency(G, weight=None):
-    """Compute global efficiency of a graph.
+    """
+    Compute global efficiency of a graph.
 
     Parameters
     ----------
@@ -111,12 +118,14 @@ def compute_global_efficiency(G, weight=None):
     -------
     float
         Global efficiency.
+
     """
     return nx.global_efficiency(G)
 
 
 def compute_modularity(G, weight="weight"):
-    """Compute modularity of a graph using Louvain community detection.
+    """
+    Compute modularity of a graph using Louvain community detection.
 
     Parameters
     ----------
@@ -129,6 +138,7 @@ def compute_modularity(G, weight="weight"):
     -------
     float
         Modularity score.
+
     """
     from networkx.algorithms.community import greedy_modularity_communities
 
@@ -150,7 +160,8 @@ def evaluate_classifier_skeleton(X_curvature: np.ndarray, X_benchmark: np.ndarra
 
 
 def classify_curvature_vs_benchmarks(X_curvature, X_benchmarks, y, cv=5):
-    """Skeleton for a cross-validated classifier comparing curvature entropy
+    """
+    Skeleton for a cross-validated classifier comparing curvature entropy
     features against standard hyperscanning metrics.
 
     Parameters
@@ -169,6 +180,7 @@ def classify_curvature_vs_benchmarks(X_curvature, X_benchmarks, y, cv=5):
     dict
         Dictionary with keys 'curvature_scores' and 'benchmark_scores',
         each containing cross-validation accuracy scores.
+
     """
     # TODO: Execute classification. Uncomment and run when data is available.
     #
