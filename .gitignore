@@ -6,3 +6,6 @@ results/
 data/*.npy
 data_8node/
 ricci_flow_analysis.py.bak
+.DS_Store
+.idea/
+.vscode/
