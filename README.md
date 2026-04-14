@@ -56,22 +56,20 @@ The repository is split into the following main directories, each with a dedicat
 
 Source folder of the Python toolbox `hyphi`, which implements the core analysis modules and pipelines for the pipeline.
 
+- Network simulations
+- Ricci curvature computation
+- Density estimation
+- Entropy and quantile analysis
+
 ### `data`
 
 Simulation and EEG-derived connectivity data below 100 MB.
 Larger files are hosted at:
 https://osf.io/yah5u
 
-### `software_module`
+### `experiments`
 
-Core analysis modules and executable pipelines, including:
-
-- Network simulations
-- Ricci curvature computation
-- Density estimation
-- Entropy and quantile analysis
-
-This directory also contains a worked, end-to-end example illustrating the canonical HyPhi workflow on synthetic networks.
+This directory contains worked, end-to-end examples illustrating the canonical HyPhi workflow on synthetic networks.
 
 ### `tutorials`
 
