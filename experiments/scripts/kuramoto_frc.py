@@ -1,5 +1,6 @@
-# %% Import
+"""TODO: add docstring"""
 
+# %% Import
 import os
 import numpy as np
 import networkx as nx
@@ -9,7 +10,7 @@ import sys
 from tqdm import tqdm
 
 from hyphi.configs import paths
-from hyphi.modeling.graph_curvatures import get_frc_vec
+from hyphi.modeling.graph_curvatures import compute_frc_vec
 
 # %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 # Analysis configuration file
@@ -42,7 +43,7 @@ if __name__ == "__main__":
         FRCvals = np.zeros((len(Gt), config["kuramoto_size"], config["kuramoto_size"]))
 
         # Compute Forman-Ricci curvatures across windows for this trial and frequency band
-        FRCt = get_frc_vec(Gt, method_val=cmethod)
+        FRCt = compute_frc_vec(Gt, method_val=cmethod)
 
         # Convert IBCs (networkx graphs) with window curvatures to window curvature matrices
         for window in tqdm(range(len(Gt)), desc="Timepoints"):

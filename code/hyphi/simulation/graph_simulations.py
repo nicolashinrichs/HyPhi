@@ -1,5 +1,6 @@
-# %% Import
+"""TODO: add docstring."""
 
+# %% Import
 import numpy as np
 import networkx as nx
 

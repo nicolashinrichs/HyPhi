@@ -10,7 +10,6 @@ Created on Wed Sep 25 19:08:59 2024
 
 import numpy as np
 from scipy.signal import hilbert
-from astropy.stats import circmean  # TODO: add as dependency
 import time
 
 

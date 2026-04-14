@@ -1,6 +1,9 @@
 """
 Benchmarks module for HyPhi: Standard connectivity metrics and classifier evaluation.
 
+Standard hyperscanning connectivity metrics for comparison
+against curvature-based measures.
+
 Years: 2026
 """
 
@@ -17,61 +20,120 @@ pass
 # %% Functions >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
 
-def compute_plv(signal1: np.ndarray, signal2: np.ndarray) -> float:
-    """Compute Phase Locking Value (PLV) between two signals."""
-    if len(signal1) != len(signal2):
-        raise ValueError("Signals must be of same length.")
+def compute_plv(phases_i, phases_j):
+    """Compute Phase Locking Value between two phase time series.
 
-    # Calculate phase difference
-    phase_diff = np.angle(signal1) - np.angle(signal2)
+    Parameters
+    ----------
+    phases_i, phases_j : np.ndarray
+        Phase time series of shape (T,).
 
-    # Compute PLV
-    plv = np.abs(np.mean(np.exp(1j * phase_diff)))
-    return float(plv)
+    Returns
+    -------
+    float
+        PLV value in [0, 1].
+    """
+    return float(np.abs(np.mean(np.exp(1j * (phases_i - phases_j)))))
 
 
-def compute_wpli(signal1: np.ndarray, signal2: np.ndarray) -> float:
-    """Compute weighted Phase Lag Index (wPLI) between two signals."""
-    # Cross-spectrum
-    cross_spec = signal1 * np.conj(signal2)
-    imag_cs = np.imag(cross_spec)
+def compute_wpli(phases_i, phases_j):
+    """Compute weighted Phase Lag Index (wPLI).
 
-    numerator = np.abs(np.mean(imag_cs))
-    denominator = np.mean(np.abs(imag_cs))
+    The wPLI is defined as:
+        wPLI = |E[|Im(S)| * sign(Im(S))]| / E[|Im(S)|]
+    where S = exp(j*(phi_i - phi_j)).
 
-    if denominator == 0:
+    Parameters
+    ----------
+    phases_i, phases_j : np.ndarray
+        Phase time series of shape (T,).
+
+    Returns
+    -------
+    float
+        wPLI value in [0, 1].
+    """
+    cross_spectrum = np.exp(1j * (phases_i - phases_j))
+    imag_part = np.imag(cross_spectrum)
+    numerator = np.abs(np.mean(np.abs(imag_part) * np.sign(imag_part)))
+    denominator = np.mean(np.abs(imag_part))
+    if denominator < 1e-15:
         return 0.0
     return float(numerator / denominator)
 
 
-def compute_imaginary_coherence(signal1: np.ndarray, signal2: np.ndarray) -> float:
-    """Compute Imaginary Coherence between two signals."""
-    cross_spec = np.mean(signal1 * np.conj(signal2))
-    psd1 = np.mean(np.abs(signal1) ** 2)
-    psd2 = np.mean(np.abs(signal2) ** 2)
+def compute_imaginary_coherence(signal_i, signal_j, fs, nperseg=None):
+    """Compute imaginary part of coherence between two signals.
 
-    if psd1 == 0 or psd2 == 0:
-        return 0.0
+    Parameters
+    ----------
+    signal_i, signal_j : np.ndarray
+        Real-valued time series of shape (T,).
+    fs : float
+        Sampling frequency.
+    nperseg : int, optional
+        Segment length for Welch method.
 
-    coh = np.imag(cross_spec) / np.sqrt(psd1 * psd2)
-    return float(np.abs(coh))
+    Returns
+    -------
+    tuple
+        (freqs, imag_coh) — frequency array and imaginary coherence values.
+    """
+    from scipy.signal import csd, welch
+
+    if nperseg is None:
+        nperseg = min(256, len(signal_i))
+
+    freqs, Pxy = csd(signal_i, signal_j, fs=fs, nperseg=nperseg)
+    _, Pxx = welch(signal_i, fs=fs, nperseg=nperseg)
+    _, Pyy = welch(signal_j, fs=fs, nperseg=nperseg)
+
+    denom = np.sqrt(Pxx * Pyy)
+    denom[denom < 1e-15] = 1e-15
+
+    coherence = Pxy / denom
+    imag_coh = np.abs(np.imag(coherence))
+
+    return freqs, imag_coh
 
 
-def compute_global_efficiency(G: nx.Graph) -> float:
-    """Compute Global Efficiency of a network."""
-    try:
-        return nx.global_efficiency(G)
-    except nx.NetworkXError:
-        return 0.0
+def compute_global_efficiency(G, weight=None):
+    """Compute global efficiency of a graph.
+
+    Parameters
+    ----------
+    G : nx.Graph
+        Input graph.
+    weight : str, optional
+        Edge attribute for distance (if None, uses hop count).
+
+    Returns
+    -------
+    float
+        Global efficiency.
+    """
+    return nx.global_efficiency(G)
 
 
-def compute_modularity(G: nx.Graph) -> float:
-    """Compute Modularity using Clauset-Newman-Moore greedy modularity maximization."""
-    try:
-        communities = nx.community.greedy_modularity_communities(G)
-        return nx.community.modularity(G, communities)
-    except (ZeroDivisionError, nx.NetworkXError):
-        return 0.0
+def compute_modularity(G, weight="weight"):
+    """Compute modularity of a graph using Louvain community detection.
+
+    Parameters
+    ----------
+    G : nx.Graph
+        Weighted or unweighted graph.
+    weight : str
+        Edge attribute for weights.
+
+    Returns
+    -------
+    float
+        Modularity score.
+    """
+    from networkx.algorithms.community import greedy_modularity_communities
+
+    communities = greedy_modularity_communities(G, weight=weight)
+    return nx.algorithms.community.quality.modularity(G, communities, weight=weight)
 
 
 def evaluate_classifier_skeleton(X_curvature: np.ndarray, X_benchmark: np.ndarray, y: np.ndarray):
@@ -85,6 +147,47 @@ def evaluate_classifier_skeleton(X_curvature: np.ndarray, X_benchmark: np.ndarra
     scores_bench = cross_val_score(clf2, X_benchmark, y, cv=5)
 
     return scores_curv.mean(), scores_bench.mean()
+
+
+def classify_curvature_vs_benchmarks(X_curvature, X_benchmarks, y, cv=5):
+    """Skeleton for a cross-validated classifier comparing curvature entropy
+    features against standard hyperscanning metrics.
+
+    Parameters
+    ----------
+    X_curvature : np.ndarray
+        Feature matrix from curvature entropy, shape (n_samples, n_curvature_features).
+    X_benchmarks : np.ndarray
+        Feature matrix from standard metrics, shape (n_samples, n_benchmark_features).
+    y : np.ndarray
+        Labels, shape (n_samples,).
+    cv : int
+        Number of cross-validation folds.
+
+    Returns
+    -------
+    dict
+        Dictionary with keys 'curvature_scores' and 'benchmark_scores',
+        each containing cross-validation accuracy scores.
+    """
+    # TODO: Execute classification. Uncomment and run when data is available.
+    #
+    # from sklearn.model_selection import cross_val_score
+    # from sklearn.svm import SVC
+    # from sklearn.preprocessing import StandardScaler
+    # from sklearn.pipeline import make_pipeline
+    #
+    # clf = make_pipeline(StandardScaler(), SVC(kernel='rbf'))
+    #
+    # curvature_scores = cross_val_score(clf, X_curvature, y, cv=cv, scoring='accuracy')
+    # benchmark_scores = cross_val_score(clf, X_benchmarks, y, cv=cv, scoring='accuracy')
+    #
+    # return {
+    #     'curvature_scores': curvature_scores,
+    #     'benchmark_scores': benchmark_scores,
+    # }
+
+    raise NotImplementedError("TODO: Execute classification when empirical feature matrices are available.")
 
 
 # o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o END

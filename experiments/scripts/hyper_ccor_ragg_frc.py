@@ -1,3 +1,8 @@
+# TODO: this script needs more structure. Move all functions in dedicated section.
+#  Move run through in __main__ section.
+
+"""TODO: add docstring"""
+
 # %% Import
 
 import os
@@ -6,7 +11,7 @@ import sys
 
 import dcor  # TODO: add as dependency
 from dcor import EstimationStatistic
-from hyphi.io import path, load_config, make_dir
+from hyphi.io import load_config, make_dir
 import numpy as np
 from joblib import Parallel, delayed
 from scipy.stats import energy_distance
@@ -36,8 +41,8 @@ assert curv_type in ["FRC", "AFRC"], f"Curvature type ({curv_type}) must be one 
 # %% Functions >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
 
-# Construct data path by curvature type
-def dataPathConstructor(dyad, trial_type, curvature, config):
+def data_path_constructor(dyad, trial_type, curvature, config):
+    """Construct the data path by curvature type."""
     if curvature == "FRC":
         return os.path.abspath(
             os.path.join(
@@ -54,8 +59,8 @@ def dataPathConstructor(dyad, trial_type, curvature, config):
         )
 
 
-# Construct data path by curvature type
-def resultPathConstructor(dyad, trial_type, curvature, config, pooling):
+def result_path_constructor(dyad, trial_type, curvature, config, pooling):
+    """Construct the data path by curvature type."""
     assert pooling in ["trial", "window"]
     if curvature == "FRC":
         FRCpath = os.path.abspath(
@@ -84,13 +89,13 @@ def resultPathConstructor(dyad, trial_type, curvature, config, pooling):
             )
         )
         Hpath = os.path.abspath(
-            path.join(
+            os.path.join(
                 config["pooled_result_loc"],
                 f"CCORR_aug_FRC_{pooling}_pooling_entropy_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy",
             )
         )
-        Qpath = path.abspath(
-            path.join(
+        Qpath = os.path.abspath(
+            os.path.join(
                 config["pooled_result_loc"],
                 f"CCORR_aug_FRC_{pooling}_pooling_quantiles_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy",
             )
@@ -98,42 +103,42 @@ def resultPathConstructor(dyad, trial_type, curvature, config, pooling):
     return FRCpath, Hpath, Qpath
 
 
-def dyadPooledPathConstructor(trial_type, curvature, config, pooling):
+def dyad_pooled_path_constructor(trial_type, curvature, config, pooling):
     assert pooling in ["trial", "window"]
     if curvature == "FRC":
-        FRCpath = path.abspath(
-            path.join(
+        FRCpath = os.path.abspath(
+            os.path.join(
                 config["pooled_result_loc"],
                 f"CCORR_FRC_{pooling}_pooling_matrix_dyad_pooled_trial_type_{trial_type}_config_{config['config_id']}.npy",
             )
         )
-        Hpath = path.abspath(
-            path.join(
+        Hpath = os.path.abspath(
+            os.path.join(
                 config["pooled_result_loc"],
                 f"CCORR_FRC_{pooling}_pooling_entropy_dyad_pooled_trial_type_{trial_type}_config_{config['config_id']}.npy",
             )
         )
-        Qpath = path.abspath(
-            path.join(
+        Qpath = os.path.abspath(
+            os.path.join(
                 config["pooled_result_loc"],
                 f"CCORR_FRC_{pooling}_pooling_quantiles_dyad_pooled_trial_type_{trial_type}_config_{config['config_id']}.npy",
             )
         )
     elif curvature == "AFRC":
-        FRCpath = path.abspath(
-            path.join(
+        FRCpath = os.path.abspath(
+            os.path.join(
                 config["pooled_result_loc"],
                 f"CCORR_aug_FRC_{pooling}_pooling_matrix_dyad_pooled_trial_type_{trial_type}_config_{config['config_id']}.npy",
             )
         )
-        Hpath = path.abspath(
-            path.join(
+        Hpath = os.path.abspath(
+            os.path.join(
                 config["pooled_result_loc"],
                 f"CCORR_aug_FRC_{pooling}_pooling_entropy_dyad_pooled_trial_type_{trial_type}_config_{config['config_id']}.npy",
             )
         )
-        Qpath = path.abspath(
-            path.join(
+        Qpath = os.path.abspath(
+            os.path.join(
                 config["pooled_result_loc"],
                 f"CCORR_aug_FRC_{pooling}_pooling_quantiles_dyad_pooled_trial_type_{trial_type}_config_{config['config_id']}.npy",
             )
@@ -141,17 +146,17 @@ def dyadPooledPathConstructor(trial_type, curvature, config, pooling):
     return FRCpath, Hpath, Qpath
 
 
-def fullyPooledPathConstructor(trial_type, curvature, config):
+def fully_pooled_path_constructor(trial_type, curvature, config):
     if curvature == "FRC":
-        FRCpath = path.abspath(
-            path.join(
+        FRCpath = os.path.abspath(
+            os.path.join(
                 config["pooled_result_loc"],
                 f"CCORR_FRC_matrix_fully_pooled_trial_type_{trial_type}_config_{config['config_id']}.npy",
             )
         )
     elif curvature == "AFRC":
-        FRCpath = path.abspath(
-            path.join(
+        FRCpath = os.path.abspath(
+            os.path.join(
                 config["pooled_result_loc"],
                 f"CCORR_aug_FRC_matrix_fully_pooled_trial_type_{trial_type}_config_{config['config_id']}.npy",
             )
@@ -161,13 +166,13 @@ def fullyPooledPathConstructor(trial_type, curvature, config):
 
 # Load data
 data = {
-    d: {tt: np.load(dataPathConstructor(d, tt, curv_type, config)) for tt in config["trial_types"]}
+    d: {tt: np.load(data_path_constructor(d, tt, curv_type, config)) for tt in config["trial_types"]}
     for d in config["dyads"]
 }
 
 # # Containers for pooled data per dyad and trial type
-# pooled_trials_per_dyad = {d: {} for d in dyads}        # (8, 4, 30*128*128)
-# pooled_windows_per_dyad = {d: {} for d in dyads}       # (8, 30, 4*128*128)
+# pooled_trials_per_dyad = {d: {} for d in dyads}  # (8, 4, 30*128*128)
+# pooled_windows_per_dyad = {d: {} for d in dyads}  # (8, 30, 4*128*128)
 
 # pooled_trials_per_dyad_entropy = {d: {tt: np.zeros((8, 4)) for tt in config["trial_types"]} for d in config["dyads"]}
 # pooled_windows_per_dyad_entropy = {d: {tt: np.zeros((8, 30)) for tt in config["trial_types"]} for d in config["dyads"]}
@@ -201,7 +206,7 @@ data = {
 #                 pooled_trials_per_dyad_quantiles[d][tt][f, w] = np.quantile(pooled_trials[f, w], config["quantiles"])
 
 #         # File paths
-#         FRCpath, Hpath, Qpath = resultPathConstructor(d, tt, curv_type, config, "trial")
+#         FRCpath, Hpath, Qpath = result_path_constructor(d, tt, curv_type, config, "trial")
 
 #         # Now save the NPY files
 #         np.save(FRCpath, pooled_trials)
@@ -232,7 +237,7 @@ data = {
 #                 pooled_windows_per_dyad_quantiles[d][tt][f, tr] = np.quantile(pooled_windows[f, tr], config["quantiles"])
 
 #         # File paths
-#         FRCpath, Hpath, Qpath = resultPathConstructor(d, tt, curv_type, config, "window")
+#         FRCpath, Hpath, Qpath = result_path_constructor(d, tt, curv_type, config, "window")
 
 #         # Now save the NPY files
 #         np.save(FRCpath, pooled_windows)
@@ -294,7 +299,7 @@ data = {
 #             pooled_windows_quantiles[tt][f, tr] = np.quantile(window_merged[f, tr, :], config["quantiles"])
 
 #     # File paths
-#     FRCpath, Hpath, Qpath = resultPathConstructor(d, tt, curv_type, config, "window")
+#     FRCpath, Hpath, Qpath = result_path_constructor(d, tt, curv_type, config, "window")
 
 #     # Now save the NPY files
 #     np.save(FRCpath, pooled_windows)
@@ -323,7 +328,7 @@ for tt in config["trial_types"]:
     fully_pooled_across_everything[tt] = fully_pooled
 
     # Save data
-    FRCpath = fullyPooledPathConstructor(tt, curv_type, config)
+    FRCpath = fully_pooled_path_constructor(tt, curv_type, config)
     np.save(FRCpath, fully_pooled)
 
 # ------------------------------------------------------------------
@@ -344,6 +349,10 @@ for tt in config["trial_types"]:
 #       fully_pooled_across_everything[example_tt].shape)
 # # Expected: (8, 10*30*4*128*128) = (8, 19660800)
 
+# ================== #
+# Hypothesis Testing #
+# ================== #
+
 # Assume fully_pooled_across_everything from previous script
 # Shape: fully_pooled_across_everything[tt][freq, flattened_curvs]
 # flattened_curvs has shape (10*30*4*128*128,)
@@ -357,7 +366,7 @@ def single_permutation_perm(all_c, split_sizes, test_statistic):
 
 
 def fast_energy_test_parallel(curvs, n_perm=1000, sample_size=50000, n_jobs=-1):
-    """Run parallelized energy distance test."""
+    """Run the parallelized energy distance test."""
     # Downsample first
     sampled_curvs = [c[np.random.choice(len(c), min(sample_size, len(c)), replace=False)] for c in curvs]
 
@@ -600,68 +609,6 @@ def pairwise_energy_tests(fully_pooled, trial_types, freq_bands, n_perm=1000, sa
     return results
 
 
-# %% __main__  >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
-
-# Run omnibus analysis
-results = test_trial_types_per_freq(
-    fully_pooled_across_everything,
-    config["trial_types"],
-    config["freq_bands"],
-    n_perm=config["nhst_perm"],
-    sample_size=config["nhst_subsample"],
-)
-print("Uncorrected omnibus results:")
-for r in results:
-    print(
-        f"Freq {r['frequency_band']}: stat={r['observed_statistic']:.4f}, p={r['p_value']:.4f}, sig={r['significant']}"
-    )
-
-# Correct for multiple testing while maintaining good statistical power
-
-# Get your 8 p-values from original per-frequency tests
-p_values = [r["p_value"] for r in results]
-
-# Holm-Bonferroni (step-down)
-rejected, p_corrected, _, _ = multipletests(p_values, alpha=0.05, method="holm")
-
-print("Omnibus results after correcting for multiple comparisons:")
-for f, (reject, p_corr) in enumerate(zip(rejected, p_corrected)):
-    print(f"Freq {results[f]['frequency_band']}: p={p_values[f]:.4f} → p_corr={p_corr:.4f}, sig={reject}")
-
-# Run pairwise tests
-results_pair = pairwise_energy_tests(
-    fully_pooled_across_everything,
-    config["trial_types"],
-    config["freq_bands"],
-    n_perm=config["nhst_perm"],
-    sample_size=config["nhst_subsample"],
-)
-print("Uncorrected pairwise results:")
-for r in results_pair:
-    print(
-        f"Freq {r['frequency_band']}, Pair {r['pair']}: stat={r['observed_statistic']:.4f}, p={r['p_value']:.4f}, sig={r['significant']}"
-    )
-
-# Correct for multiple testing while maintaining good statistical power
-
-# Get your 3 p-values from each original per-frequency tests, 24 in total
-p_values_pair = [r["p_value"] for r in results_pair]
-
-# Holm-Bonferroni (step-down)
-rejected_pair, p_corrected_pair, _, _ = multipletests(p_values_pair, alpha=0.05, method="holm")
-
-print("Pairwise results after correcting for multiple comparisons:")
-for f, (reject, p_corr) in enumerate(zip(rejected_pair, p_corrected_pair)):
-    print(
-        f"Freq {results_pair[f]['frequency_band']}, Pair {results_pair[f]['pair']}: p={p_values_pair[f]:.4f} → p_corr={p_corr:.4f}, sig={reject}"
-    )
-
-# Summary
-significant_pairs = sum(rejected_pair)
-print(f"\n{significant_pairs}/24 pairwise tests significant (Holm-corrected)")
-
-
-# Function to save results
 def save_hypothesis_test_results_json(
     results_omnibus,
     rejected_omnibus,
@@ -674,6 +621,8 @@ def save_hypothesis_test_results_json(
 ):
     """
     Save omnibus and pairwise test results (with Holm-corrected p-values) to JSON.
+
+    Function to save results.
 
     Parameters
     ----------
@@ -758,10 +707,71 @@ def save_hypothesis_test_results_json(
     return output
 
 
+# %% __main__  >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
+
+# Run omnibus analysis
+results = test_trial_types_per_freq(
+    fully_pooled_across_everything,
+    config["trial_types"],
+    config["freq_bands"],
+    n_perm=config["nhst_perm"],
+    sample_size=config["nhst_subsample"],
+)
+print("Uncorrected omnibus results:")
+for r in results:
+    print(
+        f"Freq {r['frequency_band']}: stat={r['observed_statistic']:.4f}, p={r['p_value']:.4f}, sig={r['significant']}"
+    )
+
+# Correct for multiple testing while maintaining good statistical power
+
+# Get your 8 p-values from original per-frequency tests
+p_values = [r["p_value"] for r in results]
+
+# Holm-Bonferroni (step-down)
+rejected, p_corrected, _, _ = multipletests(p_values, alpha=0.05, method="holm")
+
+print("Omnibus results after correcting for multiple comparisons:")
+for f, (reject, p_corr) in enumerate(zip(rejected, p_corrected)):
+    print(f"Freq {results[f]['frequency_band']}: p={p_values[f]:.4f} → p_corr={p_corr:.4f}, sig={reject}")
+
+# Run pairwise tests
+results_pair = pairwise_energy_tests(
+    fully_pooled_across_everything,
+    config["trial_types"],
+    config["freq_bands"],
+    n_perm=config["nhst_perm"],
+    sample_size=config["nhst_subsample"],
+)
+print("Uncorrected pairwise results:")
+for r in results_pair:
+    print(
+        f"Freq {r['frequency_band']}, Pair {r['pair']}: stat={r['observed_statistic']:.4f}, p={r['p_value']:.4f}, sig={r['significant']}"
+    )
+
+# Correct for multiple testing while maintaining good statistical power
+
+# Get your 3 p-values from each original per-frequency tests, 24 in total
+p_values_pair = [r["p_value"] for r in results_pair]
+
+# Holm-Bonferroni (step-down)
+rejected_pair, p_corrected_pair, _, _ = multipletests(p_values_pair, alpha=0.05, method="holm")
+
+print("Pairwise results after correcting for multiple comparisons:")
+for f, (reject, p_corr) in enumerate(zip(rejected_pair, p_corrected_pair)):
+    print(
+        f"Freq {results_pair[f]['frequency_band']}, Pair {results_pair[f]['pair']}: p={p_values_pair[f]:.4f} → p_corr={p_corr:.4f}, sig={reject}"
+    )
+
+# Summary
+significant_pairs = sum(rejected_pair)
+print(f"\n{significant_pairs}/24 pairwise tests significant (Holm-corrected)")
+
+
 # Save the results
-fullpoolstats = path.abspath(
-    path.join(
-        config_path,
+fullpoolstats = os.path.abspath(
+    os.path.join(
+        paths.experiments.configs,
         f"fully_pooled_{curv_type}_energy_stat_trial_types_n_perm_{config['nhst_perm']}_ sample_size_{config['nhst_subsample']}.json",
     )
 )

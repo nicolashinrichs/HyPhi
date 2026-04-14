@@ -8,12 +8,27 @@ from KDEpy import NaiveKDE, TreeKDE, FFTKDE
 # %% Functions >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
 
-def select_kde(
-    kernel_type: str = "gaussian", bw: str | float | int = "ISJ", norm: int = 2, method: str = "FFT"
-) -> NaiveKDE | TreeKDE | FFTKDE:
-    """Select a kernel density estimate by KDE method."""
-    assert (bw in ["scott", "silverman", "ISJ"]) | (isinstance(bw, (int, float))), f"BW {bw} not an approved type!"
+def select_kde(kernel_type="gaussian", bw="ISJ", norm=2, method="FFT"):
+    """Create a KDE estimator (unfitted).
+
+    Parameters
+    ----------
+    kernel_type : str
+        Kernel function name.
+    bw : str or float
+        Bandwidth parameter ('scott', 'silverman', 'ISJ', or a number).
+    norm : int
+        Norm for the KDE.
+    method : str
+        One of 'naive', 'tree', 'FFT'.
+
+    Returns
+    -------
+    KDE estimator object (unfitted).
+    """
+    assert (bw in ["scott", "silverman", "ISJ"]) or isinstance(bw, (int, float)), f"BW {bw} not an approved type!"
     assert isinstance(norm, int)
+
     match method:
         case "naive":
             return NaiveKDE(kernel=kernel_type, bw=bw, norm=norm)

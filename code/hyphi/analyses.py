@@ -7,10 +7,10 @@ Years: 2026
 # %% Import
 import networkx as nx
 import numpy as np
-from GraphRicciCurvature.FormanRicci import FormanRicci
-from GraphRicciCurvature.OllivierRicci import OllivierRicci
-from KDEpy import FFTKDE, NaiveKDE, TreeKDE
+from KDEpy import TreeKDE
 from scipy.stats import differential_entropy
+
+from .modeling.graph_curvatures import compute_frc_vec, extract_curvatures
 
 # %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 pass
@@ -48,46 +48,9 @@ def build_sliding_window_graphs(connectivity_matrix: np.ndarray) -> list[nx.Grap
     return graphs
 
 
-# ================ #
-# Graph Curvatures #
-# ================ #
-
-
-def compute_frc(G: nx.Graph, method: str = "1d") -> nx.Graph:
-    """Compute Forman-Ricci Curvature."""
-    frc = FormanRicci(G, method=method)
-    frc.compute_ricci_curvature()
-    return frc.G
-
-
-def compute_frc_vec(Gt: list[nx.Graph], method: str = "1d") -> list[nx.Graph]:
-    return [compute_frc(G, method=method) for G in Gt]
-
-
-def compute_orc(G: nx.Graph, alpha: float = 0.5, method: str = "OTDSinkhornMix") -> nx.Graph:
-    """Compute Ollivier-Ricci Curvature."""
-    orc = OllivierRicci(G, alpha=alpha, method=method)
-    orc.compute_ricci_curvature()
-    return orc.G
-
-
-def extract_curvatures(G: nx.Graph, curvature: str = "formanCurvature") -> np.ndarray:
-    return np.array([ddict[curvature] for u, v, ddict in G.edges(data=True)])
-
-
 # ================= #
 # Density & Entropy #
 # ================= #
-
-
-def select_kde(kernel: str = "gaussian", bw: str | float = "ISJ", method: str = "FFT"):
-    if method == "naive":
-        return NaiveKDE(kernel=kernel, bw=bw)
-    if method == "tree":
-        return TreeKDE(kernel=kernel, bw=bw)
-    if method == "FFT":
-        return FFTKDE(kernel=kernel, bw=bw)
-    raise ValueError("Method must be naive, tree, or FFT")
 
 
 def compute_entropy_kde_plugin(

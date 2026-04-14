@@ -1,6 +1,6 @@
 # hyphi – **code**
 
-    Last update:    April 10, 2026
+    Last update:    April 14, 2026
     Status:         work in progress
 
 ***
@@ -25,9 +25,13 @@ To install the `hyphi` package, run the following code in the project root direc
 uv sync [--extra develop] [--extra notebook]
 ```
 
+#### Ricci-Flow
+
+For details on the Ricci-Flow analysis, see [README_Ricci-Flow.md](README_Ricci-Flow.md).
+
 Or use other package management tools (e.g., `conda`, `pip`, or `pixi`) to install the package in editable mode.
 
-#### Notebooks
+### Notebooks
 
 `Jupyter` | `marimo` notebooks are stored in `./code/notebooks/`
 

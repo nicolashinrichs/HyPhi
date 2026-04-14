@@ -63,7 +63,7 @@ def run_pipeline():
     logger.info("Step 5: Theoretical Simulations")
     # TODO: Run Connectome-informed Kuramoto with delays and Watts-Strogatz sweep
     # example:
-    # from hyphi.simulations import run_kuramoto_simulation
+    # from hyphi.simulation.simulations import run_kuramoto_simulation
     # run_kuramoto_simulation(connectome_path="...", delays=...)
 
     logger.info("Pipeline completed successfully.")

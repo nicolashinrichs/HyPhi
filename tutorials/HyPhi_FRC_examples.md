@@ -1,23 +1,29 @@
-# HyPhi Example Code
+## HyPhi Example Code
 
-## Generating Small World Networks
+###### TODO: update this text
+For all examples below, for the import statements to work,
+a script utilizing these functions needs to be located in the `experiments/scripts/` directory of the `HyPhi` repo.
+Most of the examples build on the previous ones and are meant to illustrate a typical workflow when using this package.
+
+### Generating Small World Networks
 
 Below, we demonstrate how to generate unweighted and weighted small world networks. We show example code for both the single network case and the "time varying" case in which the rewiring probability is varied.
 
-```python
+All functions utilized in this example are defined in `GraphSimulations.py`.
 
-from Entropies import *
-from GraphSimulations import *
+```python
+import networkx as nx
+from hyphi.simulation.graph_simulations import gen_weighted_sw, gen_tv_sw, gen_tv_weighted_sw
 
 # Pseudorandom number generation seed
 # Needed for reproducibility
 seed_val = 42
 
 # Parameters for single small world network simulation
-n = 1000    # Number of nodes in the network
-k = 50      # Average node degree
-p = 0.2     # Edge rewiring probability
-ε = 1.0     # Unit spacing of nodes around the ring
+n = 1000  # Number of nodes in the network
+k = 50  # Average node degree
+p = 0.2  # Edge rewiring probability
+ε = 1.0  # Unit spacing of nodes around the ring
 
 # Generate a single unweighted small world network
 # This is just the networkx implementation
@@ -29,9 +35,9 @@ G = nx.watts_strogatz_graph(n, k, p, seed=seed_val)
 Gw = gen_weighted_sw(n, k, p, ε, seed_val)
 
 # Parameters for "time varying" small world networks
-minpow = -4     # Exponent for lower bound of rewiring probability
-maxpow = 0      # Exponent for upper bound of rewiring probability
-trez = 1000     # Number of sample points for rewiring probability
+minpow = -4  # Exponent for lower bound of rewiring probability
+maxpow = 0  # Exponent for upper bound of rewiring probability
+trez = 100  # Number of sample points for rewiring probability
 
 # Generate a sequence of "time varying" unweighted small world networks
 # Where the rewiring probability evolves from 10^minpow to 10^maxpow
@@ -39,24 +45,28 @@ trez = 1000     # Number of sample points for rewiring probability
 # Gt is a list of networkx graphs at those rewiring probabilities
 pt, Gt = gen_tv_sw(n, k, trez, minpow, maxpow, seed_val)
 
-# Generate a sequence of "time varying" unweighted small world networks
+# Generate a sequence of "time varying" weighted small world networks
 # Where the rewiring probability evolves from 10^minpow to 10^maxpow
 # ptw is the array of rewiring probabilities
 # Gtw is a list of networkx graphs at those rewiring probabilities
 ptw, Gtw = gen_tv_weighted_sw(n, k, ε, trez, minpow, maxpow, seed_val)
 ```
 
-## Computing Graph Curvatures
+### Computing Graph Curvatures
 
 Below, we demonstrate the method for computing the edge Forman-Ricci curvatures of single networks and arrays of networks. The Ollivier-Ricci curvature case is more complicated and will be reserved for a separate tutorial.
 
+All functions utilized in this example are defined in `graph_curvatures.py`.
+
 ```python
+
+from hyphi.modeling.graph_curvatures import compute_frc, extract_curvatures, compute_frc_vec, extract_curvatures_vec
 
 # Compute the Forman-Ricci curvature for a
 # single weighted network (same for unweighted)
 # The "method_val" argument can be '1d' or 'augmented'
 # FRC is a new network where edges have the property "formanCurvature"
-FRC = get_frc(Gw, method_val="1d")
+FRC = compute_frc(Gw, method_val="1d")
 
 # Extract the Forman-Ricci curvatures of the network into an array
 curvatures = extract_curvatures(FRC, curvature="formanCurvature")
@@ -65,19 +75,21 @@ curvatures = extract_curvatures(FRC, curvature="formanCurvature")
 # of weighted small world networks (same for unweighted)
 # The "method_val" argument can be '1d' or 'augmented'
 # FRCt is a list of new networks where edges have the property "formanCurvature"
-FRCt = get_frc_vec(Gtw, method_val="1d")
+FRCt = compute_frc_vec(Gtw, method_val="1d")
 
 # Extract the Forman-Ricci curvatures of the networks into a list of arrays
-curvatures_t = extract_curvatures_vec(FRC, curvature="formanCurvature")
+curvatures_t = extract_curvatures_vec(FRCt, curvature="formanCurvature")
 ```
 
-## Kernel Density Estimation of Graph Curvature Distributions
+### Kernel Density Estimation of Graph Curvature Distributions
 
 We can compute nonparametric estimates of the graph curvature densities from the array of edge curvature values. This functionality is based heavily on the KDEpy package.
 
-```python
+All functions utilized in this example are defined in `density_estimation.py`.
 
-from DensityEstimation import *
+###### TODO: update scripts below
+```python
+from hyphi.modeling.density_estimation import TreeKDE
 
 # Parameters for the kernel density estimation
 kernel_type = "gaussian"    # Gaussian kernel
@@ -93,23 +105,32 @@ f = TreeKDE(kernel=kernel_type, bw=bw, norm=norm).fit(curvatures)
 fvals = f.evaluate(curvatures)
 ```
 
-## Computing Entropies and Quantiles of Graph Curvature Distributions
+### Computing Entropies and Quantiles of Graph Curvature Distributions
 
 We can compute entropies and quantiles of the graph curvature distributions. There are many methods available for computing the entropy, of which the most robust is the Kozachenko-Leonenko nearest neighbor estimator.
 
+All functions utilized in this example are defined in `entropies.py`.
+
 ```python
+
+from hyphi.modeling.entropies import entropy_kozachenko, vec_entropy, vec_quantiles
 
 # Number of nearest neighbors to use for the Kozachenko-Leonenko entropy estimate
 nn_val = 4
 
 # Get the Kozachenko-Leonenko estimate of the entropy of the Forman-Ricci curvatures
 # Single network case
-H = get_entropy_kozachenko(Gw, curvature="formanCurvature", num_nn=nn_val)
+H = entropy_kozachenko(FRC, curvature="formanCurvature", num_nn=nn_val)
 
 # Get the Kozachenko-Leonenko estimate of the entropy of the Forman-Ricci curvatures
 # Array of multiple networks
 # We first need to create a lambda function for the estimator we want to use
-hKL = lambda X: get_entropy_kozachenko(X, curvature="formanCurvature", num_nn=nn_val)
+# vec_entropy is really just a parallelized wrapper around an estimator instance
+hKL = lambda X: entropy_kozachenko(X, curvature="formanCurvature", num_nn=nn_val)
 # Now we pass this lambda function to a parallelized entropy function
-Ht = vec_entropy(Gtw, estim=hKL)
+Ht = vec_entropy(FRCt, estim=hKL)
+
+# We can also get quantiles of the curvature distribution
+quantiles = [0.05, 0.25, 0.5, 0.75, 0.95]
+Qt = vec_quantiles(FRCt, qs=quantiles)
 ```
