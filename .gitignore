@@ -1,6 +1,8 @@
 # Bigger research folders
-data/
+# data/
 results/
+data/*.npy
+data_8node/
 
 # Private configs in ./code/configs/
 *_config.toml
@@ -9,6 +11,7 @@ results/
 # *.png
 # *.nii
 # or others
+.bak
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -117,6 +120,8 @@ ENV/
 # IDE settings
 .vscode/
 .idea/
+.ipynb_checkpoints/
+code/notebooks/.ipynb_checkpoints/
 
 # Mac specific
 *.key
@@ -126,4 +131,3 @@ ENV/
 .Rproj.user/
 .Rhistory
 *.Rproj
-

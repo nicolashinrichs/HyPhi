@@ -5,10 +5,10 @@ Years: 2026
 """
 
 # %% Import
-import os
 import pickle
 import tomllib
 import os
+from pathlib import Path
 
 # %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 pass
@@ -17,7 +17,7 @@ pass
 # %% Functions >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
 
-def load_config(config_file: str) -> dict:
+def load_config(config_file: str | Path) -> dict:
     """Load configuration from a TOML file."""
     with open(config_file, mode="rb") as fp:
         config = tomllib.load(fp)

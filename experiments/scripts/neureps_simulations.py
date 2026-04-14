@@ -14,8 +14,8 @@ import networkx as nx
 
 from hyphi.configs import paths
 from hyphi.modeling.entropies import vec_entropy, vec_quantiles
-from hyphi.modeling.graph_curvatures import get_frc_vec
-from hyphi.modeling.graph_simulations import gen_neureps_wsw, gen_tv_weighted_sw
+from hyphi.modeling.graph_curvatures import compute_frc_vec
+from hyphi.simulation.graph_simulations import gen_neureps_wsw, gen_tv_weighted_sw
 
 # from hyphi.modeling.graph_simulations import
 
@@ -179,7 +179,7 @@ if __name__ == "__main__":
         pt, Gt = gen_neureps_wsw(seed_val=n)
 
         # Compute Forman-Ricci curvatures
-        FRCt = get_frc_vec(Gt)
+        FRCt = compute_frc_vec(Gt)
 
         # Get entropy
         Ht = vec_entropy(FRCt)

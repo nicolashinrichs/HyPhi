@@ -1,4 +1,4 @@
-# Miscellaneous Documentation
+# `HyPhi` tutorials
 
 This directory contains supplementary documentation and tutorial material intended to help users understand and apply the HyPhi pipeline.
 
@@ -6,7 +6,7 @@ This directory contains supplementary documentation and tutorial material intend
 
 ## HyPhi_FRC_examples.md
 
-The file `HyPhi_FRC_examples.md` provides a step-by-step tutorial focused on Forman-Ricci curvature analysis in hyperscanning networks.
+The file [HyPhi_FRC_examples.md](HyPhi_FRC_examples.md) provides a step-by-step tutorial focused on Forman-Ricci curvature analysis in hyperscanning networks.
 
 It demonstrates:
 
@@ -15,7 +15,7 @@ It demonstrates:
 - Computing Forman-Ricci curvature
 - Interpreting curvature dynamics over time
 
-This tutorial complements the synthetic example in `software_module` by illustrating how the same geometric tools are applied to empiric data structures.
+This tutorial complements the synthetic example in [experiments](../experiments) by illustrating how the same geometric tools are applied to empiric data structures.
 
 ---
 
@@ -24,11 +24,11 @@ This tutorial complements the synthetic example in `software_module` by illustra
 The materials in this directory are not required to run the core pipeline but are recommended for:
 
 - First-time users
-- Readers coming from a neuroscience background
+- Readers who come from a neuroscience background
 - Reproducing figures and analyses used in manuscripts
 
 ---
 
 ## Scope
 
-Files in `miscellaneous` may evolve independently of the core pipeline and include explanatory material, protocols, and exploratory analyses.
+Files in `tutorials` may evolve independently of the core pipeline and include explanatory material, protocols, and exploratory analyses.

@@ -1,15 +1,19 @@
-# %% Import
+"""TODO: add docstring"""
 
-from hyphi.modeling.entropies import *
-from hyphi.io import *
+# %% Import
+import os
 import sys
-from tqdm import tqdm
-import scipy as sp
-import multiprocessing
 from concurrent.futures import ThreadPoolExecutor
+import multiprocessing
 import threading
+import scipy as sp
+import networkx as nx
+import numpy as np
+from tqdm import tqdm
 
 from hyphi.configs import paths
+from hyphi.modeling.entropies import entropy_kozachenko, get_quantiles
+from hyphi.io import load_config, make_dir
 from hyphi.modeling.graph_curvatures import get_orc
 
 # %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
@@ -132,7 +136,7 @@ def freqBandAnalysis(freq_data, band_idx, config, progress_queue):
                             ORCvals[trial, window, :, :] = nx.attr_matrix(ORC, edge_attr="ricciCurvature")[0]
 
                             # Get entropy
-                            H = get_entropy_kozachenko(ORC, curvature="ricciCurvature")
+                            H = entropy_kozachenko(ORC, curvature="ricciCurvature")
                             Hvals[trial, window] = H.copy()
 
                             # Get quantiles

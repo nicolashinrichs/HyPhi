@@ -1,3 +1,4 @@
+"""TODO: Add docstring"""
 # %% Import
 
 import os
@@ -55,7 +56,7 @@ make_dir(hyperviz)
 # %% Functions >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
 
-def plotHyperFRC(entropy, quantiles, title=None, band_labels=None, window_labels=None, q_labels=None):
+def plot_hyper_frc(entropy, quantiles, title=None, band_labels=None, window_labels=None, q_labels=None):
     """
     entropy:   array of shape (8, 30, 4)
     quantiles: array of shape (8, 30, 4, 5)
@@ -141,13 +142,12 @@ def plotHyperFRC(entropy, quantiles, title=None, band_labels=None, window_labels
     return fig, axes
 
 
-def plotHyperFRCFullExp(
+def plot_hyper_frc_full_exp(
     entropy_list,  # list of 3 arrays, each (8, 30, 4)
     quantiles_list,  # list of 3 arrays, each (8, 30, 4, 5)
     trial_type_seq,  # array-like, length 90, values in {0,1,2} or {1,2,3}
     title=None,
     band_labels=None,
-    window_labels=None,
     q_labels=None,
     type_labels=None,
 ):
@@ -313,13 +313,12 @@ def plotHyperFRCFullExp(
     return fig, axes
 
 
-def plotHyperFRCFullExp_avgWindows(
+def plot_hyper_frc_full_exp_avg_windows(
     entropy_list,  # list of 3 arrays, each (8, 30, 4)
     quantiles_list,  # list of 3 arrays, each (8, 30, 4, 5)
     trial_type_seq,  # array-like, length 90, values in {0,1,2} or {1,2,3}
     title=None,
     band_labels=None,
-    window_labels=None,
     q_labels=None,
     type_labels=None,
 ):
@@ -535,92 +534,95 @@ def plotHyperFRCFullExp_avgWindows(
 
 # %% __main__  >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
-# Loop over dyads
-for dyad in tqdm(config["dyads"], desc="Dyads"):
-    # Data path for shot times
-    Spath = os.path.abspath(os.path.join(config["behav_loc"], f"exp{dyad_date_map[dyad]}"))
 
-    # Load shot time data
-    Svals = sp.io.loadmat(Spath)["trialtype"].flatten()
+if __name__ == "__main__":
+    # Loop over dyads
+    for dyad in tqdm(config["dyads"], desc="Dyads"):
+        # Data path for shot times
+        Spath = os.path.abspath(os.path.join(config["behav_loc"], f"exp{dyad_date_map[dyad]}"))
 
-    # List to hold entropies and quantiles
-    Hlist = []
-    Qlist = []
+        # Load shot time data
+        Svals = sp.io.loadmat(Spath)["trialtype"].flatten()
 
-    # Loop over trial types
-    for trial_type in tqdm(config["trial_types"], desc="Trial Types"):
-        # Data paths
-        Hpath = os.path.abspath(
-            os.path.join(
-                config["result_loc"],
-                f"CCORR_aug_FRC_entropy_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy",
+        # List to hold entropies and quantiles
+        Hlist = []
+        Qlist = []
+
+        # Loop over trial types
+        for trial_type in tqdm(config["trial_types"], desc="Trial Types"):
+            # Data paths
+            Hpath = os.path.abspath(
+                os.path.join(
+                    config["result_loc"],
+                    f"CCORR_aug_FRC_entropy_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy",
+                )
             )
-        )
-        Qpath = os.path.abspath(
-            os.path.join(
-                config["result_loc"],
-                f"CCORR_aug_FRC_quantiles_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy",
+            Qpath = os.path.abspath(
+                os.path.join(
+                    config["result_loc"],
+                    f"CCORR_aug_FRC_quantiles_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy",
+                )
             )
-        )
 
-        # Load data
-        Hvals = np.load(Hpath)
-        Hlist.append(Hvals)
-        Qvals = np.load(Qpath)
-        Qlist.append(Qvals)
+            # Load data
+            Hvals = np.load(Hpath)
+            Hlist.append(Hvals)
+            Qvals = np.load(Qpath)
+            Qlist.append(Qvals)
 
-        # Plot
-        f, _ = plotHyperFRC(
-            Hvals,
-            Qvals,
-            title=f"Dyad: {dyad}, Trial Type: {trial_type}",
+            # Plot
+            f, _ = plot_hyper_frc(
+                Hvals,
+                Qvals,
+                title=f"Dyad: {dyad}, Trial Type: {trial_type}",
+                band_labels=config["freq_bands"],
+                q_labels=config["quantiles"],
+            )
+
+            # Plot paths
+            figpath = os.path.abspath(
+                os.path.join(
+                    hyperviz,
+                    f"CCORR_aug_FRC_ent_quant_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.png",
+                )
+            )
+
+            # Save the figure
+            f.savefig(figpath, bbox_inches="tight")
+
+        # Plot full experiment
+        ffull, _ = plot_hyper_frc_full_exp(
+            Hlist,
+            Qlist,
+            Svals,
+            title=f"Dyad: {dyad}",
             band_labels=config["freq_bands"],
             q_labels=config["quantiles"],
+            type_labels=trial_type_map,
+        )
+        ffull_avg, _ = plot_hyper_frc_full_exp_avg_windows(
+            Hlist,
+            Qlist,
+            Svals,
+            title=f"Dyad: {dyad}",
+            band_labels=config["freq_bands"],
+            q_labels=config["quantiles"],
+            type_labels=trial_type_map,
         )
 
         # Plot paths
-        figpath = os.path.abspath(
+        fullfigpath = os.path.abspath(
+            os.path.join(hyperviz, f"CCORR_aug_FRC_ent_quant_dyad_{dyad}_full_exp_config_{config['config_id']}.png")
+        )
+        fullavgfigpath = os.path.abspath(
             os.path.join(
-                hyperviz,
-                f"CCORR_aug_FRC_ent_quant_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.png",
+                hyperviz, f"CCORR_aug_FRC_ent_quant_dyad_{dyad}_full_exp_trial_avg_config_{config['config_id']}.png"
             )
         )
 
         # Save the figure
-        f.savefig(figpath, bbox_inches="tight")
+        ffull.savefig(fullfigpath, bbox_inches="tight")
+        ffull_avg.savefig(fullavgfigpath, bbox_inches="tight")
 
-    # Plot full experiment
-    ffull, _ = plotHyperFRCFullExp(
-        Hlist,
-        Qlist,
-        Svals,
-        title=f"Dyad: {dyad}",
-        band_labels=config["freq_bands"],
-        q_labels=config["quantiles"],
-        type_labels=trial_type_map,
-    )
-    ffull_avg, _ = plotHyperFRCFullExp_avgWindows(
-        Hlist,
-        Qlist,
-        Svals,
-        title=f"Dyad: {dyad}",
-        band_labels=config["freq_bands"],
-        q_labels=config["quantiles"],
-        type_labels=trial_type_map,
-    )
-
-    # Plot paths
-    fullfigpath = os.path.abspath(
-        os.path.join(hyperviz, f"CCORR_aug_FRC_ent_quant_dyad_{dyad}_full_exp_config_{config['config_id']}.png")
-    )
-    fullavgfigpath = os.path.abspath(
-        os.path.join(
-            hyperviz, f"CCORR_aug_FRC_ent_quant_dyad_{dyad}_full_exp_trial_avg_config_{config['config_id']}.png"
-        )
-    )
-
-    # Save the figure
-    ffull.savefig(fullfigpath, bbox_inches="tight")
-    ffull_avg.savefig(fullavgfigpath, bbox_inches="tight")
 
 # o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o END

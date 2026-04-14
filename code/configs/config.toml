@@ -24,7 +24,7 @@ visualizations = "./results/datavisualization"
 
 # Set parameters
 [params]
-weight_decay = 0.01 # PLACEHOLDER
+weight_decay = 0.01 # TODO: replace PLACEHOLDER
 
 ################################################
 ##################  LOGGER  ####################
@@ -65,7 +65,7 @@ handlers = ["file_handler", "stream_handler"]
 
 # Add more handlers & loggers here
 # [logging.handlers.NAME_OF_HANDLER]
-# level = 10  # == "DEBUG" (pass int or string)
+# level = 10 # == "DEBUG" (pass int or string)
 # formatter = "fmtfile"
 # filename = "logs/NAME_OF_LOGFILE.log"
 # class = "logging.handlers.RotatingFileHandler"
@@ -73,6 +73,6 @@ handlers = ["file_handler", "stream_handler"]
 # backupCount=20
 
 # [logging.loggers.NAME_OF_LOGGER]
-# level = 10  # == "DEBUG" (pass int or string)
+# level = 10 # == "DEBUG" (pass int or string)
 # propagate = true
 # handlers = ["NAME_OF_HANDLER", "ADD_MORE_HANDLERS_HERE"]

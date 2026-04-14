@@ -1,3 +1,8 @@
+"""
+Template marimo notebook for the hyphi toolbox.
+
+Years: 2026
+"""
 import marimo
 
 __generated_with = "0.23.0"

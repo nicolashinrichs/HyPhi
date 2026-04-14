@@ -1,4 +1,4 @@
-"""TODO: add description."""
+"""TODO: add docstring"""
 
 # %% Import
 import os
@@ -11,7 +11,7 @@ import scipy as sp
 from hyphi.configs import paths
 from hyphi.io import load_config, make_dir
 from hyphi.modeling.entropies import vec_entropy, vec_quantiles
-from hyphi.modeling.graph_curvatures import get_frc_vec
+from hyphi.modeling.graph_curvatures import compute_frc_vec
 
 # %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 # Analysis configuration file
@@ -108,7 +108,7 @@ if __name__ == "__main__":
                     Gt = [nx.from_numpy_array(ccorr_trial[window, :, :]) for window in range(4)]
 
                     # Compute Forman-Ricci curvatures across windows for this trial and frequency band
-                    FRCt = get_frc_vec(Gt)
+                    FRCt = compute_frc_vec(Gt)
 
                     # Convert IBCs (networkx graphs) with window curvatures to window curvature matrices
                     for window in range(4):

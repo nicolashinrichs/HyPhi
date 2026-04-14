@@ -155,10 +155,10 @@ def plot_hyper_frc_full_exp(
 ):
     """
     For each trial type k (0,1,2):
-      entropy_list[k][b, i, w]   shape (8, 30, 4)
+      entropy_list[k][b, i, w] shape (8, 30, 4)
       quantiles_list[k][b, i, w, q] shape (8, 30, 4, 5)
 
-    trial_type_seq[t] gives chronological trial type for t in 0..89.
+    trial_type_seq[t] gives the chronological trial type for t in 0..89.
     Plots:
       - 1 row per band, 2 cols: left = entropy, right = quantiles
       - x-axis is 90 * 4 = 360 windows.
@@ -289,7 +289,7 @@ def plot_hyper_frc_full_exp(
 
     fig.tight_layout()
 
-    # Per-band colorbars, anchored as insets to quantile axes   ### CHANGED
+    # Per-band colorbars, anchored as insets to quantile axes ### CHANGED
     for b in range(n_bands):
         ax_q = axes[b, 1]
         sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
@@ -326,7 +326,7 @@ def plot_hyper_frc_full_exp_avg_windows(
 ):
     """
     Same as plot_hyper_frc_full_exp, but averages across the 4 windows within each trial.
-    Resulting time axis has 90 points (one per trial). Marker shape encodes trial type.
+    The resulting time axis has 90 points (one per trial). Marker shape encodes trial type.
     """
 
     # Shapes
@@ -368,9 +368,9 @@ def plot_hyper_frc_full_exp_avg_windows(
         per_type_counters[k] += 1
 
         for b in range(n_bands):
-            # Average entropy across windows: (4,) -> scalar
+            # Average entropy across windows: (4, ) -> scalar
             ent_combined[b, t] = entropy_list[k][b, i, :].mean()
-            # Average quantiles across windows: (4, 5) -> (5,)
+            # Average quantiles across windows: (4, 5) -> (5, )
             quant_combined[b, t, :] = quantiles_list[k][b, i, :, :].mean(axis=0)
 
     # Marker style per trial type
@@ -407,7 +407,7 @@ def plot_hyper_frc_full_exp_avg_windows(
             linewidth=1,
             linestyle="-",
         )
-        # Overlay markers by trial type, but do not re-draw the line
+        # Overlay markers by trial type but do not re-draw the line
         for k in range(n_types):
             mask = tt_seq == k
             if not np.any(mask):
@@ -429,7 +429,7 @@ def plot_hyper_frc_full_exp_avg_windows(
         else:
             ax_ent.set_title(f"Band {b}", loc="left")
 
-        # ---- Quantiles time series (right column) ----
+        # ---- Quantile time series (right column) ----
         # One line per quantile index across all trials
         for q_idx in range(n_q):
             color = cmap(norm(q_idx))
@@ -536,89 +536,89 @@ def plot_hyper_frc_full_exp_avg_windows(
 
 # %% __main__  >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
-# Loop over dyads
-for dyad in tqdm(config["dyads"], desc="Dyads"):
-    # Data path for shot times
-    Spath = os.path.abspath(os.path.join(config["behav_loc"], f"exp{dyad_date_map[dyad]}"))
+if __name__ == "__main__":
+    # Loop over dyads
+    for dyad in tqdm(config["dyads"], desc="Dyads"):
+        Spath = os.path.abspath(os.path.join(config["behav_loc"], f"exp{dyad_date_map[dyad]}"))
 
-    # Load shot time data
-    Svals = sp.io.loadmat(Spath)["trialtype"].flatten()
+        # Load shot time data
+        Svals = sp.io.loadmat(Spath)["trialtype"].flatten()
 
-    # List to hold entropies and quantiles
-    Hlist = []
-    Qlist = []
+        # List to hold entropies and quantiles
+        Hlist = []
+        Qlist = []
 
-    # Loop over trial types
-    for trial_type in tqdm(config["trial_types"], desc="Trial Types"):
-        # Data paths
-        Hpath = os.path.abspath(
-            os.path.join(
-                config["result_loc"],
-                f"CCORR_FRC_entropy_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy",
+        # Loop over trial types
+        for trial_type in tqdm(config["trial_types"], desc="Trial Types"):
+            Hpath = os.path.abspath(
+                os.path.join(
+                    config["result_loc"],
+                    f"CCORR_FRC_entropy_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy",
+                )
             )
-        )
-        Qpath = os.path.abspath(
-            os.path.join(
-                config["result_loc"],
-                f"CCORR_FRC_quantiles_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy",
+            Qpath = os.path.abspath(
+                os.path.join(
+                    config["result_loc"],
+                    f"CCORR_FRC_quantiles_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy",
+                )
             )
-        )
 
-        # Load data
-        Hvals = np.load(Hpath)
-        Hlist.append(Hvals)
-        Qvals = np.load(Qpath)
-        Qlist.append(Qvals)
+            # Load data
+            Hvals = np.load(Hpath)
+            Hlist.append(Hvals)
+            Qvals = np.load(Qpath)
+            Qlist.append(Qvals)
 
-        # Plot
-        f, _ = plot_hyper_frc(
-            Hvals,
-            Qvals,
-            title=f"Dyad: {dyad}, Trial Type: {trial_type}",
+            # Plot
+            f, _ = plot_hyper_frc(
+                Hvals,
+                Qvals,
+                title=f"Dyad: {dyad}, Trial Type: {trial_type}",
+                band_labels=config["freq_bands"],
+                q_labels=config["quantiles"],
+            )
+            figpath = os.path.abspath(
+                os.path.join(
+                    hyperviz,
+                    f"CCORR_FRC_ent_quant_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.png",
+                )
+            )
+
+            # Save the figure
+            f.savefig(figpath, bbox_inches="tight")
+
+        # Plot full experiment
+        ffull, _ = plot_hyper_frc_full_exp(
+            Hlist,
+            Qlist,
+            Svals,
+            title=f"Dyad: {dyad}",
             band_labels=config["freq_bands"],
             q_labels=config["quantiles"],
+            type_labels=trial_type_map,
+        )
+        ffull_avg, _ = plot_hyper_frc_full_exp_avg_windows(
+            Hlist,
+            Qlist,
+            Svals,
+            title=f"Dyad: {dyad}",
+            band_labels=config["freq_bands"],
+            q_labels=config["quantiles"],
+            type_labels=trial_type_map,
         )
 
         # Plot paths
-        figpath = os.path.abspath(
+        full_fig_path = os.path.abspath(
+            os.path.join(hyperviz, f"CCORR_FRC_ent_quant_dyad_{dyad}_full_exp_config_{config['config_id']}.png")
+        )
+        full_avg_fig_path = os.path.abspath(
             os.path.join(
-                hyperviz, f"CCORR_FRC_ent_quant_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.png"
+                hyperviz, f"CCORR_FRC_ent_quant_dyad_{dyad}_full_exp_trial_avg_config_{config['config_id']}.png"
             )
         )
 
         # Save the figure
-        f.savefig(figpath, bbox_inches="tight")
-
-    # Plot full experiment
-    ffull, _ = plot_hyper_frc_full_exp(
-        Hlist,
-        Qlist,
-        Svals,
-        title=f"Dyad: {dyad}",
-        band_labels=config["freq_bands"],
-        q_labels=config["quantiles"],
-        type_labels=trial_type_map,
-    )
-    ffull_avg, _ = plot_hyper_frc_full_exp_avg_windows(
-        Hlist,
-        Qlist,
-        Svals,
-        title=f"Dyad: {dyad}",
-        band_labels=config["freq_bands"],
-        q_labels=config["quantiles"],
-        type_labels=trial_type_map,
-    )
-
-    # Plot paths
-    fullfigpath = os.path.abspath(
-        os.path.join(hyperviz, f"CCORR_FRC_ent_quant_dyad_{dyad}_full_exp_config_{config['config_id']}.png")
-    )
-    fullavgfigpath = os.path.abspath(
-        os.path.join(hyperviz, f"CCORR_FRC_ent_quant_dyad_{dyad}_full_exp_trial_avg_config_{config['config_id']}.png")
-    )
-
-    # Save the figure
-    ffull.savefig(fullfigpath, bbox_inches="tight")
-    ffull_avg.savefig(fullavgfigpath, bbox_inches="tight")
+        ffull.savefig(full_fig_path, bbox_inches="tight")
+        ffull_avg.savefig(full_avg_fig_path, bbox_inches="tight")
 
 # o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o END
