@@ -9,6 +9,9 @@
 help: ## Show available commands
 	@grep -E '^[a-zA-Z_-]+:.*##' Makefile | awk -F ':.*## ' '{printf "  %-15s %s\n", $$1, $$2}'
 
+am-i-ready: ## Check if everything is in place
+	@python -c "import hyphi" >/dev/null 2>&1 && echo "You are set up" || echo "hyphi was not found, use: 'make install' or try 'uv sync' directly"
+
 install: ## Install all dependencies
 	uv sync --extra develop --extra notebook
 
@@ -31,7 +34,6 @@ format: ## Format code with ruff
 clean: ## Remove build artifacts and caches
 	rm -rf code/hyphi.egg-info .pytest_cache .ruff_cache
 	find . -type d -name __pycache__ -exec rm -rf {} +
-
 
 run-simulations: ## Execute HyPhi E2E simulations
 	@echo "Executing HyPhi E2E Pipeline..."
