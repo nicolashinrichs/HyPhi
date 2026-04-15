@@ -4,31 +4,31 @@ This folder contains a standalone workflow script for Kuramoto-based PLV graph a
 
 - `ricci_flow_analysis.py`
 
-The script is adapted to run from either:
-- project root (`HyPhi_base_refactor/`), or
-- this folder (`HyPhi_base_refactor/Ricci-Flow/`).
+The script is adapted to run from the project root (`HyPhi/`).
 
 ## What The Script Does
 
 For each time window:
 1. Loads per-run Kuramoto phases (`*_kuramoto_phases.npy`) if available.
-2. Simulates missing phase files using `software_module/KuramotoSimulations.py`.
+2. Simulates missing phase files using `hyphi.simulation.kuramoto_simulations`.
 3. Builds PLV graphs using one of two modes:
    - `merge_signals_plv` (default): concatenate signals across runs first, then compute PLV, then build one merged graph.
    - `merge_graphs`: load per-run precomputed graph windows and disjoint-union them.
-4. Computes Forman curvature (`compute_frc` from `src/hyphi/curvatures.py`).
+4. Computes Forman curvature (`compute_frc` from `hyphi.modeling.graph_curvatures`).
 5. Runs iterative Forman-Ricci-flow updates.
 6. Saves per-window numeric outputs and a final `summary.json`.
 
 ## Inputs
 
 ### Required (directly or via config)
-- `--config` (default: `experiments/analysis/CCORRconfig_001.toml`)
+
+- `--config` (default: `experiments/configs/CCORRconfig_001.toml`)
 - Run IDs (`--runs` or `num_kuramotos` in config)
 - Phase location (`--phase-dir` or `kuramoto_loc` in config)
 - Target windows (`--target-windows` or `kuramoto_time` in config)
 
 ### Data files
+
 - Per-run phases (expected pattern by default):
   - `data/<run>_kuramoto_phases.npy`
 - Optional precomputed per-run graph windows (for `merge_graphs` mode):
@@ -78,7 +78,7 @@ Main speed controls:
 
 ### 1) Fast smoke test (1 window, 1 run)
 ```bash
-python Ricci-Flow/ricci_flow_analysis.py \
+uv run python -m hyphi.modeling.ricci_flow_analysis \
   --runs 1 \
   --phase-dir data_8node \
   --data-dir data_8node \
@@ -88,7 +88,7 @@ python Ricci-Flow/ricci_flow_analysis.py \
 
 ### 2) Full merged-signal analysis (24 windows)
 ```bash
-python Ricci-Flow/ricci_flow_analysis.py \
+uv run python -m hyphi.modeling.ricci_flow_analysis \
   --graph-construction merge_signals_plv \
   --runs 1 2 3 4 5 6 7 8 \
   --phase-dir data_8node \
@@ -100,7 +100,7 @@ python Ricci-Flow/ricci_flow_analysis.py \
 
 ### 3) Force re-simulation of phases
 ```bash
-python Ricci-Flow/ricci_flow_analysis.py \
+uv run python -m hyphi.modeling.ricci_flow_analysis \
   --runs 1 2 3 4 5 6 7 8 \
   --phase-dir data_8node \
   --data-dir data_8node \
