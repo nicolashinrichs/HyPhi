@@ -2,7 +2,6 @@
 
 - [ ] Check the minimal Python version (the higher the better)
 - [ ] Specify all dependencies with version in `pyproject.toml` (some missing deps are also mentioned in some scripts).
-  - [x] `requirements.txt` and `environment.yml` are then redundant
 - [ ] Adapt/add docstrings to all functions and classes.
 - [ ] Also adapt/add docstrings at the beginning of each Python script
 - [ ] Go through README.md files to check *placeholder text* in italics and fill in the corresponding information.
@@ -11,5 +10,6 @@
 - [ ] Consider how to keep the citation link up to date: Zenodo allows for DOIs not bound to a specific version). Consider how to add contributors to the citation
 - [ ] Unify the config loader framework for the whole project
 - [ ] Some functions are implemented twice
-- [ ] Ricci Flow analysis script does not flow well with current structure yet
+- [ ] Ricci Flow analysis script does not flow well with the current structure yet
+- [ ] Add proper docs
 - [ ] Search for other "TODO"s in the repo files and resolve them

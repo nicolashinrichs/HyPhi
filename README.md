@@ -58,6 +58,7 @@ Source folder of the Python toolbox `hyphi`, which implements the core analysis 
 
 - Network simulations
 - Ricci curvature computation
+- Ricci-Flow (for details, see [README_Ricci-Flow.md](code/README_Ricci-Flow.md)).
 - Density estimation
 - Entropy and quantile analysis
 
