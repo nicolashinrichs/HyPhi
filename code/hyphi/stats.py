@@ -7,7 +7,7 @@ entry point here is framed as a **proof-of-concept** given the small empirical
 sample (N = 2 dyads in the reference dataset); see :func:`required_sample_size`
 for the N implied by an observed effect at alpha=0.05, power=0.80.
 
-Reviewer-driven changes (2026-04):
+Changes (2026-04):
   * Hierarchical permutation tests that permute condition labels *within* each
     dyad at the trial level, keeping window blocks intact.
   * Mixed-effects fitter wrapper (statsmodels) with dyad-level random intercept
