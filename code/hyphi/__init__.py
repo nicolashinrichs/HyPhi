@@ -1,4 +1,4 @@
-"""HyPhi: A Python package for hyperscanning data analysis via geometric entropy."""
+"""HyPhi"""
 
 # %% Imports & setup
 from importlib.metadata import version
