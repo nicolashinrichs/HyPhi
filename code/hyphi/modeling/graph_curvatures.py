@@ -8,8 +8,8 @@ import numpy as np
 from GraphRicciCurvature.FormanRicci import FormanRicci
 from GraphRicciCurvature.OllivierRicci import OllivierRicci
 
-if TYPE_CHECKING:
-    import networkx as nx
+#if TYPE_CHECKING:
+import networkx as nx
 
 # %% Functions >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
