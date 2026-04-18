@@ -1,184 +1,331 @@
 """
-Null models module for HyPhi: Surrogate data generation for statistical testing.
+Null-model / surrogate generators for HyPhi.
+
+Three families of controls matched to the reviewer's request (2026-04):
+
+1. **Signal-level surrogates** — amplitude-preserving phase randomization and
+   channel-wise circular time-shift.  Preserve each channel's spectral /
+   autocorrelation structure while destroying cross-channel / cross-brain
+   phase alignment.  Use these when raw phase/signal is available (simulation
+   path).
+2. **Dyad-level surrogates** — subject swapping across dyads and dyad-label
+   shuffling.  Break the real dyadic pairing / assignment to produce a
+   pseudo-dyad null.  Use these to show curvature effects reflect genuine
+   inter-brain coupling, not within-brain structure.
+3. **Condition-level surrogates** — within-dyad, trial-level condition-label
+   shuffle.  Remove the condition signal while preserving dyad- and
+   trial-level structure.  Matches the permutation scheme in
+   :func:`hyphi.stats.hierarchical_permutation_test`.
+
+Every generator accepts an optional :class:`numpy.random.Generator` so runs
+are reproducible from a seed.
 
 Years: 2026
 """
 
-# %% Import
 from __future__ import annotations
+
+# %% Import
+import logging
 
 import numpy as np
 
 # %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
-pass
+logger = logging.getLogger(__name__)
+
+__all__ = [
+    "circular_time_shift",
+    "condition_label_shuffle_within_dyad",
+    "dyad_label_shuffle",
+    "dyad_subject_swap",
+    "generate_surrogate_stack",
+    "phase_randomize",
+]
+
+_VALID_METHODS = {"phase_randomize", "circular_time_shift", "dyad_subject_swap"}
 
 
 # %% Functions >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
 
+def _as_rng(rng: np.random.Generator | None) -> np.random.Generator:
+    return rng if rng is not None else np.random.default_rng()
+
+
+def _random_derangement(n: int, rng: np.random.Generator, max_tries: int = 100) -> np.ndarray:
+    """Random derangement of ``[0, n)`` — a permutation with no fixed points."""
+    if n < 2:
+        return np.arange(n)
+    base = np.arange(n)
+    for _ in range(max_tries):
+        perm = rng.permutation(n)
+        if not np.any(perm == base):
+            return perm
+    # Rejection sampling exhausted — fall back to a deterministic rotation.
+    return np.roll(base, 1)
+
+
 # ---------------------
-# Signal-level Surrogates
+# Signal-level surrogates
 # ---------------------
 
 
-def phase_randomize(signal: np.ndarray, rng: np.random.Generator | None = None) -> np.ndarray:
+def phase_randomize(
+    signal: np.ndarray,
+    rng: np.random.Generator | None = None,
+) -> np.ndarray:
     """
-    Phase randomization (amplitude-preserving surrogate).
+    Amplitude-preserving phase-randomization surrogate (Prichard & Theiler, 1994).
 
-    Randomises the Fourier phases of a signal while preserving its
-    power spectrum.  Works on each channel independently.
-
-    *(preserves power spectrum, destroys phase relationships)*
+    Randomises the Fourier phases channel-wise while preserving each channel's
+    power spectrum.  Destroys cross-channel / cross-brain phase relationships
+    and any temporal structure that depends on phase.
 
     Parameters
     ----------
     signal : np.ndarray
-        Signal of shape ``(n_channels, T)`` or ``(T,)``.
+        ``(T,)`` or ``(n_channels, T)``.
     rng : np.random.Generator, optional
-        Random number generator.  Defaults to ``np.random.default_rng()``.
+        RNG.
 
     Returns
     -------
     np.ndarray
-        Surrogate signal with same shape and power spectrum as input.
+        Surrogate with the input's shape and power spectrum.
 
     """
-    if rng is None:
-        rng = np.random.default_rng()
-
+    rng = _as_rng(rng)
     one_d = signal.ndim == 1
-    if one_d:
-        signal = signal[np.newaxis, :]
+    arr = signal[np.newaxis, :] if one_d else signal
+    n_channels, T = arr.shape
 
-    n_channels, T = signal.shape
-    surrogates = np.zeros_like(signal)
-
+    out = np.empty_like(arr, dtype=float)
     for ch in range(n_channels):
-        fft_vals = np.fft.rfft(signal[ch])
-        amplitudes = np.abs(fft_vals)
-        random_phases = rng.uniform(0, 2 * np.pi, size=len(fft_vals))
-        # Preserve DC and Nyquist (if T is even)
-        random_phases[0] = 0
+        fft_vals = np.fft.rfft(arr[ch])
+        amp = np.abs(fft_vals)
+        random_phases = rng.uniform(0.0, 2 * np.pi, size=len(fft_vals))
+        random_phases[0] = 0.0  # preserve DC
         if T % 2 == 0:
-            random_phases[-1] = 0
-        surrogates[ch] = np.fft.irfft(amplitudes * np.exp(1j * random_phases), n=T)
+            random_phases[-1] = 0.0  # preserve Nyquist bin (real)
+        out[ch] = np.fft.irfft(amp * np.exp(1j * random_phases), n=T)
 
-    return surrogates[0] if one_d else surrogates
+    return out[0] if one_d else out
 
 
-def circular_time_shift(signal: np.ndarray, min_shift: int = 1, rng: np.random.Generator | None = None) -> np.ndarray:
+def circular_time_shift(
+    signal: np.ndarray,
+    min_shift: int = 1,
+    rng: np.random.Generator | None = None,
+) -> np.ndarray:
     """
-    Circular time-shift surrogate.
+    Channel-wise circular time-shift surrogate.
 
-    Applies a random circular shift to each channel independently,
-    destroying temporal alignment while preserving autocorrelation.
+    Each channel is rotated by a random offset in
+    ``[min_shift, T - min_shift)``.  Preserves each channel's autocorrelation
+    and amplitude distribution but destroys cross-channel temporal alignment.
 
     Parameters
     ----------
     signal : np.ndarray
-        Signal of shape ``(n_channels, T)`` or ``(T,)``.
+        ``(T,)`` or ``(n_channels, T)``.
     min_shift : int
-        Minimum absolute shift (avoids trivially small shifts).
+        Minimum absolute shift (avoids trivially small rotations).
     rng : np.random.Generator, optional
-        Random number generator.
+        RNG.
 
     Returns
     -------
     np.ndarray
-        Circularly shifted surrogate.
+        Shifted surrogate.
 
     """
-    if rng is None:
-        rng = np.random.default_rng()
-
+    rng = _as_rng(rng)
     one_d = signal.ndim == 1
-    if one_d:
-        signal = signal[np.newaxis, :]
+    arr = signal[np.newaxis, :] if one_d else signal
+    n_channels, T = arr.shape
+    if T <= 2 * min_shift:
+        raise ValueError(f"Signal length {T} too short for min_shift={min_shift}.")
 
-    n_channels, T = signal.shape
-    surrogates = np.zeros_like(signal)
-
+    out = np.empty_like(arr)
     for ch in range(n_channels):
-        shift = rng.integers(min_shift, T - min_shift)
-        surrogates[ch] = np.roll(signal[ch], shift)
+        shift = int(rng.integers(min_shift, T - min_shift))
+        out[ch] = np.roll(arr[ch], shift)
 
-    return surrogates[0] if one_d else surrogates
+    return out[0] if one_d else out
 
 
 # ---------------------
-# Dyad-level Null Models
+# Dyad-level surrogates
 # ---------------------
 
 
-def dyad_subject_swap(data_matrix: np.ndarray, rng: np.random.Generator | None = None) -> np.ndarray:
+def dyad_subject_swap(
+    data_matrix: np.ndarray,
+    rng: np.random.Generator | None = None,
+) -> np.ndarray:
     """
-    Generate pseudo-dyads by shuffling subjects across real dyads.
+    Generate pseudo-dyads by deranging subject-B across real dyads.
 
-    Swaps the second subject of each dyad with the second subject of
-    a randomly chosen other dyad, breaking real dyad pairings while
-    keeping each subject's data intact.
+    The B-subject of each dyad is replaced by the B-subject of a different
+    dyad, chosen from a random derangement of dyad indices so no dyad keeps
+    its original pairing.
 
     Parameters
     ----------
     data_matrix : np.ndarray
-        Array of shape ``(n_dyads, 2, n_timepoints)``.
+        Shape ``(n_dyads, 2, T)`` or ``(n_dyads, 2, n_channels, T)``.  Axis 1
+        indexes subject A (0) and subject B (1).
     rng : np.random.Generator, optional
-        Random number generator.
+        RNG.
 
     Returns
     -------
     np.ndarray
-        Shuffled data matrix with same shape.
+        Same shape as input, with subject-B deranged.
 
     """
-    if rng is None:
-        rng = np.random.default_rng()
-
+    rng = _as_rng(rng)
     n_dyads = data_matrix.shape[0]
-    shuffled = data_matrix.copy()
+    if n_dyads < 2:
+        logger.warning("dyad_subject_swap: n_dyads=%d — nothing to swap.", n_dyads)
+        return data_matrix.copy()
 
-    for i in range(n_dyads):
-        swap_idx = rng.integers(0, n_dyads)
-        if swap_idx != i:
-            temp = shuffled[i, 1].copy()
-            shuffled[i, 1] = shuffled[swap_idx, 1]
-            shuffled[swap_idx, 1] = temp
-
-    return shuffled
+    perm = _random_derangement(n_dyads, rng)
+    out = data_matrix.copy()
+    out[:, 1] = data_matrix[perm, 1]
+    return out
 
 
 def dyad_label_shuffle(
-    entropy_series: np.ndarray, dyad_labels: np.ndarray, rng: np.random.Generator | None = None
+    dyad_labels: np.ndarray,
+    rng: np.random.Generator | None = None,
 ) -> np.ndarray:
     """
-    Dyad-label shuffling control.
+    Shuffle dyad assignment across observations.
 
-    Shuffles dyad assignment labels while keeping the entropy time series
-    intact, breaking the dyad-specific structure.
+    Returns a permutation of the input labels, preserving each dyad's total
+    count but breaking the observation → dyad association.  Useful as a
+    sanity null: a mixed-effects model with ``groups=shuffled_labels`` should
+    yield a near-zero group variance component, while the true labels should
+    not.
 
     Parameters
     ----------
-    entropy_series : np.ndarray # TODO: kwarg not used
-        Entropy values of shape ``(n_observations,)`` or ``(n_observations, n_features)``.
-        Not modified; provided for context on the observation count.
     dyad_labels : np.ndarray
-        Dyad identifiers of shape ``(n_observations,)``.
+        Shape ``(n_observations,)``.
     rng : np.random.Generator, optional
-        Random number generator.
+        RNG.
 
     Returns
     -------
     np.ndarray
-        Shuffled dyad labels (same shape as *dyad_labels*).
+        Shape ``(n_observations,)`` with labels permuted uniformly at random.
 
     """
-    if rng is None:
-        rng = np.random.default_rng()
+    rng = _as_rng(rng)
+    return rng.permutation(np.asarray(dyad_labels))
 
-    unique_dyads = np.unique(dyad_labels)
-    permuted_dyads = rng.permutation(unique_dyads)
-    mapping = dict(zip(unique_dyads, permuted_dyads))
-    return np.array([mapping[d] for d in dyad_labels])
+
+def condition_label_shuffle_within_dyad(
+    condition_labels: np.ndarray,
+    dyad_labels: np.ndarray,
+    trial_labels: np.ndarray | None = None,
+    rng: np.random.Generator | None = None,
+) -> np.ndarray:
+    """
+    Shuffle condition labels within each dyad.
+
+    If ``trial_labels`` is provided, shuffling happens at the trial level:
+    all rows sharing a ``(dyad, trial)`` keep a single, jointly permuted
+    condition label — preserving the window-within-trial block structure,
+    as required by the hierarchical permutation scheme.  Otherwise labels
+    are permuted freely across all observations of each dyad.
+
+    Parameters
+    ----------
+    condition_labels : np.ndarray
+        Per-observation condition labels.
+    dyad_labels : np.ndarray
+        Per-observation dyad labels (same length).
+    trial_labels : np.ndarray, optional
+        Per-observation trial ids (same length).  Strongly recommended for
+        windowed hyperscanning data.
+    rng : np.random.Generator, optional
+        RNG.
+
+    Returns
+    -------
+    np.ndarray
+        Shuffled condition labels, same shape as input.
+
+    """
+    rng = _as_rng(rng)
+    cond = np.asarray(condition_labels).copy()
+    dyad = np.asarray(dyad_labels)
+
+    if trial_labels is None:
+        for d in np.unique(dyad):
+            mask = dyad == d
+            cond[mask] = rng.permutation(cond[mask])
+        return cond
+
+    trial = np.asarray(trial_labels)
+    for d in np.unique(dyad):
+        mask = dyad == d
+        sub_trials = trial[mask]
+        sub_cond = cond[mask]
+        uniq_trials, first_idx = np.unique(sub_trials, return_index=True)
+        trial_cond = sub_cond[first_idx]
+        perm = rng.permutation(len(uniq_trials))
+        mapping = dict(zip(uniq_trials, trial_cond[perm]))
+        cond[mask] = np.array([mapping[t] for t in sub_trials])
+    return cond
+
+
+# ---------------------
+# Convenience: generate a stack of surrogates
+# ---------------------
+
+
+def generate_surrogate_stack(
+    data: np.ndarray,
+    method: str = "phase_randomize",
+    n_surrogates: int = 100,
+    rng: np.random.Generator | None = None,
+    **kwargs,
+) -> np.ndarray:
+    """
+    Generate ``n_surrogates`` stacked copies of ``data`` under the requested null.
+
+    Parameters
+    ----------
+    data : np.ndarray
+        Input; the required shape depends on ``method``.
+    method : {"phase_randomize", "circular_time_shift", "dyad_subject_swap"}
+        Which signal/dyad-level surrogate to apply.
+    n_surrogates : int
+        Number of surrogates to generate.
+    rng : np.random.Generator, optional
+        RNG.
+    **kwargs
+        Forwarded to the underlying generator (e.g. ``min_shift``).
+
+    Returns
+    -------
+    np.ndarray
+        Stacked surrogates, shape ``(n_surrogates, *data.shape)``.
+
+    """
+    if method not in _VALID_METHODS:
+        raise ValueError(f"method must be one of {sorted(_VALID_METHODS)}; got {method!r}")
+    rng = _as_rng(rng)
+    dispatch = {
+        "phase_randomize": phase_randomize,
+        "circular_time_shift": circular_time_shift,
+        "dyad_subject_swap": dyad_subject_swap,
+    }
+    fn = dispatch[method]
+    return np.stack([fn(data, rng=rng, **kwargs) for _ in range(n_surrogates)], axis=0)
 
 
 # o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o END
