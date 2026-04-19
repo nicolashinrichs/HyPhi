@@ -41,7 +41,7 @@ def eigen_in_time(matrices: np.ndarray, plot=False, Fs=1):
     gaps = np.zeros(len(matrices)) #gap between smallest and largest eigenvalues
     
     for i, matrix_item in enumerate(matrices):
-        eigenvalues, eigenvectors = laplace(matrix_item)
+        eigenvalues, eigenvectors, _ = laplace(matrix_item)
         lambdas[i] = eigenvalues[1]
         gaps[i] = eigenvalues[0] - eigenvalues[1]
 
