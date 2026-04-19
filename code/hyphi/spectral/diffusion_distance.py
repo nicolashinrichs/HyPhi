@@ -3,7 +3,7 @@ import scipy.linalg as la
 import hyphi.spectral.laplace as lap
 
 def main():
-    pass
+    return 0
 
 def diffusion_distance(adj1: np.ndarray, adj2: np.ndarray, time_limit: float, fs: float) -> float:
     """
