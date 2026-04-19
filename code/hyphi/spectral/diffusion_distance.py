@@ -33,7 +33,30 @@ def diffusion_distance(adj1: np.ndarray, adj2: np.ndarray, time_limit: float, fs
     return np.max(diffusion_distance)
 
 
+def edge_deletion(A,i,j):
+    """
+    A is an adjucency matrix, i and j are nodes between which we want to remove the edge
+    """
+    A_prime = np.copy(A)
+    
+    A_prime[j,i] = 0
+    A_prime[i,j] = 0
 
+    return A_prime
+
+def EDP(A, m, n, Fs):
+    """
+    Function which returns the normalized edge detetion perturbation.
+    A - adjucency matrix (original)
+    A_prime - is a  A matrix with a delted edge
+    """
+    if A[m, n]:
+        A_prime = edge_deletion(A, m, n)
+        dgdd =  diffusion_distance(A, A_prime, 100, Fs)
+        chi = dgdd / A[m,n]
+    else:
+        chi = 0
+    return chi, A_prime
 
 
 
