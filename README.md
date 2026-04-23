@@ -5,11 +5,7 @@
 ![Last update](https://img.shields.io/badge/version-v.1.2.0-blue)
 [![🚀 scilaunch](https://img.shields.io/badge/based%20on-🚀%20scilaunch-salmon "🚀")](https://shescher.github.io/scilaunch/)
 
-A Python package for hyperscanning data analysis via geometric entropy.
-
-The toolkit for detecting phase transitions in inter-brain networks by tracking discrete Ricci curvature and its entropy distribution.
-
-This repository contains a modular pipeline for analyzing phase transitions in inter-brain coupling using geometric network analysis techniques, demonstrated on simulated and hyperscanning datasets.
+A Python package for hyperscanning data analysis by tracking inter-brain network curvature and its entropy distribution.
 
 ## Overview
 
