@@ -1,10 +1,9 @@
-# HyPhi(Φ)
+# hyphi – **code**
 
-![Last update](https://img.shields.io/badge/last_update-Apr_14,_2026-green)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18415664.svg)](https://doi.org/10.5281/zenodo.18415664)
-![Last update](https://img.shields.io/badge/version-v.1.2.0-blue)
-[![🚀 scilaunch](https://img.shields.io/badge/based%20on-🚀%20scilaunch-salmon "🚀")](https://shescher.github.io/scilaunch/)
+    Last update:    April 14, 2026
+    Status:         work in progress
 
+***
 A Python package for hyperscanning data analysis by tracking inter-brain network curvature and its entropy distribution.
 
 ## Overview
@@ -60,83 +59,65 @@ Source folder of the Python toolbox `hyphi`, which implements the core analysis 
 
 ### `data`
 
-Simulation and EEG-derived connectivity data below 100 MB.
-Larger files are hosted at:
-https://osf.io/yah5u
+## Description
 
-### `experiments`
+*List relevant information one needs to know about the code of this research project.
+For instance, one could describe the computational model that was applied,
+and which statistical approach has been chosen for.*
 
-This directory contains worked, end-to-end examples illustrating the canonical HyPhi workflow on synthetic networks.
+## Codebase
 
-### `tutorials`
+*Refer to the corresponding code/scripts written for the analysis/simulation/etc.*
 
-Supplementary documentation and tutorials, including a step-by-step protocol demonstrating Forman-Ricci curvature analysis in hyperscanning-style networks.
+### `hyphi` Python package
 
-## Install the `hyphi` package
+Python code (in the structure of a python package) is stored in `./code/hyphi/`
 
-All dependencies are specified in `pyproject.toml` and can be installed via `uv` (recommended), `pip`, `conda`, `pixi`, or any other Python package manager of your choice.
+To install the `hyphi` package, run the following code in the project root directory:
 
 ```shell
 uv sync [--extra develop] [--extra notebook]
 ```
 
-Use `--extra develop` to install development dependencies (e.g., testing, linting) and `--extra notebook` to install `Jupyter`|`marimo`-related dependencies for running the notebooks in the `tutorials` and `code/notebooks` directories.
+Or use other package management tools (e.g., `conda`, `pip`, or `pixi`) to install the package in editable mode.
 
-To check that the package is installed correctly, you can run:
 
-```shell
-uv pip list | grep hyphi
+### Notebooks
+
+`Jupyter` | `marimo` notebooks are stored in `./code/notebooks/`
+
+### Configs
+
+Paths to data, parameter settings, etc. are stored in the config file: `./code/configs/config.toml`
+
+Private config files that contain, e.g., passwords, and therefore should not be shared,
+or mirrored to a remote repository can be listed in: `./code/configs/private_config.toml`
+
+Both files will be read out by the script in `./code/hyphi/configs.py`.
+Keep both config toml files and the script in the places where they are.
+
+To use your configs in your `Python` scripts, do the following:
+
+```python
+from hyphi.configs import config, paths
+
+# check out which paths are set in config.toml
+paths.show()
+
+# get the path to data
+path_to_data: str = paths.DATA
+
+# Get parameter from config (example)
+weight_decay = config.params.weight_decay
+
+# Get private parameter from config (example)
+api_key = config.service_x.api_key
 ```
 
-For convenience, you can also use the `Makefile` targets. To get an overview run:
+*Fill the corresponding `*config.toml` files with your data.*
 
-```shell
-make
-```
+For other programming languages, corresponding scripts must be implemented to use these `*config.toml` files in a similar way.
 
-## Relevant publications
+## COPYRIGHT/LICENSE
 
-Related benchmarks and applications of components of this toolkit are discussed in prior and ongoing work, including:
-
-- **Hinrichs, N., Guzmán, N., & Weber, M. (2025).**
-  [*On a Geometry of Interbrain Networks.*](https://openreview.net/pdf?id=ouNpUPdUzH)
-  NeurIPS 2025 Workshop on Symmetry and Geometry in Neural Representations (NeurReps).
-
-- **Hinrichs, N., Hartwigsen, G., & Guzmán, N. (2025).**
-  [*Detecting Phase Transitions in EEG Hyperscanning Networks Using Geometric Markers.*](https://osf.io/preprints/osf/abx8u_v1)
-  Open Science Framework (OSF) Preregistration.
-
-- **Hinrichs, N., Albarracin, M., Bolis, D., Jiang, Y., Christov-Moore, L., & Schilbach, L. (2025).**
-  [*Geometric Hyperscanning under Active Inference.*](https://doi.org/10.48550/arXiv.2506.08599)
-  6th International Workshop on Active Inference (IWAI 2025).
-
-## Citation
-
-If you use this software, please cite:
-
-Nicolás Hinrichs & Noah Guzmán (2026).
-*HyPhi(Φ): A toolkit for detecting phase transitions in inter-brain networks*.
-nicolashinrichs/HyPhi: Second release (v1.1.0). Zenodo.
-https://doi.org/10.5281/zenodo.18415663
-
-Latest DOI: https://doi.org/10.5281/zenodo.18415664
-
-## Contributors/Collaborators
-
-*Name people who are involved in this project, their position and/or contribution.
-Optional: add contact data.*
-
-## Licensing
-
-This repository is released under the BSD-3-Clause license.
-See `LICENSE` for details.
-
-## Contact
-
-For questions, issues, or collaboration inquiries, contact:
-Nicolás Hinrichs
-[hinrichsn@cbs.mpg.de](mailto:hinrichsn@cbs.mpg.de)
-
-***
-
-*Based on the [🚀 scilaunch](https://shescher.github.io/scilaunch/ "🚀") project structure.*
+See the [LICENSE](../LICENSE) file for details.
