@@ -1,12 +1,19 @@
 """
-This module contains the function for transformation of Foreman-Ricci curvatures
-for use in Graph Diffusion Distance computation, and related helpers. 
+Curvature transformation for Graph Diffusion Distance (GDD) computation.
+
+Forman-Ricci curvature is signed, but the GDD construction in
+:mod:`hyphi.modeling.curvatures` (via :func:`compute_laplacian_matrix` /
+:func:`heat_kernel_distance`) requires strictly positive edge weights.
+
+The helpers in this module fit ONE global linear transform (sign flip + shift,
+optional rescale) across the pooled curvature values from a *collection* of
+graphs, then apply the same parameters to every graph.  This keeps the
+transformed weights comparable across the collection, which is what the GDD
+heatmap / successive-GDD analyses in the ``GDD_FRc_*`` notebooks rely on.
 """
 
 
-import math
 import numpy as np
-import matplotlib.pyplot as plt
 import networkx as nx
 
 
@@ -55,11 +62,11 @@ def fit_global_positive_linear_transform(
     rescale : None or tuple(float, float), default=(1e-6, 1.0)
         If None:
             use scale = 1 and choose the smallest shift that makes all
-            transformed values strictly positive. 
+            transformed values strictly positive.
         If (low, high):
             map the globally signed curvatures linearly into [low, high].
             Requires 0 < low < high. Rescaling is not appropriate for
-            transforming Forman-Ricci curvatures!!! 
+            transforming Forman-Ricci curvatures!!!
 
     Returns
     -------
