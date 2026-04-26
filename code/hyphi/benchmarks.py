@@ -2,13 +2,14 @@
 Benchmarks for HyPhi: standard hyperscanning metrics and classifier evaluation.
 
 Three families of benchmark features for head-to-head comparison against
-curvature-entropy features (2026-04):
+curvature-entropy features (reviewer-driven addition, 2026-04):
 
 1. **Phase-based metrics** (PLV, wPLI, imaginary coherence) — for pipelines
    where raw phase time series are available (Kuramoto simulation path).
 2. **Graph-theoretic metrics** (global efficiency, modularity, assortativity,
    mean clustering) — computed on the same windowed graphs HyPhi uses for
-   curvature.
+   curvature, addressing the reviewer's *"computed on the same windowed
+   graphs"* point directly.
 3. **Connectivity-matrix features** — cross- and within-brain strengths and
    graph summaries derived from a pre-computed inter-brain circular-correlation
    (CCORR) matrix.  This is the empirical path in the reference dataset, where

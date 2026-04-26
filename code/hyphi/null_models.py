@@ -1,5 +1,7 @@
 """
-Null-model / surrogate generators for HyPhi as three families of controls:
+Null-model / surrogate generators for HyPhi.
+
+Three families of controls matched to the reviewer's request (2026-04):
 
 1. **Signal-level surrogates** — amplitude-preserving phase randomization and
    channel-wise circular time-shift.  Preserve each channel's spectral /
