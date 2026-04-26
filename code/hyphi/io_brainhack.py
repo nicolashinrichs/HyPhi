@@ -1,6 +1,22 @@
 """
-This module contains io helpers for loading adjacency data from
-the Kuramoto simulation dataset and the prebase dataset.
+Brainhack I/O helpers for loading adjacency matrices.
+
+This module bundles loaders for the two graph-pickle datasets used by the
+GDD / Forman-Ricci transformation notebooks (`GDD_FRc_Kuramoto.ipynb`,
+`GDD_FRc_prebase.ipynb`):
+
+- the per-window Kuramoto connectomes shipped in ``data/connectome/``
+- the per-dyad prebase graphs (external — see ``data/README.md`` for download
+  instructions; these pickles are not committed to the repo)
+
+Each loader returns plain NumPy adjacency matrices keyed by integer index, so
+downstream code (``hyphi.modeling.GDD_FRc_helpers``) can build NetworkX graphs
+and compute curvatures without re-implementing the unpickling logic.
+
+A small back-compat shim (`_compat_load`) lets us read graph pickles produced
+under older NetworkX versions even when the importing environment ships a
+different NetworkX, by stubbing out the legacy ``Graph`` / ``*View`` classes
+referenced inside the pickle stream and reading the ``_adj`` dict directly.
 """
 
 from __future__ import annotations
@@ -12,10 +28,10 @@ from typing import List, Union
 
 import numpy as np
 
-from hyphi.modeling.GDD_FRc_helpers import compute_frc_bundle_from_adjacency
-#------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------
 # general
-#------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------
+
 
 def load_pickle_adjacency(
     pickle_path: Union[str, Path],
@@ -142,7 +158,7 @@ def load_pickle_adjacency(
 def load_adjacencies_from_paths(
     paths,
     weight_key="weight",
-    symmetrize = False,
+    symmetrize=False,
     return_nodes=False,
     verbose=False,
 ):
@@ -197,9 +213,9 @@ def load_adjacencies_from_paths(
     return adjacencies
 
 
-#------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------
 # kuramoto
-#------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------
 
 
 def build_kuramoto_paths(
@@ -264,11 +280,9 @@ def load_all_kuramoto_adjacencies(
     }
 
 
-
-#------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------
 # prebase
-#------------------------------------------------------------------------------------------
-
+# ------------------------------------------------------------------------------------------
 
 
 def build_prebase_paths(
