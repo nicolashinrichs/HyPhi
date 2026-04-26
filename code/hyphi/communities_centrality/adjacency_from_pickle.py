@@ -1,12 +1,21 @@
 #!/usr/bin/env python3
-"""Minimal helper to load a graph pickle and return its adjacency matrix."""
+"""Minimal helper to load a graph pickle and return its adjacency matrix.
+
+This is the communities_centrality-package copy of the loader.  The same
+function is also available in :mod:`hyphi.io_brainhack` (preferred for new
+code) and in :mod:`hyphi.spectral.adjacency_from_pickle`; the duplication is
+intentional so that the original ``from
+hyphi.communities_centrality.adjacency_from_pickle import load_pickle_adjacency``
+import path used in :mod:`hyphi.communities_centrality.processing` keeps
+working without modification.
+"""
 
 from __future__ import annotations
 
 import io
 import pickle
 from pathlib import Path
-from typing import List, Tuple, Union
+from typing import List, Union
 
 import numpy as np
 
