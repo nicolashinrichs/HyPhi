@@ -1,7 +1,8 @@
 """
 Hierarchical proof-of-concept statistical runner for HyPhi.
 
-Runs **alongside** ``hyper_ccor_ragg_frc.py``'s pooled energy-distance tests and writes a parallel JSON report:
+Runs **alongside** ``hyper_ccor_ragg_frc.py``'s pooled energy-distance tests
+— the old pipeline is untouched — and writes a parallel JSON report:
 
     hierarchical_stats_{FRC|AFRC}_n_perm_{N}_config_{ID}.json
 
@@ -12,32 +13,25 @@ What this script does:
    demo / proof-of-concept / small-sample / exploratory), and decides which
    analyses are statistically meaningful *before* the permutation loops run.
    Any stage that can't run given the current N is skipped with a reason.
-   
 2. **Hierarchical permutation**: permutes condition labels *within dyad, at
    the trial level*, keeping window blocks intact — no more pooling across
    dyads/trials/windows. (``hyphi.stats.hierarchical_permutation_test``)
-   
 3. **Mixed-effects model**: fits ``entropy ~ C(condition)`` with dyad-level
    random intercept and a trial-level nested variance component. Requires
    ≥2 dyads. (``hyphi.stats.mixed_effects_test``)
-   
 4. **Hierarchical energy distance**: per-dyad pairwise energy distance
    averaged across dyads, with the same hierarchical permutation for null.
-   
 5. **Benchmark head-to-head**: PLV/wPLI-like block summaries and
    graph-theoretic metrics (modularity, global efficiency, assortativity,
    clustering) extracted from the same windowed CCORR graphs, then a
    cross-validated classifier with ``StratifiedGroupKFold`` on dyad (≥2
    dyads) or ``StratifiedKFold`` (N=1) compares curvature-entropy features
    vs. benchmarks vs. their concatenation. (``hyphi.benchmarks``)
-   
 6. **Null models**: dyad-label shuffle sanity check (requires ≥2 dyads);
    within-dyad condition-label surrogate cross-check. (``hyphi.null_models``)
-   
 7. **Effect sizes**: Cohen's d scalar and per-window time series for each
    condition pair; minimum N dyads required for 80% power at alpha=0.05.
    (``hyphi.stats.cohens_d``, ``cohens_d_timeseries``, ``required_sample_size``)
-   
 8. **Adaptive framing**: the banner and JSON framing text are generated
    from the actual loaded N; the word "proof-of-concept" sticks until the
    sample size comfortably exceeds the required-N implied by the observed
