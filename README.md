@@ -4,6 +4,60 @@
     Status:         work in progress
 
 ***
+A Python package for hyperscanning data analysis by tracking inter-brain network curvature and its entropy distribution.
+
+## Overview
+
+`HyPhi` implements a geometry-driven alternative to traditional synchrony-based hyperscanning analysis.
+
+The pipeline includes:
+
+- A ground-truth simulation framework based on coupled Kuramoto oscillators
+- Empirical dual-EEG analysis
+- Comparison between Forman-Ricci and Augmented Forman-Ricci curvature metrics
+- Sliding-window dynamic network construction
+- Phase transition detection using curvature distributions, entropy, and quantiles
+
+## Conceptual Workflow
+
+Across simulated and empirical use cases, `HyPhi` follows the same high-level workflow:
+
+1. **Network construction**
+   Static or time-resolved graphs are constructed from simulations or empirical connectivity measures.
+
+2. **Discrete curvature computation**
+   Edge-wise Ricci curvature (Forman-Ricci and variants) is computed on each network.
+
+3. **Distributional analysis**
+   Curvature values are treated as distributions and analyzed via kernel density estimation.
+
+4. **Information-theoretic tracking**
+   Entropy and quantiles of curvature distributions are used to detect regime shifts and phase transitions.
+
+Concrete implementations of this workflow are provided in the `experiments` and `tutorials` directories.
+
+## Scientific Motivation
+
+Traditional synchrony metrics collapse rich network structure into low-dimensional summaries and often miss critical topological transitions.
+
+HyPhi instead treats inter-brain coupling as a **dynamic geometric object**, where curvature captures higher-order structural reorganization.
+This enables principled detection of coupling and decoupling regimes beyond synchrony alone.
+
+## Project structure
+
+The repository is split into the following main directories, each with a dedicated `README.md`:
+
+### `code`
+
+Source folder of the Python toolbox `hyphi`, which implements the core analysis modules and pipelines for the pipeline.
+
+- Network simulations
+- Ricci curvature computation
+- Ricci-Flow (for details, see [README_Ricci-Flow.md](code/README_Ricci-Flow.md)).
+- Density estimation
+- Entropy and quantile analysis
+
+### `data`
 
 ## Description
 
