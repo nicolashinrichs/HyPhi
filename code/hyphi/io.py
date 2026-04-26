@@ -27,7 +27,7 @@ def load_config(config_file: str | Path) -> dict:
 def make_dir(dirpath: str) -> None:
     """Create a directory if it does not exist."""
     if not os.path.exists(dirpath):
-        os.make_dirs(dirpath)
+        os.makedirs(dirpath)
 
 
 def load_network_pkl(pkl_file: str):
