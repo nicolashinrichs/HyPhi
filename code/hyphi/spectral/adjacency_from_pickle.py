@@ -1,12 +1,20 @@
 #!/usr/bin/env python3
-"""Minimal helper to load a graph pickle and return its adjacency matrix."""
+"""Minimal helper to load a graph pickle and return its adjacency matrix.
+
+This is the spectral-package copy.  An identical loader (with cross-version
+NetworkX pickle compatibility) also lives in :mod:`hyphi.io_brainhack` as
+``load_pickle_adjacency`` — prefer that one for new code; this thin copy is
+kept so that the original ``from hyphi.spectral.adjacency_from_pickle import
+load_pickle_adjacency`` import path used in the contributor notebooks keeps
+working.
+"""
 
 from __future__ import annotations
 
 import io
 import pickle
 from pathlib import Path
-from typing import List, Tuple, Union
+from typing import List, Union
 
 import numpy as np
 
@@ -129,4 +137,4 @@ def load_pickle_adjacency(
 
     if return_nodes:
         return A, nodes
-    return A, A.shape
+    return A
