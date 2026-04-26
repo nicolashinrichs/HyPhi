@@ -16,13 +16,6 @@ pass
 
 # %% Functions >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
-class CompatUnpickler(pickle.Unpickler):
-    """Compatibility unpickler for older NumPy-internal module paths."""
-    def find_class(self, module, name):
-        if module.startswith("numpy._core"):
-            module = module.replace("numpy._core", "numpy.core")
-        return super().find_class(module, name)
-#%%
 
 def load_config(config_file: str | Path) -> dict:
     """Load configuration from a TOML file."""
@@ -34,7 +27,7 @@ def load_config(config_file: str | Path) -> dict:
 def make_dir(dirpath: str) -> None:
     """Create a directory if it does not exist."""
     if not os.path.exists(dirpath):
-        os.make_dirs(dirpath)
+        os.makedirs(dirpath)
 
 
 def load_network_pkl(pkl_file: str):
@@ -49,15 +42,34 @@ def save_network_pkl(data, pkl_file: str) -> None:
     make_dir(os.path.dirname(pkl_file) or ".")
     with open(pkl_file, mode="wb") as fp:
         pickle.dump(data, fp)
-        
-def load_connectivity_data(pickle_path):
-    """Load connectivity_data.pkl and return all expected components."""
-    with open(pickle_path, "rb") as f:
-        data = CompatUnpickler(f).load()
 
-    # Decode ROI labels to plain strings for downstream readability.
-    #roi_names = [name.decode("utf-8") if isinstance(name, bytes) else name for name in roi_names]
+
+class CompatUnpickler(pickle.Unpickler):
+    """Compatibility unpickler for older NumPy-internal module paths.
+
+    Pickles produced under ``numpy >= 1.25`` reference the private
+    ``numpy._core`` namespace.  When loaded under older NumPy releases that
+    only expose ``numpy.core``, the standard unpickler raises
+    ``ModuleNotFoundError``.  This unpickler rewrites the prefix on the fly so
+    such pickles can still be loaded.
+    """
+
+    def find_class(self, module, name):
+        if module.startswith("numpy._core"):
+            module = module.replace("numpy._core", "numpy.core")
+        return super().find_class(module, name)
+
+
+def load_connectivity_data(pickle_path: str | Path):
+    """Load ``connectivity_data.pkl`` and return all expected components.
+
+    Uses :class:`CompatUnpickler` so that pickles written under newer NumPy
+    versions remain loadable in environments still on the legacy
+    ``numpy.core`` namespace.
+    """
+    with open(pickle_path, "rb") as fp:
+        data = CompatUnpickler(fp).load()
     return data
-#W, tract, roi_names, centers_raw, hemis_raw, areas_raw -> is now data
+
 
 # o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o END
