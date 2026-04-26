@@ -1,19 +1,25 @@
-# The functions from here on are just little helpers used in notebooks testing the FRc
-# transformation and GDD computation on the resulting network. 
-# Some of this functions prepare data for plotting which is done by 
-# visualization/GDD_FRc_visualization.py
+"""
+GDD / Forman-Ricci pipeline helpers.
 
+These functions stitch together adjacency matrices, Forman-Ricci curvature
+computation, and graph diffusion distance (GDD) into a small bundle-oriented
+pipeline used by the ``GDD_FRc_*`` notebooks.  Pure orchestration: all of the
+actual graph maths lives in :mod:`hyphi.modeling.graph_curvatures` (FRC) and
+:mod:`hyphi.modeling.curvatures` (Laplacian, heat-kernel distance).
+"""
 
 import numpy as np
 import networkx as nx
+
 from hyphi.modeling.graph_curvatures import (
-    compute_frc, 
-    extract_curvatures, 
+    compute_frc,
+    extract_curvatures,
 )
 from hyphi.modeling.curvatures import (
     compute_laplacian_matrix,
     heat_kernel_distance,
 )
+
 
 def compute_global_curvature_stats(curvature_dict):
     """
@@ -169,6 +175,7 @@ def compute_successive_gdd(
 
     return gdd_dict
 
+
 def compute_pairwise_gdd_matrix(
     weighted_graphs,
     weight_attr="positive_weight",
@@ -228,4 +235,3 @@ def compute_pairwise_gdd_matrix(
                 print(f"GDD({idx_i:02d}, {idx_j:02d}) = {d}")
 
     return indices, distance_matrix, laplacians
-
