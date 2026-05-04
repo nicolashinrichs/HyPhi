@@ -7,7 +7,7 @@
 - [ ] Ricci Flow analysis script does not flow well with the current structure yet
 - [ ] Create `CONTRIBUTION.md` file describing how to contribute to the project, coding style etc.
 - [ ] Search for other "TODO"s in the repo files and resolve them
-- [ ] Create a notebook as a user entry point (also for development)
+- [ ] Create a notebook as a user entry point (also for development) e.g., in `tutorials/`
 - [ ] Unify the config loader framework for the whole project (this should be tested with the user notebook above)
 - [ ] Adapt/add docstrings at the beginning of each Python script (what functionality is implemented here)
 - [ ] Adapt/add docstrings to all functions and classes.
