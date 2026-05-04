@@ -1,5 +1,6 @@
 # TODOs
 
+- [ ] Create user entry point notebook (also for development)
 - [ ] Check the minimal Python version (the higher the better)
 - [ ] Specify all dependencies with version in `pyproject.toml` (some missing deps are also mentioned in some scripts).
 - [ ] Adapt/add docstrings to all functions and classes.
@@ -13,3 +14,4 @@
 - [ ] Ricci Flow analysis script does not flow well with the current structure yet
 - [ ] Add proper docs
 - [ ] Search for other "TODO"s in the repo files and resolve them
+- [ ] Create `CONTRIBUTION.md` file describing how to contribute to the project, coding style etc.
