@@ -1,4 +1,4 @@
-"""TODO: Add docstring"""
+"""Plot per-trial AFRC entropy distributions from a hyper_ccorr_aug_frc.py run."""
 # %% Import
 
 import os

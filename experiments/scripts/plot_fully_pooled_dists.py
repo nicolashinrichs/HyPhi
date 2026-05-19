@@ -1,4 +1,4 @@
-"""TODO: add docstring"""
+"""Plot fully-pooled FRC/AFRC distributional comparisons across trial types."""
 
 # %% Import
 import os
@@ -26,7 +26,7 @@ assert curv_type in ["FRC", "AFRC"], f"Curvature type ({curv_type}) must be one 
 
 
 def fully_pooled_path_constructor(trial_type, curvature, config):
-    """TODO: add docstring"""
+    """Build the on-disk path of the pooled curvature matrix for ``trial_type`` / ``curvature``."""
     if curvature == "FRC":
         FRCpath = os.path.abspath(
             os.path.join(

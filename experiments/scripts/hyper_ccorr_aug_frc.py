@@ -1,4 +1,4 @@
-"""TODO: add docstring"""
+"""Compute Augmented Forman-Ricci curvatures on CCORR inter-brain graphs and write per-trial entropies."""
 
 # %% Import
 import os

@@ -1,4 +1,4 @@
-"""TODO: add docstring"""
+"""Run Kuramoto simulations and compute Forman-Ricci curvatures on the resulting PLV graph series."""
 
 # %% Import
 import os
