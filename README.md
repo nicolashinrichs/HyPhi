@@ -158,10 +158,10 @@ A version-independent (concept) DOI is also available; see the
 
 ## Contributors/Collaborators
 
-- Nicolás Hinrichs — lead author, MPI CBS Leipzig
+- Nicolás Hinrichs — lead author
 - Noah Guzmán — co-author
-- Simon M. Hofmann — package scaffolding and config framework, MPI CBS Leipzig
-- Nahid Torbati — curvature & visualization modules, MPI CBS Leipzig
+- Simon M. Hofmann — package scaffolding and config framework
+- Nahid Torbati — flow module
 
 See `CITATION.cff` for the canonical citation metadata.
 
