@@ -46,7 +46,7 @@ def _(mo):
 def _():
     from pathlib import Path
 
-    from hyphi.io_adjacency import load_all_kuramoto_adjacencies
+    from hyphi.io_brainhack import load_all_kuramoto_adjacencies
 
     base_dir = Path("data/connectome")
     bundle = load_all_kuramoto_adjacencies(indices=range(1, 9), base_dir=base_dir)
