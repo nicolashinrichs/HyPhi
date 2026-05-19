@@ -1,9 +1,7 @@
 ## HyPhi Example Code
 
-###### TODO: update this text
-For all examples below, for the import statements to work,
-a script utilizing these functions needs to be located in the `experiments/scripts/` directory of the `HyPhi` repo.
-Most of the examples build on the previous ones and are meant to illustrate a typical workflow when using this package.
+The snippets below assume `hyphi` is installed in editable mode (`uv sync`); they can be pasted into a notebook or a script under `experiments/scripts/`.
+Most examples build on the previous ones and together illustrate a typical workflow when using this package.
 
 ### Generating Small World Networks
 
@@ -23,7 +21,7 @@ seed_val = 42
 n = 1000  # Number of nodes in the network
 k = 50  # Average node degree
 p = 0.2  # Edge rewiring probability
-ε = 1.0  # Unit spacing of nodes around the ring
+epsilon = 1.0  # Unit spacing of nodes around the ring
 
 # Generate a single unweighted small world network
 # This is just the networkx implementation
@@ -32,7 +30,7 @@ G = nx.watts_strogatz_graph(n, k, p, seed=seed_val)
 
 # Generate a single weighted small world network
 # Gw is a networkx graph
-Gw = gen_weighted_sw(n, k, p, ε, seed_val)
+Gw = gen_weighted_sw(n, k, p, epsilon, seed=seed_val)
 
 # Parameters for "time varying" small world networks
 minpow = -4  # Exponent for lower bound of rewiring probability
@@ -49,7 +47,7 @@ pt, Gt = gen_tv_sw(n, k, trez, minpow, maxpow, seed_val)
 # Where the rewiring probability evolves from 10^minpow to 10^maxpow
 # ptw is the array of rewiring probabilities
 # Gtw is a list of networkx graphs at those rewiring probabilities
-ptw, Gtw = gen_tv_weighted_sw(n, k, ε, trez, minpow, maxpow, seed_val)
+ptw, Gtw = gen_tv_weighted_sw(n, k, epsilon, trez, minpow, maxpow, seed_val)
 ```
 
 ### Computing Graph Curvatures
@@ -64,18 +62,18 @@ from hyphi.modeling.graph_curvatures import compute_frc, extract_curvatures, com
 
 # Compute the Forman-Ricci curvature for a
 # single weighted network (same for unweighted)
-# The "method_val" argument can be '1d' or 'augmented'
+# The "method" argument can be '1d' or 'augmented'
 # FRC is a new network where edges have the property "formanCurvature"
-FRC = compute_frc(Gw, method_val="1d")
+FRC = compute_frc(Gw, method="1d")
 
 # Extract the Forman-Ricci curvatures of the network into an array
 curvatures = extract_curvatures(FRC, curvature="formanCurvature")
 
 # Compute the Forman-Ricci curvature for an array
 # of weighted small world networks (same for unweighted)
-# The "method_val" argument can be '1d' or 'augmented'
+# The "method" argument can be '1d' or 'augmented'
 # FRCt is a list of new networks where edges have the property "formanCurvature"
-FRCt = compute_frc_vec(Gtw, method_val="1d")
+FRCt = compute_frc_vec(Gtw, method="1d")
 
 # Extract the Forman-Ricci curvatures of the networks into a list of arrays
 curvatures_t = extract_curvatures_vec(FRCt, curvature="formanCurvature")
@@ -85,11 +83,10 @@ curvatures_t = extract_curvatures_vec(FRCt, curvature="formanCurvature")
 
 We can compute nonparametric estimates of the graph curvature densities from the array of edge curvature values. This functionality is based heavily on the KDEpy package.
 
-All functions utilized in this example are defined in `density_estimation.py`.
+The KDE classes (`TreeKDE`, `FFTKDE`, `NaiveKDE`) come from the third-party `KDEpy` package; `hyphi.modeling.density_estimation` re-exports them via :func:`fit_kde` / :func:`select_kde`.
 
-###### TODO: update scripts below
 ```python
-from hyphi.modeling.density_estimation import TreeKDE
+from KDEpy import TreeKDE
 
 # Parameters for the kernel density estimation
 kernel_type = "gaussian"    # Gaussian kernel
@@ -120,15 +117,15 @@ nn_val = 4
 
 # Get the Kozachenko-Leonenko estimate of the entropy of the Forman-Ricci curvatures
 # Single network case
-H = entropy_kozachenko(FRC, curvature="formanCurvature", num_nn=nn_val)
+H = entropy_kozachenko(FRC, curvature="formanCurvature", k=nn_val)
 
 # Get the Kozachenko-Leonenko estimate of the entropy of the Forman-Ricci curvatures
 # Array of multiple networks
 # We first need to create a lambda function for the estimator we want to use
 # vec_entropy is really just a parallelized wrapper around an estimator instance
-hKL = lambda X: entropy_kozachenko(X, curvature="formanCurvature", num_nn=nn_val)
+hKL = lambda X: entropy_kozachenko(X, curvature="formanCurvature", k=nn_val)
 # Now we pass this lambda function to a parallelized entropy function
-Ht = vec_entropy(FRCt, estim=hKL)
+Ht = vec_entropy(FRCt, hKL)
 
 # We can also get quantiles of the curvature distribution
 quantiles = [0.05, 0.25, 0.5, 0.75, 0.95]

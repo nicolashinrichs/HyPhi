@@ -1,0 +1,3 @@
+# `hyphi.benchmarks`
+
+::: hyphi.benchmarks

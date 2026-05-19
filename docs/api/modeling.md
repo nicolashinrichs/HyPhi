@@ -1,0 +1,3 @@
+# `hyphi.modeling`
+
+::: hyphi.modeling
