@@ -1,4 +1,4 @@
-"""TODO: add docstring"""
+"""Reproduce the weighted Watts-Strogatz curvature-entropy sweep used in the NeurReps 2025 submission."""
 
 # %% Import
 import os

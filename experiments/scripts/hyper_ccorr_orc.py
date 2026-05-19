@@ -1,4 +1,4 @@
-"""TODO: add docstring"""
+"""Sweep Ollivier-Ricci curvature parameters over CCORR inter-brain matrices and write per-trial entropies."""
 
 # %% Import
 import os
@@ -14,7 +14,7 @@ from tqdm import tqdm
 from hyphi.configs import paths
 from hyphi.modeling.entropies import entropy_kozachenko, get_quantiles
 from hyphi.io import load_config, make_dir
-from hyphi.modeling.graph_curvatures import get_orc
+from hyphi.modeling.graph_curvatures import compute_orc
 
 # %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 # Analysis configuration file
@@ -130,7 +130,7 @@ def freqBandAnalysis(freq_data, band_idx, config, progress_queue):
                         # Loop over windows
                         for window in range(config["num_windows"]):
                             # Compute Forman-Ricci curvatures across windows for this trial and frequency band
-                            ORC = get_orc(Gt[window], alpha_val=alph, power_val=powr)
+                            ORC = compute_orc(Gt[window], alpha=alph, exp_power=powr)
 
                             # Convert IBCs (networkx graphs) with window curvatures to window curvature matrices
                             ORCvals[trial, window, :, :] = nx.attr_matrix(ORC, edge_attr="ricciCurvature")[0]

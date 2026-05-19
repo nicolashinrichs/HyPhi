@@ -1,4 +1,4 @@
-"""TODO: add docstring"""
+"""Plot Kuramoto-derived curvature time series produced by kuramoto_frc.py."""
 
 # %% Import
 import os

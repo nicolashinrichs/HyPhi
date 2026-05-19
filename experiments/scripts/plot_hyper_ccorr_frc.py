@@ -1,4 +1,4 @@
-"""TODO: add docstring."""
+"""Plot per-trial FRC entropy distributions from a hyper_ccorr_frc.py run."""
 
 # %% Import
 import os
@@ -57,12 +57,10 @@ make_dir(hyperviz)
 
 
 def plot_hyper_frc(entropy, quantiles, title=None, band_labels=None, window_labels=None, q_labels=None):
-    """
-    # TODO: describe what this function does.
+    """Render per-band, per-trial entropy and curvature-quantile time courses on a shared figure.
 
-    entropy:   array of shape (8, 30, 4)
-    quantiles: array of shape (8, 30, 4, 5)
-               last dim = 5 quantiles.
+    entropy:   array of shape (n_bands, n_trials, n_windows)
+    quantiles: array of shape (n_bands, n_trials, n_windows, n_quantiles)
     """
 
     n_bands, n_trials, n_windows = entropy.shape

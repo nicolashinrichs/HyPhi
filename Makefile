@@ -3,7 +3,7 @@
 # ================================================
 # Provides standard entry points for reproducibility.
 
-.PHONY: help install test check lint typecheck format clean pipeline
+.PHONY: help install test check lint typecheck format clean pipeline tutorial docs
 .DEFAULT_GOAL := help
 
 help: ## Show available commands
@@ -38,3 +38,9 @@ clean: ## Remove build artifacts and caches
 run-simulations: ## Execute HyPhi E2E simulations
 	@echo "Executing HyPhi E2E Pipeline..."
 	uv run python -m hyphi.main
+
+tutorial: ## Open the user-facing quickstart marimo notebook
+	uv run --extra notebook marimo edit tutorials/01_quickstart.py
+
+docs: ## Build the mkdocs site
+	uv run --extra docs mkdocs build

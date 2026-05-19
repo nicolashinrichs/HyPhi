@@ -150,21 +150,29 @@ Related benchmarks and applications of components of this toolkit are discussed 
 If you use this software, please cite:
 
 Nicolás Hinrichs & Noah Guzmán (2026).
-*HyPhi(Φ): A toolkit for detecting phase transitions in inter-brain networks*.
-nicolashinrichs/HyPhi: Second release (v1.1.0). Zenodo.
-https://doi.org/10.5281/zenodo.18415663
+*HyPhi(Φ): A toolkit for detecting phase transitions in inter-brain networks* (v1.2.0). Zenodo.
+https://doi.org/10.5281/zenodo.18415664
 
-Latest DOI: https://doi.org/10.5281/zenodo.18415664
+A version-independent (concept) DOI is also available; see the
+[Zenodo record](https://zenodo.org/records/18415664) for the latest release.
 
 ## Contributors/Collaborators
 
-*Name people who are involved in this project, their position and/or contribution.
-Optional: add contact data.*
+- Nicolás Hinrichs — lead author
+- Noah Guzmán — co-author
+- Simon M. Hofmann — package scaffolding and config framework
+- Nahid Torbati — flow module
+
+See `CITATION.cff` for the canonical citation metadata.
 
 ## Licensing
 
 This repository is released under the BSD-3-Clause license.
 See `LICENSE` for details.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, code style, and the PR workflow.
 
 ## Contact
 

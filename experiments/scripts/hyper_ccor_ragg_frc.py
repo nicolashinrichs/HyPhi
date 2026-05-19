@@ -1,7 +1,4 @@
-# TODO: this script needs more structure. Move all functions in dedicated section.
-#  Move run through in __main__ section.
-
-"""TODO: add docstring"""
+"""Aggregated FRC permutation testing on CCORR matrices via energy distance and dcor statistics."""
 
 # %% Import
 
@@ -9,7 +6,7 @@ import os
 import json
 import sys
 
-import dcor  # TODO: add as dependency
+import dcor
 from dcor import EstimationStatistic
 from hyphi.io import load_config, make_dir
 import numpy as np
@@ -17,7 +14,7 @@ from joblib import Parallel, delayed
 from scipy.stats import energy_distance
 from statsmodels.stats.multitest import multipletests
 from tqdm import tqdm
-from tqdm_joblib import tqdm_joblib  # TODO: add as dependency
+from tqdm_joblib import tqdm_joblib
 
 from hyphi.configs import paths
 
