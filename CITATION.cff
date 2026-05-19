@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using the metadata below."
+title: "HyPhi(Φ): A toolkit for detecting phase transitions in inter-brain networks"
+version: "1.2.0"
+date-released: "2026-04-14"
+doi: "10.5281/zenodo.18415664"
+repository-code: "https://github.com/nicolashinrichs/HyPhi/"
+license: BSD-3-Clause
+type: software
+authors:
+  - family-names: Hinrichs
+    given-names: "Nicolás"
+    email: hinrichs@cbs.mpg.de
+    affiliation: "Max Planck Institute for Human Cognitive and Brain Sciences"
+  - family-names: "Guzmán"
+    given-names: Noah
+  - family-names: Hofmann
+    given-names: "Simon M."
+    email: simon.hofmann@cbs.mpg.de
+    affiliation: "Max Planck Institute for Human Cognitive and Brain Sciences"
+  - family-names: Torbati
+    given-names: Nahid
+    email: torbati@cbs.mpg.de
+    affiliation: "Max Planck Institute for Human Cognitive and Brain Sciences"
