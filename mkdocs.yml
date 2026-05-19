@@ -1,0 +1,49 @@
+site_name: HyPhi
+site_description: A Python package for hyperscanning data analysis via geometric entropy.
+repo_url: https://github.com/nicolashinrichs/HyPhi/
+repo_name: nicolashinrichs/HyPhi
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - content.code.copy
+
+nav:
+  - Home: index.md
+  - Tutorials:
+      - Quickstart: tutorials/quickstart.md
+      - Forman-Ricci examples: tutorials/frc-examples.md
+  - API:
+      - hyphi.analyses: api/analyses.md
+      - hyphi.benchmarks: api/benchmarks.md
+      - hyphi.io: api/io.md
+      - hyphi.io_adjacency: api/io_adjacency.md
+      - hyphi.modeling: api/modeling.md
+      - hyphi.null_models: api/null_models.md
+      - hyphi.simulation: api/simulation.md
+      - hyphi.spectral: api/spectral.md
+      - hyphi.stats: api/stats.md
+      - hyphi.visualization: api/visualization.md
+  - Contributing: contributing.md
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [code]
+          options:
+            show_root_heading: true
+            docstring_style: numpy
+            members_order: source
+  - mkdocs-jupyter:
+      include_source: true
+
+markdown_extensions:
+  - admonition
+  - toc:
+      permalink: true
+  - pymdownx.highlight
+  - pymdownx.superfences
