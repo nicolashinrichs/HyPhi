@@ -30,12 +30,15 @@ def build_sliding_window_graphs(connectivity_matrix: np.ndarray) -> list[nx.Grap
     """
     Convert a 3D or 2D connectivity array into a list of NetworkX graphs.
 
-    Args:
-        connectivity_matrix: (windows, nodes, nodes) or (nodes, nodes).
+    Parameters
+    ----------
+    connectivity_matrix : np.ndarray
+        (windows, nodes, nodes) or (nodes, nodes).
 
-    Returns:
+    Returns
+    -------
+    list[nx.Graph]
         List of nx.Graph instances with edge weights.
-
     """
     if connectivity_matrix.ndim == 2:
         connectivity_matrix = connectivity_matrix[np.newaxis, :, :]
