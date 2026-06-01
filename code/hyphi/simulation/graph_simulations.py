@@ -35,14 +35,14 @@ def gen_tv_weighted_sw(
     pt = np.logspace(minpow, maxpow, trez)
 
     # Initialize empty list for graphs
-    gt = []
+    Gt: list[nx.Graph] = []
 
     # Simulate
     for t in range(trez):
-        gt.append(gen_weighted_sw(n, k, pt[t], ε, seed_val=seed_val))
+        Gt.append(gen_weighted_sw(n, k, pt[t], ε, seed_val=seed_val))
 
     # Return time series of graphs
-    return pt, gt
+    return pt, Gt
 
 
 def gen_tv_sw(n: int, k: int, trez: int, minpow: float | int, maxpow: float | int, seed_val: int = 42):
@@ -50,7 +50,7 @@ def gen_tv_sw(n: int, k: int, trez: int, minpow: float | int, maxpow: float | in
     pt = np.logspace(minpow, maxpow, trez)
 
     # Initialize empty list for graphs
-    Gt = []
+    Gt: list[nx.Graph] = []
 
     # Simulate
     for t in range(trez):

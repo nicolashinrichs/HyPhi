@@ -2,8 +2,8 @@
 Statistical testing for HyPhi: hierarchical permutation, mixed-effects, effect sizes, power.
 
 This module replaces the original pooled-permutation approach with tests that
-respect the dyad → trial → window nesting of hyperscanning data.  Every
-entry point here is framed as a **proof-of-concept** given the small empirical
+respect the dyad → trial → window nesting of hyperscanning data.
+Every entry point here is framed as a **proof-of-concept** given the small empirical
 sample (N = 2 dyads in the reference dataset); see :func:`required_sample_size`
 for the N implied by an observed effect at alpha=0.05, power=0.80.
 
@@ -92,10 +92,7 @@ def entropy_to_long_df(
     for dyad, by_cond in entropy_by_dyad_condition.items():
         for cond, arr in by_cond.items():
             if arr.ndim != 3:
-                msg = (
-                    f"Expected (n_freq, n_trials, n_windows) for dyad={dyad} "
-                    f"cond={cond}, got shape {arr.shape}."
-                )
+                msg = f"Expected (n_freq, n_trials, n_windows) for dyad={dyad} cond={cond}, got shape {arr.shape}."
                 raise ValueError(msg)
             n_freq, n_trials, n_windows = arr.shape
             for f in range(n_freq):

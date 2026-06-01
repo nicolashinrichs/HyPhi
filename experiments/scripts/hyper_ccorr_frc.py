@@ -105,10 +105,10 @@ if __name__ == "__main__":
                     ccorr_trial = ccorr_mat[freq, trial, :, :, :]
 
                     # Convert CCORR matrices into Networkx graphs
-                    Gt = [nx.from_numpy_array(ccorr_trial[window, :, :]) for window in range(4)]
+                    list_of_graphs = [nx.from_numpy_array(ccorr_trial[window, :, :]) for window in range(4)]
 
                     # Compute Forman-Ricci curvatures across windows for this trial and frequency band
-                    FRCt = compute_frc_vec(Gt)
+                    FRCt = compute_frc_vec(list_of_graphs)
 
                     # Convert IBCs (networkx graphs) with window curvatures to window curvature matrices
                     for window in range(4):

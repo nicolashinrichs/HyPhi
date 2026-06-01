@@ -123,14 +123,14 @@ def freqBandAnalysis(freq_data, band_idx, config, progress_queue):
                         ccorr_trial = ccorr_mat[trial, :, :, :]
 
                         # Convert CCORR matrices into Networkx graphs
-                        Gt = [
+                        list_of_graphs = [
                             nx.from_numpy_array(ccorr_trial[window, :, :]) for window in range(config["num_windows"])
                         ]
 
                         # Loop over windows
                         for window in range(config["num_windows"]):
                             # Compute Forman-Ricci curvatures across windows for this trial and frequency band
-                            ORC = compute_orc(Gt[window], alpha=alph, exp_power=powr)
+                            ORC = compute_orc(G=list_of_graphs[window], alpha=alph, exp_power=powr)
 
                             # Convert IBCs (networkx graphs) with window curvatures to window curvature matrices
                             ORCvals[trial, window, :, :] = nx.attr_matrix(ORC, edge_attr="ricciCurvature")[0]
