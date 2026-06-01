@@ -186,9 +186,7 @@ class TestHierarchicalPermutation:
     def test_missing_column_raises(self):
         df = pd.DataFrame({"dyad": [0, 0], "trial_id": ["0__0", "0__1"], "entropy": [1.0, 2.0]})
         with pytest.raises(ValueError, match="Missing columns"):
-            hierarchical_permutation_test(
-                data=df, value_col="entropy", condition_col="condition", n_perms=10, seed=0
-            )
+            hierarchical_permutation_test(data=df, value_col="entropy", condition_col="condition", n_perms=10, seed=0)
 
     def test_unknown_tail_raises(self):
         data = _synthetic_entropy_dict(n_dyads=2, n_trials=3)

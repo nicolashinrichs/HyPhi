@@ -1,15 +1,12 @@
-"""TODO: add description here"""
+"""TODO: add description here."""
 
 # %% Import
 import math
-from typing import TYPE_CHECKING
 
+import networkx as nx
 import numpy as np
 from GraphRicciCurvature.FormanRicci import FormanRicci
 from GraphRicciCurvature.OllivierRicci import OllivierRicci
-
-#if TYPE_CHECKING:
-import networkx as nx
 
 # %% Functions >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 

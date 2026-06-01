@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Minimal helper to load a graph pickle and return its adjacency matrix.
+"""
+Minimal helper to load a graph pickle and return its adjacency matrix.
 
 This is the communities_centrality-package copy of the loader.  The same
 function is also available in :mod:`hyphi.io_brainhack` (preferred for new
@@ -15,13 +16,12 @@ from __future__ import annotations
 import io
 import pickle
 from pathlib import Path
-from typing import List, Union
 
 import numpy as np
 
 
 def load_pickle_adjacency(
-    pickle_path: Union[str, Path],
+    pickle_path: str | Path,
     weight_key: str = "weight",
     symmetrize: bool = False,
     return_nodes: bool = False,
@@ -47,8 +47,8 @@ def load_pickle_adjacency(
         Adjacency matrix.
     (np.ndarray, list)
         Returned when return_nodes=True.
-    """
 
+    """
     path = Path(pickle_path)
 
     def _compat_load(path_obj: Path):
@@ -115,7 +115,7 @@ def load_pickle_adjacency(
     if not isinstance(adj, dict):
         raise TypeError("Could not find dictionary-like '_adj' in the pickle object.")
 
-    nodes: List[object] = list(adj.keys())
+    nodes: list[object] = list(adj.keys())
     idx = {node: i for i, node in enumerate(nodes)}
     n = len(nodes)
     A = np.zeros((n, n), dtype=float)

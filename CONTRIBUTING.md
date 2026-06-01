@@ -1,7 +1,8 @@
 # Contributing to HyPhi
 
-Thanks for your interest in contributing.  This document collects the project conventions
-that are not enforced by tooling, plus the commands you need to develop locally.
+Thanks for your interest in contributing.
+This document collects the project conventions
+that tooling does not enforce, plus the commands you need to develop locally.
 
 ## Setup
 
@@ -51,6 +52,7 @@ import ...
 
 
 def public_function(...):
+    """Add a docstring here."""
     ...
 
 # o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o END

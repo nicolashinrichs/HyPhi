@@ -4,8 +4,8 @@ analyses.  Pure NumPy; only depends on ``matplotlib`` for the optional plot
 inside :func:`eigen_in_time`.
 """
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 def laplace(matrix: np.ndarray):
@@ -15,11 +15,11 @@ def laplace(matrix: np.ndarray):
     input
     Adjacency matrix
 
-    returns
-    eigenvalues, eigenvectors and Laplacian matrix
+    Returns
+    -------
+    eigenvalues, eigenvectors, and Laplacian matrix
 
     """
-
     # Calculating degrees of nodes
     degrees = np.sum(matrix, axis=1)
 
@@ -39,7 +39,8 @@ def eigen_in_time(matrices: np.ndarray, plot=False, Fs=1):
     This function takes multiple matrices as input and finds second to smallest eigenvalue of each.
     Fs - sampling frequency
 
-    returns
+    Returns
+    -------
     lambdas - second to smallest eigenvalue of each matrix
     gaps - moduli of two largest eigenvalues
 

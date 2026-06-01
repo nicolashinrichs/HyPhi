@@ -4,7 +4,7 @@ Simulations module for HyPhi: Kuramoto model and Watts-Strogatz network sweeps.
 1. Connectome-informed Kuramoto model with delays
    (structural outline extracted from connectome_kuramoto.ipynb)
 2. Watts-Strogatz small-world sweep
-   (parameterised version of the sweep in NeuRepsSimulations.py)
+   (parameterized version of the sweep in NeuRepsSimulations.py)
 
 Years: 2026
 """
@@ -47,7 +47,7 @@ def load_connectome(pickle_path: str) -> tuple[np.ndarray, np.ndarray, list[str]
     with open(pickle_path, "rb") as f:  # noqa: S301
         W, tract, roi_names, _centers_raw, _hemis_raw, _areas_raw = pickle.load(f)  # noqa: S301
 
-    # Symmetrise and zero diagonal
+    # Symmetrize and zero diagonal
     W = (W + W.T) / 2.0
     tract = (tract + tract.T) / 2.0
     np.fill_diagonal(W, 0)
@@ -237,7 +237,7 @@ def gen_weighted_sw(n: int, k: int, p: float, epsilon: float, seed: int = 42) ->
     n : int
         Number of nodes.
     k : int
-        Each node is connected to *k* nearest neighbours in ring topology.
+        Each node is connected to *k* nearest neighbors in ring topology.
     p : float
         Rewiring probability.
     epsilon : float
@@ -280,7 +280,7 @@ def run_ws_sweep(
     n : int
         Number of nodes.
     k : int
-        Neighbourhood size.
+        Neighborhood size.
     epsilon : float
         Spacing parameter.
     t_rez : int

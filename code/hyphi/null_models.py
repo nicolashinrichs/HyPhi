@@ -143,7 +143,7 @@ def circular_time_shift(
     one_d = signal.ndim == 1
     arr = signal[np.newaxis, :] if one_d else signal
     n_channels, T = arr.shape
-    if T <= 2 * min_shift:
+    if 2 * min_shift >= T:
         raise ValueError(f"Signal length {T} too short for min_shift={min_shift}.")
 
     out = np.empty_like(arr)

@@ -34,7 +34,7 @@ import numpy as np
 
 
 def load_pickle_adjacency(
-    pickle_path: Union[str, Path],
+    pickle_path: str | Path,
     weight_key: str = "weight",
     symmetrize: bool = False,
     return_nodes: bool = False,
@@ -61,8 +61,8 @@ def load_pickle_adjacency(
         Adjacency matrix.
     (np.ndarray, list)
         Returned when return_nodes=True.
-    """
 
+    """
     path = Path(pickle_path)
 
     def _compat_load(path_obj: Path):
@@ -129,7 +129,7 @@ def load_pickle_adjacency(
     if not isinstance(adj, dict):
         raise TypeError("Could not find dictionary-like '_adj' in the pickle object.")
 
-    nodes: List[object] = list(adj.keys())
+    nodes: list[object] = list(adj.keys())
     idx = {node: i for i, node in enumerate(nodes)}
     n = len(nodes)
     A = np.zeros((n, n), dtype=float)
@@ -185,6 +185,7 @@ def load_adjacencies_from_paths(
     (dict, dict)
         Returned when return_nodes=True:
         ({idx: adjacency}, {idx: nodes})
+
     """
     adjacencies = {}
     node_orders = {} if return_nodes else None
@@ -233,9 +234,7 @@ def build_kuramoto_paths(
     missing = [idx for idx, path in paths.items() if not path.exists()]
     if missing:
         missing_str = ", ".join(str(idx) for idx in missing)
-        raise FileNotFoundError(
-            f"Missing Kuramoto pickle file(s) for index/indices: {missing_str}"
-        )
+        raise FileNotFoundError(f"Missing Kuramoto pickle file(s) for index/indices: {missing_str}")
 
     return paths
 
@@ -300,9 +299,7 @@ def build_prebase_paths(
     missing = [idx for idx, path in paths.items() if not path.exists()]
     if missing:
         missing_str = ", ".join(f"{idx:02d}" for idx in missing)
-        raise FileNotFoundError(
-            f"Missing prebase pickle file(s) for index/indices: {missing_str}"
-        )
+        raise FileNotFoundError(f"Missing prebase pickle file(s) for index/indices: {missing_str}")
 
     return paths
 

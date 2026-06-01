@@ -4,20 +4,20 @@ GDD / Forman-Ricci pipeline helpers.
 These functions stitch together adjacency matrices, Forman-Ricci curvature
 computation, and graph diffusion distance (GDD) into a small bundle-oriented
 pipeline used by the ``GDD_FRc_*`` notebooks.  Pure orchestration: all of the
-actual graph maths lives in :mod:`hyphi.modeling.graph_curvatures` (FRC) and
+actual graph maths live in :mod:`hyphi.modeling.graph_curvatures` (FRC) and
 :mod:`hyphi.modeling.curvatures` (Laplacian, heat-kernel distance).
 """
 
-import numpy as np
 import networkx as nx
+import numpy as np
 
-from hyphi.modeling.graph_curvatures import (
-    compute_frc,
-    extract_curvatures,
-)
 from hyphi.modeling.curvatures import (
     compute_laplacian_matrix,
     heat_kernel_distance,
+)
+from hyphi.modeling.graph_curvatures import (
+    compute_frc,
+    extract_curvatures,
 )
 
 
@@ -30,10 +30,7 @@ def compute_global_curvature_stats(curvature_dict):
     - MAD = median absolute deviation from the median
     """
     all_curvatures = np.concatenate(
-        [
-            np.ravel(np.asarray(curvatures, dtype=float))
-            for curvatures in curvature_dict.values()
-        ]
+        [np.ravel(np.asarray(curvatures, dtype=float)) for curvatures in curvature_dict.values()]
     )
 
     if all_curvatures.size == 0:
@@ -60,10 +57,7 @@ def compute_frc_bundle_from_adjacency(adjacency, method="1d"):
     G = nx.from_numpy_array(adjacency)
     G_frc = compute_frc(G, method=method)
 
-    edge_curvatures = {
-        (u, v): data["formanCurvature"]
-        for u, v, data in G_frc.edges(data=True)
-    }
+    edge_curvatures = {(u, v): data["formanCurvature"] for u, v, data in G_frc.edges(data=True)}
 
     curvatures = np.asarray(
         extract_curvatures(G_frc, curvature="formanCurvature"),
@@ -106,6 +100,7 @@ def compute_frc_bundles_from_adjacencies(
         Dictionary like {idx: bundle}, where bundle contains:
         adjacency, graph, graph_frc, edge_curvatures, curvatures,
         and optionally path.
+
     """
     results = {}
 
@@ -149,6 +144,7 @@ def compute_successive_gdd(
     -------
     gdd_dict : dict
         Dictionary like {2: d(G2, G1), 3: d(G3, G2), ...}
+
     """
     indices = sorted(weighted_graphs.keys())
 
@@ -166,8 +162,7 @@ def compute_successive_gdd(
 
         if L_prev.shape != L_curr.shape:
             raise ValueError(
-                f"Laplacian shape mismatch between graphs {prev_idx} and {curr_idx}: "
-                f"{L_prev.shape} vs {L_curr.shape}"
+                f"Laplacian shape mismatch between graphs {prev_idx} and {curr_idx}: {L_prev.shape} vs {L_curr.shape}"
             )
 
         gdd = heat_kernel_distance(L_prev, L_curr)
@@ -200,6 +195,7 @@ def compute_pairwise_gdd_matrix(
         Symmetric array with entry (i, j) = GDD(graph_i, graph_j).
     laplacians : dict
         Cached Laplacian matrices keyed by graph index.
+
     """
     indices = sorted(weighted_graphs.keys())
 
@@ -216,10 +212,7 @@ def compute_pairwise_gdd_matrix(
         if reference_shape is None:
             reference_shape = L.shape
         elif L.shape != reference_shape:
-            raise ValueError(
-                f"Laplacian shape mismatch for graph {idx}: "
-                f"expected {reference_shape}, got {L.shape}"
-            )
+            raise ValueError(f"Laplacian shape mismatch for graph {idx}: expected {reference_shape}, got {L.shape}")
 
     n = len(indices)
     distance_matrix = np.zeros((n, n), dtype=float)

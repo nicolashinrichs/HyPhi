@@ -23,9 +23,9 @@ intact for backward compatibility; this module is additive.
 Years: 2026
 """
 
+# %% Import
 from __future__ import annotations
 
-# %% Import
 import logging
 from collections.abc import Callable, Mapping
 from typing import Any
@@ -277,7 +277,7 @@ def _default_test_stat(df: pd.DataFrame, value_col: str, condition_col: str) -> 
     """
     Multi-group test statistic: sum of squared pairwise mean differences.
 
-    Equivalent to ``|mean_a - mean_b|²`` for K=2 groups, generalises smoothly
+    Equivalent to ``|mean_a - mean_b|²`` for K=2 groups, generalizes smoothly
     to K>2, and is permutation-valid under the sharp null of label
     exchangeability.  Always non-negative (use ``tail="right"``).
     """
@@ -363,7 +363,7 @@ def hierarchical_permutation_test(
             d_df.drop_duplicates(subset=[trial_col]).set_index(trial_col).loc[trial_ids, condition_col].to_numpy()
         )
         dyad_trial_info[d] = (trial_ids, trial_conds)
-        n_trials_per_dyad[d] = int(len(trial_ids))
+        n_trials_per_dyad[d] = len(trial_ids)
 
     trial_to_row_idx: dict[tuple[Any, Any], np.ndarray] = {}
     for (d, t), rows in data.groupby([dyad_col, trial_col]).groups.items():
@@ -391,7 +391,7 @@ def hierarchical_permutation_test(
         "null_distribution": null_dist,
         "p_value": p_value,
         "n_perms": int(n_perms),
-        "n_dyads": int(len(dyad_trial_info)),
+        "n_dyads": len(dyad_trial_info),
         "n_trials_per_dyad": n_trials_per_dyad,
         "tail": tail,
     }
@@ -474,7 +474,7 @@ def required_sample_size(
     power: float = 0.8,
     ratio: float = 1.0,
     alternative: str = "two-sided",
-) -> dict[str, float]:
+) -> dict[str, float | str]:
     """
     Minimum dyads per condition to detect an effect of the given size.
 

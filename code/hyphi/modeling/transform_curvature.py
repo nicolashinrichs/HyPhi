@@ -12,9 +12,8 @@ transformed weights comparable across the collection, which is what the GDD
 heatmap / successive-GDD analyses in the ``GDD_FRc_*`` notebooks rely on.
 """
 
-
-import numpy as np
 import networkx as nx
+import numpy as np
 
 
 def as_1d_float_array(values):
@@ -72,24 +71,21 @@ def fit_global_positive_linear_transform(
     -------
     params : dict
         Fitted parameters and some diagnostics.
+
     """
     if not isinstance(curvature_dict, dict) or len(curvature_dict) == 0:
         raise ValueError("curvature_dict must be a non-empty dictionary.")
 
     sign = -1.0 if flip_sign else 1.0
 
-    pooled = np.concatenate(
-        [as_1d_float_array(values) for values in curvature_dict.values()]
-    )
+    pooled = np.concatenate([as_1d_float_array(values) for values in curvature_dict.values()])
     signed = sign * pooled
 
     signed_min = float(np.min(signed))
     signed_max = float(np.max(signed))
 
     if signed_max == signed_min:
-        raise ValueError(
-            "All pooled curvature values are identical; cannot fit a meaningful transform."
-        )
+        raise ValueError("All pooled curvature values are identical; cannot fit a meaningful transform.")
 
     if rescale is None:
         scale = 1.0
@@ -129,10 +125,7 @@ def apply_linear_transform(values, *, sign, scale, shift):
     - array-like -> NumPy array
     """
     if isinstance(values, dict):
-        return {
-            key: float(scale * sign * value + shift)
-            for key, value in values.items()
-        }
+        return {key: float(scale * sign * value + shift) for key, value in values.items()}
 
     arr = np.asarray(values, dtype=float)
     return scale * sign * arr + shift

@@ -206,7 +206,7 @@ def summarize_network(
     weight_values = np.array(list(weights.values()))
     if len(weight_values) > 0:
         summary["weight_stats"] = {
-            "count": int(len(weight_values)),
+            "count": len(weight_values),
             "min": float(weight_values.min()),
             "max": float(weight_values.max()),
             "mean": float(weight_values.mean()),

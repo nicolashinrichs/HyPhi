@@ -45,7 +45,8 @@ def save_network_pkl(data, pkl_file: str) -> None:
 
 
 class CompatUnpickler(pickle.Unpickler):
-    """Compatibility unpickler for older NumPy-internal module paths.
+    """
+    Compatibility unpickler for older NumPy-internal module paths.
 
     Pickles produced under ``numpy >= 1.25`` reference the private
     ``numpy._core`` namespace.  When loaded under older NumPy releases that
@@ -61,7 +62,8 @@ class CompatUnpickler(pickle.Unpickler):
 
 
 def load_connectivity_data(pickle_path: str | Path):
-    """Load ``connectivity_data.pkl`` and return all expected components.
+    """
+    Load ``connectivity_data.pkl`` and return all expected components.
 
     Uses :class:`CompatUnpickler` so that pickles written under newer NumPy
     versions remain loadable in environments still on the legacy

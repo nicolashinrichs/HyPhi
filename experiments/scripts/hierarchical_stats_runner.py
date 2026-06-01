@@ -135,9 +135,7 @@ def entropy_path(config: dict, dyad: Any, trial_type: str, curvature: str) -> Pa
 def curvature_matrix_path(config: dict, dyad: Any, trial_type: str, curvature: str) -> Path:
     """Per-dyad × per-trial-type curvature matrix path (shape: n_freq × n_trials × n_windows × 2n × 2n)."""
     base = Path(config["result_loc"]).resolve()
-    return base / (
-        f"{_prefix(curvature)}_matrix_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy"
-    )
+    return base / (f"{_prefix(curvature)}_matrix_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy")
 
 
 # ---------------------
@@ -221,9 +219,7 @@ def preflight_check(entropies: dict, config: dict) -> Capabilities:
     n_conds_loaded = len(loaded_conditions)
 
     # Dyads that have the full set of configured conditions
-    n_dyads_complete = sum(
-        1 for by_cond in entropies.values() if set(by_cond.keys()) == set(conditions_configured)
-    )
+    n_dyads_complete = sum(1 for by_cond in entropies.values() if set(by_cond.keys()) == set(conditions_configured))
 
     regime = _classify_regime(n_dyads_loaded)
 
@@ -253,17 +249,11 @@ def preflight_check(entropies: dict, config: dict) -> Capabilities:
             "they will participate only where their subset of conditions is sufficient."
         )
     if n_conds_loaded < 2:
-        caps.notes.append(
-            f"Only {n_conds_loaded} condition(s) loaded; between-condition inference disabled."
-        )
+        caps.notes.append(f"Only {n_conds_loaded} condition(s) loaded; between-condition inference disabled.")
     if not caps.can_mixed_effects and caps.can_hierarchical_perm:
-        caps.notes.append(
-            "Mixed-effects skipped: need ≥2 dyads to estimate a dyad-level variance component."
-        )
+        caps.notes.append("Mixed-effects skipped: need ≥2 dyads to estimate a dyad-level variance component.")
     if not caps.can_group_cv and caps.can_hierarchical_perm:
-        caps.notes.append(
-            "Classifier falls back to StratifiedKFold (non-group-aware): only one dyad present."
-        )
+        caps.notes.append("Classifier falls back to StratifiedKFold (non-group-aware): only one dyad present.")
 
     return caps
 
@@ -430,7 +420,7 @@ def run_effect_sizes(entropies: dict, conditions: list[str], freq_bands: list[st
 
     results: dict[str, Any] = {}
     for i, ca in enumerate(conditions):
-        for cb in conditions[i + 1:]:
+        for cb in conditions[i + 1 :]:
             for band in freq_bands:
                 if band not in stacks.get(ca, {}) or band not in stacks.get(cb, {}):
                     continue
@@ -563,9 +553,7 @@ def main(config_file: str, curvature: str, strict: bool = False) -> dict:
 
     config_path = os.path.join(paths.experiments.configs, config_file)
     config = load_config(config_path)
-    freq_bands = list(
-        config.get("freq_bands", [f"band{i}" for i in range(int(config.get("num_freqs", 8)))])
-    )
+    freq_bands = list(config.get("freq_bands", [f"band{i}" for i in range(int(config.get("num_freqs", 8)))]))
 
     # --- Load (cheap) ------------------------------------------------------
     entropies = load_entropy_arrays(config, curvature)
@@ -644,9 +632,7 @@ def main(config_file: str, curvature: str, strict: bool = False) -> dict:
     }
 
     out_dir = Path(config.get("pooled_result_loc", paths.experiments.configs))
-    out_path = out_dir / (
-        f"hierarchical_stats_{curvature}_n_perm_{n_perms}_config_{config['config_id']}.json"
-    )
+    out_path = out_dir / (f"hierarchical_stats_{curvature}_n_perm_{n_perms}_config_{config['config_id']}.json")
     save_results_json(report, out_path)
     return report
 

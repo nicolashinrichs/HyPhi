@@ -46,7 +46,7 @@ dependencies = [
     "jaxlib>=0.4,<1.0",
     "jitcdde>=1.8,<2.0", # Delayed DDE Kuramoto (connectome model)
     "symengine>=0.11,<1.0",
-    "mne>=1.5,<2.0", # EEG forward modelling
+    "mne>=1.5,<2.0", # EEG forward modeling
     "astropy>=5.0,<7.0", # Circular statistics
     "statsmodels>=0.14,<1.0", # Statistics & machine learning
     "scikit-learn>=1.3,<2.0",
@@ -245,7 +245,6 @@ ignore = [
 # skip-magic-trailing-comma = true  # default: false
 docstring-code-format = true # default: false
 # docstring-code-line-length = 80
-# preview = true  # true: Ruff will use unstable rules for formatting; default: false
 
 # Configure specific linters
 [tool.ruff.lint.flake8-annotations]
@@ -274,7 +273,7 @@ ignore-names = [] # fill with specific class, function, variable names
 # convention = "google"  # "numpy", "pep257"
 
 [tool.ruff.lint.pylint]
-max-args = 5          # default: 5
+max-args = 10         # default: 5
 max-branches = 12     # default: 12
 max-locals = 15       # default: 15
 max-returns = 6       # default: 6

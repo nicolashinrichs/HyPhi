@@ -5,7 +5,7 @@ This is the spectral counterpart to the FRC-weighted GDD pipeline in
 :mod:`hyphi.modeling.GDD_FRc_helpers`: instead of computing a single closed-form
 heat-kernel distance, this module sweeps a time axis ``[0, time_limit]`` at
 sampling rate ``fs`` and returns the *maximum* Frobenius difference between the
-two heat operators.  Useful when you want to detect the time scale at which two
+two heat operators.  Useful when you want to detect the timescale at which two
 networks are most distinguishable, not just an aggregate scalar.
 """
 
@@ -25,15 +25,14 @@ def diffusion_distance(adj1: np.ndarray, adj2: np.ndarray, time_limit: float, fs
 
     Input
     Adjacency matrix 1, adjacency matrix 2, time_limit, fs
-    time limit - how many timepoints (in seconds) should be analysed to find the maximum distance of two heat distributions
-    fs - how many timepoints in one second should be analysed
+    time limit - how many timepoints (in seconds) should be analyzed to find the maximum distance of two heat distributions
+    fs - how many timepoints in one second should be analyzed
 
     Output
     maximum diffusion distance (d_gdd) in the given time window (0, time_limit)
 
     """
-
-    frobenius = lambda A: la.norm(A, ord='fro')
+    frobenius = lambda A: la.norm(A, ord="fro")
     exp = lambda t, eigvals, eigvecs: eigvecs @ la.expm(t * eigvals) @ la.inv(eigvecs)
 
     time = np.arange(0, time_limit, 1 / fs)
@@ -50,7 +49,7 @@ def diffusion_distance(adj1: np.ndarray, adj2: np.ndarray, time_limit: float, fs
 
 def edge_deletion(A, i, j):
     """
-    A is an adjucency matrix, i and j are nodes between which we want to remove the edge
+    A is an adjacency matrix, i and j are nodes between which we want to remove the edge.
     """
     A_prime = np.copy(A)
 
@@ -62,8 +61,8 @@ def edge_deletion(A, i, j):
 
 def EDP(A, m, n, Fs):
     """
-    Function which returns the normalized edge detetion perturbation.
-    A - adjucency matrix (original)
+    Function that returns the normalized edge detection perturbation.
+    A - adjacency matrix (original)
     A_prime - is a  A matrix with a delted edge.
 
     If edge (m, n) is absent (``A[m, n] == 0``), ``chi`` is 0 and ``A_prime``
@@ -82,5 +81,5 @@ def EDP(A, m, n, Fs):
     return chi, A_prime
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

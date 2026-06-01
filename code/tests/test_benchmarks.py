@@ -234,9 +234,7 @@ class TestClassifyCurvatureVsBenchmarks:
     def test_group_aware_cv_used_when_groups_passed(self):
         X_c, X_b, y = self._make_data(n_samples=40)
         groups = np.repeat(np.arange(4), 10)
-        out = classify_curvature_vs_benchmarks(
-            X_curvature=X_c, X_benchmarks=X_b, y=y, groups=groups, cv=4
-        )
+        out = classify_curvature_vs_benchmarks(X_curvature=X_c, X_benchmarks=X_b, y=y, groups=groups, cv=4)
         assert out["cv_splitter"] == "StratifiedGroupKFold"
         assert out["groups_used"] is True
         assert out["n_groups"] == 4
@@ -244,9 +242,7 @@ class TestClassifyCurvatureVsBenchmarks:
 
     def test_stratified_kfold_when_no_groups(self):
         X_c, X_b, y = self._make_data(n_samples=40)
-        out = classify_curvature_vs_benchmarks(
-            X_curvature=X_c, X_benchmarks=X_b, y=y, groups=None, cv=5
-        )
+        out = classify_curvature_vs_benchmarks(X_curvature=X_c, X_benchmarks=X_b, y=y, groups=None, cv=5)
         assert out["cv_splitter"] == "StratifiedKFold"
         assert out["groups_used"] is False
         assert out["n_groups"] is None

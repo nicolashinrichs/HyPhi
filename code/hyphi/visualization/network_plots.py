@@ -4,7 +4,7 @@ Network plotting utilities for HyPhi.
 Complements ``curvature_visualisation.py`` with lightweight, layout-aware
 plotting helpers for ad-hoc inspection of inter-brain graphs and their
 Forman-Ricci curvature values.  Every function returns a ``matplotlib``
-figure so downstream code can further customise or save it.
+figure so downstream code can further customize or save it.
 
 Origins: adapted from the ``network_checks_v2`` exploration notebook used
 during Brainhack 2026.
@@ -15,7 +15,7 @@ Years: 2026
 from __future__ import annotations
 
 # %% Import
-from typing import Iterable
+from collections.abc import Iterable
 
 import matplotlib.pyplot as plt
 import networkx as nx
@@ -190,10 +190,10 @@ def plot_curvature_network(
     Raises
     ------
     ValueError
-        If the graph has no edges to colour.
+        If the graph has no edges to color.
 
     """
-    cmap = cmap if cmap is not None else plt.cm.coolwarm
+    cmap = cmap if cmap is not None else plt.cm.coolwarm  # ty:ignore[unresolved-attribute]
     pos = _get_layout_positions(G, layout=layout, seed=seed)
 
     edge_curvs = [data[curvature_attr] for _, _, data in G.edges(data=True)]

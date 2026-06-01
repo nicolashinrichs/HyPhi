@@ -260,7 +260,7 @@ def connectivity_matrix_features(
     W = np.abs(M).copy()
     np.fill_diagonal(W, 0.0)
     if weight_threshold > 0:
-        W[W <= weight_threshold] = 0.0
+        W[weight_threshold >= W] = 0.0
     G = nx.from_numpy_array(W)
 
     return {
@@ -403,7 +403,7 @@ def classify_curvature_vs_benchmarks(
 
     if groups is not None:
         groups = np.asarray(groups)
-        n_uniq = int(len(np.unique(groups)))
+        n_uniq = len(np.unique(groups))
         if n_uniq < cv:
             logger.warning(
                 "Only %d unique groups for cv=%d; reducing n_splits to %d.",
@@ -421,9 +421,7 @@ def classify_curvature_vs_benchmarks(
         splitter_name = "StratifiedKFold"
 
     def _score(X: np.ndarray) -> np.ndarray:
-        return np.array(
-            [cross_val_score(pipe, X, y, scoring=scoring, cv=[(tr, te)])[0] for tr, te in splits]
-        )
+        return np.array([cross_val_score(pipe, X, y, scoring=scoring, cv=[(tr, te)])[0] for tr, te in splits])
 
     curv_scores = _score(X_curvature)
     bench_scores = _score(X_benchmarks)
@@ -436,13 +434,13 @@ def classify_curvature_vs_benchmarks(
         "curvature_std": float(curv_scores.std()),
         "benchmark_std": float(bench_scores.std()),
         "cv_splitter": splitter_name,
-        "n_splits": int(len(splits)),
+        "n_splits": len(splits),
         "scoring": scoring,
         "classifier": classifier,
         "n_samples": int(X_curvature.shape[0]),
-        "n_classes": int(len(np.unique(y))),
+        "n_classes": len(np.unique(y)),
         "groups_used": groups is not None,
-        "n_groups": int(len(np.unique(groups))) if groups is not None else None,
+        "n_groups": len(np.unique(groups)) if groups is not None else None,
     }
     if X_combined is not None:
         X_combined = np.asarray(X_combined, dtype=float)

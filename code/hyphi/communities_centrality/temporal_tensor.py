@@ -32,9 +32,9 @@ def create_temporal_tensor(folder_path, file_pattern="*_matrix.npy"):
 def plot_state_stability_heatmap(
     temporal_tensor,
     *,
-    cmap='coolwarm',
+    cmap="coolwarm",
     figsize=(9, 7),
-    style='seaborn-v0_8-muted',
+    style="seaborn-v0_8-muted",
     title="Hyper-Brain State Stability Over Time",
     show=False,
 ):
@@ -56,6 +56,7 @@ def plot_state_stability_heatmap(
     -------
     (matplotlib.figure.Figure, np.ndarray)
         The figure and the ``(num_frames, num_frames)`` similarity matrix.
+
     """
     if style:
         try:
@@ -67,14 +68,14 @@ def plot_state_stability_heatmap(
     num_frames = temporal_tensor.shape[0]
     flat_tensor = temporal_tensor.reshape(num_frames, -1)
 
-    dist_matrix = squareform(pdist(flat_tensor, metric='correlation'))
+    dist_matrix = squareform(pdist(flat_tensor, metric="correlation"))
     similarity_matrix = 1 - dist_matrix
 
     fig = plt.figure(figsize=figsize)
-    im = plt.imshow(similarity_matrix, cmap=cmap, aspect='auto', vmin=0, vmax=1)
+    im = plt.imshow(similarity_matrix, cmap=cmap, aspect="auto", vmin=0, vmax=1)
 
     cbar = plt.colorbar(im)
-    cbar.set_label('Network Similarity (Correlation)', rotation=270, labelpad=15)
+    cbar.set_label("Network Similarity (Correlation)", rotation=270, labelpad=15)
 
     plt.title(title, fontsize=16)
     plt.xlabel("Frame (time point)", fontsize=12)

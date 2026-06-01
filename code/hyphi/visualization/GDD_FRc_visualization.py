@@ -14,7 +14,7 @@ All functions return matplotlib objects; nothing is shown automatically.
 
 from __future__ import annotations
 
-from typing import Mapping, Sequence
+from collections.abc import Mapping, Sequence
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -69,6 +69,7 @@ def plot_weight_distributions_by_matrix(
     Returns
     -------
     matplotlib.figure.Figure
+
     """
     keys = list(curvature_dict.keys())
     n = len(keys)
@@ -138,6 +139,7 @@ def plot_successive_gdd(
     Returns
     -------
     (matplotlib.figure.Figure, matplotlib.axes.Axes)
+
     """
     if not successive_gdd:
         raise ValueError("successive_gdd is empty; nothing to plot.")
@@ -193,12 +195,11 @@ def plot_gdd_heatmap(
     Returns
     -------
     (matplotlib.figure.Figure, matplotlib.axes.Axes)
+
     """
     arr = np.asarray(pairwise_gdd, dtype=float)
     if arr.ndim != 2 or arr.shape[0] != arr.shape[1]:
-        raise ValueError(
-            f"pairwise_gdd must be a square 2D array; got shape {arr.shape}."
-        )
+        raise ValueError(f"pairwise_gdd must be a square 2D array; got shape {arr.shape}.")
 
     n = arr.shape[0]
     fig, ax = plt.subplots(figsize=figsize)
@@ -206,9 +207,7 @@ def plot_gdd_heatmap(
 
     if labels is not None:
         if len(labels) != n:
-            raise ValueError(
-                f"labels length ({len(labels)}) does not match matrix size ({n})."
-            )
+            raise ValueError(f"labels length ({len(labels)}) does not match matrix size ({n}).")
         ax.set_xticks(range(n))
         ax.set_yticks(range(n))
         ax.set_xticklabels(labels, rotation=90)
