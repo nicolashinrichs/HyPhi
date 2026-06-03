@@ -2,7 +2,7 @@
 
 ![Last update](https://img.shields.io/badge/last_update-Jun_03,_2026-green)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18415664.svg)](https://doi.org/10.5281/zenodo.18415664)
-![Last update](https://img.shields.io/badge/version-v.2.0.0-blue)
+![Last update](https://img.shields.io/badge/version-v.2.1.0-blue)
 [![🚀 scilaunch](https://img.shields.io/badge/based%20on-🚀%20scilaunch-salmon "🚀")](https://shescher.github.io/scilaunch/)
 
 ***
