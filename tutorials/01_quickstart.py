@@ -7,7 +7,7 @@ network plot.
 
 import marimo
 
-__generated_with = "0.23.0"
+__generated_with = "0.23.5"
 app = marimo.App()
 
 
@@ -23,7 +23,9 @@ def _(mo):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""## 1. Bootstrap project config""")
+    mo.md(r"""
+    ## 1. Bootstrap project config
+    """)
     return
 
 
@@ -33,12 +35,14 @@ def _():
 
     bootstrap()
     paths.show()
-    return bootstrap, params, paths
+    return
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""## 2. Load shipped connectomes""")
+    mo.md(r"""
+    ## 2. Load shipped connectomes
+    """)
     return
 
 
@@ -52,12 +56,14 @@ def _():
     bundle = load_all_kuramoto_adjacencies(indices=range(1, 9), base_dir=base_dir)
     adjacencies = bundle["adjacencies"]
     print(f"Loaded {len(adjacencies)} connectomes; first shape: {adjacencies[1].shape}")
-    return Path, adjacencies, bundle, load_all_kuramoto_adjacencies
+    return (adjacencies,)
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""## 3. Forman-Ricci curvature on one connectome""")
+    mo.md(r"""
+    ## 3. Forman-Ricci curvature on one connectome
+    """)
     return
 
 
@@ -71,12 +77,14 @@ def _(adjacencies):
     G_frc = compute_frc(G, method="1d")
     curvatures = extract_curvatures(G_frc)
     print(f"FRC: n_edges={curvatures.size}, mean={curvatures.mean():.3f}, std={curvatures.std():.3f}")
-    return G, G_frc, compute_frc, curvatures, extract_curvatures, nx
+    return (G_frc,)
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""## 4. Entropy of the curvature distribution""")
+    mo.md(r"""
+    ## 4. Entropy of the curvature distribution
+    """)
     return
 
 
@@ -86,12 +94,14 @@ def _(G_frc):
 
     h = entropy_kde_plugin(G_frc, curvature="formanCurvature")
     print(f"plug-in KDE entropy: {h:.3f} nats")
-    return entropy_kde_plugin, h
+    return
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""## 5. Plot""")
+    mo.md(r"""
+    ## 5. Plot
+    """)
     return
 
 
@@ -101,7 +111,7 @@ def _(G_frc):
 
     fig = plot_curvature_network(G_frc, curvature_attr="formanCurvature")
     fig
-    return fig, plot_curvature_network
+    return
 
 
 @app.cell

@@ -70,6 +70,10 @@ notebook = [
     "jupyterlab>=4.5.6,<5",
 ]
 
+experiments = []  # TODO: move depdencies here, that are only relevant for running scripts in `./experiments/`
+
+tutorial = []  # TODO: move depdencies here, that are only relevant for running scripts in `./tutorials/`
+
 [project.urls]
 # homepage = "https://www.hyphi.org" # TODO: change to actual homepage and uncomment
 # documentation = "https://readthedocs.org" # TODO: change to actual documentation  and uncomment

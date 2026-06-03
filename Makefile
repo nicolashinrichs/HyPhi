@@ -39,8 +39,8 @@ run-simulations: ## Execute HyPhi E2E simulations
 	@echo "Executing HyPhi E2E Pipeline..."
 	uv run python -m hyphi.main
 
-tutorial: ## Open the user-facing quickstart marimo notebook
-	uv run --extra notebook marimo edit tutorials/01_quickstart.py
+tutorial: ## Open the quickstart notebook (marimo) for new HyPhi users
+	uv run --extra notebook --extra tutorial marimo edit tutorials/01_quickstart.py
 
 docs: ## Build the mkdocs site
 	uv run --extra docs mkdocs build
