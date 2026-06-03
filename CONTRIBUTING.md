@@ -318,7 +318,7 @@ Two loaders, two scopes:
 - `hyphi.configs.config` / `paths` / `params` — project-wide singleton populated from
   `code/configs/*config.toml`.  Library code can read it without side effects; entry
   points (`hyphi.main`, tutorial notebooks, experiment scripts) call
-  `hyphi.configs.bootstrap()` once at startup to chdir, configure logging, and print the
+  [TODO: consider adding] `hyphi.configs.bootstrap()` once at startup to chdir, configure logging, and print the
   banner.
 - `hyphi.io.load_config(path)` — per-file TOML loader for arbitrary user configs (e.g.
   `experiments/configs/*.toml`).  Returns a plain dict.

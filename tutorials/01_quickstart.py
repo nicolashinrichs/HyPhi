@@ -1,7 +1,7 @@
 """User-facing quickstart marimo notebook for the hyphi toolbox.
 
 Walks through the canonical HyPhi workflow on a small shipped Kuramoto connectome:
-config bootstrap, adjacency loading, Forman-Ricci curvature, entropy, and a basic
+config, adjacency loading, Forman-Ricci curvature, entropy, and a basic
 network plot.
 """
 
@@ -31,9 +31,8 @@ def _(mo):
 
 @app.cell
 def _():
-    from hyphi.configs import bootstrap, params, paths
+    from hyphi.configs import params, paths
 
-    bootstrap()
     paths.show()
     return
 

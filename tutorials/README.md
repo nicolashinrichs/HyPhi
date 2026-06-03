@@ -6,9 +6,9 @@ This directory contains supplementary documentation and tutorial material intend
 
 ## 01_quickstart.py
 
-The file [01_quickstart.py](01_quickstart.py) is an executable [marimo](https://marimo.io) notebook that walks through the canonical HyPhi workflow on a shipped 8-subject Kuramoto connectome: config bootstrap, adjacency loading, Forman-Ricci curvature, entropy estimation, and a basic network plot. Run it with `make tutorial`.
+The file [01_quickstart.py](01_quickstart.py) is an executable [marimo](https://marimo.io) notebook that walks through the canonical HyPhi workflow on a shipped 8-subject Kuramoto connectome: config, adjacency loading, Forman-Ricci curvature, entropy estimation, and a basic network plot. Run it with `make tutorial`.
 
-## 02_dual_eeg_pipeline.md 
+## 02_dual_eeg_pipeline.md
 
 The file [02_dual_eeg_pipeline.md](02_dual_eeg_pipeline.md) provides a tutorial for the end-to-end pipeline for empirical dual-EEG studies.
 
