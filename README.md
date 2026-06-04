@@ -59,17 +59,31 @@ Source folder of the Python toolbox `hyphi`, which implements the core analysis 
 - Density estimation
 - Entropy and quantile analysis
 
+More in the corresponding [`code/README.md`](code/README.md).
+
 ### `data`
 
 Simulation and EEG-derived connectivity data below 100 MB.
+
+More in the corresponding [`data/README.md`](data/README.md).
 
 ### `experiments`
 
 This directory contains worked, end-to-end examples illustrating the canonical HyPhi workflow on synthetic networks.
 
+``More in the corresponding [`experiments/README.md`](experiments/README.md).``
+
 ### `tutorials`
 
 Supplementary documentation and tutorials, including a step-by-step protocol demonstrating Forman-Ricci curvature analysis in hyperscanning-style networks.
+
+For a quick start, run:
+
+```shell
+make tutorial
+```
+
+More in the corresponding [`tutorials/README.md`](tutorials/README.md).
 
 ## Install the `hyphi` package
 
@@ -92,45 +106,6 @@ For convenience, you can also use the `Makefile` targets. To get an overview run
 ```shell
 make
 ```
-
-### Notebooks
-
-`Jupyter` | `marimo` notebooks are stored in `./code/notebooks/`
-
-### Configs
-
-Paths to data, parameter settings, etc. are stored in the config file: `./code/configs/config.toml`
-
-Private config files that contain, e.g., passwords, and therefore should not be shared,
-or mirrored to a remote repository can be listed in: `./code/configs/private_config.toml`
-
-Both files will be read out by the script in `./code/hyphi/configs.py`.
-Keep both config toml files and the script in the places where they are.
-
-To use your configs in your `Python` scripts, do the following:
-
-```python
-from hyphi.configs import config
-
-# Will create a config file (configs/config.toml, if not there)
-config.init()
-
-# check out which paths are set in config.toml
-config.paths.show()
-
-# get the path to data
-path_to_data: str = config.paths.DATA
-
-# Get parameter from config (example)
-weight_decay = config.params.weight_decay
-
-# Get private parameter from config (example)
-api_key = config.service_x.api_key
-```
-
-*Fill the corresponding `*config.toml` files with your data.*
-
-For other programming languages, corresponding scripts must be implemented to use these `*config.toml` files in a similar way.
 
 ## Relevant publications
 
