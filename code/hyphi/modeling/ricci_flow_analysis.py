@@ -148,10 +148,7 @@ def simulate_missing_phase_files(
         graph_path = data_dir / f"{rid}_connectome_kuramoto.pkl"
         if not graph_path.exists():
             run_graphs = get_plv_graphs(
-                n_steps=n_steps,
-                w_size=win_size,
-                w_stride=win_stride,
-                theta_hist=theta_hist_np
+                n_steps=n_steps, w_size=win_size, w_stride=win_stride, theta_hist=theta_hist_np
             )
             _save_pickle(run_graphs, graph_path)
 

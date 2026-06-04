@@ -365,7 +365,9 @@ def _configure(config_obj: _CONFIG, *, project_name: str | None = None) -> None:
     # No config file present yet -> inform the user and create a default config
     if not config_files:
         name = project_name or project_root.name
-        print(f"No hyphi config found in '{config_dir}'.\nCreating a default 'config.toml' (PROJECT_NAME='{name}') ...")
+        print(
+            f"No hyphi config found in '{config_dir}'.\nCreating a default 'config.toml' (PROJECT_NAME='{name}') ..."
+        )
         config_files = [_create_default_config(config_dir=config_dir, project_name=name)]
 
     # Load config file(s) (public first, private last so private overrides public)

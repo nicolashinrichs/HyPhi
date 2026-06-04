@@ -12,14 +12,15 @@ import networkx as nx
 import numpy as np
 
 try:
-    import plotly.graph_objects as go   # TODO: need to be added as optional dependency
+    import plotly.graph_objects as go  # TODO: need to be added as optional dependency
 except ModuleNotFoundError:
     go = None
 from GraphRicciCurvature.FormanRicci import FormanRicci  # noqa: F401
 from GraphRicciCurvature.OllivierRicci import OllivierRicci
 from pynndescent import NNDescent  # TODO: pynndescent needs to be added to the main dependencies
 from scipy import linalg
-from scipy.spatial.distance import cdist, pdist  # noqa: F401
+
+# from scipy.spatial.distance import pdist  # noqa: ERA001
 from scipy.stats import spearmanr
 from sklearn.metrics.pairwise import cosine_similarity, euclidean_distances
 from sklearn.neighbors import NearestNeighbors
@@ -29,18 +30,17 @@ from sklearn.neighbors import NearestNeighbors
 
 def requires_go(func):
     """Decorate to guard functions that require plotly.graph_objects as `go`."""
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         """Wrap function."""
         if go is None:
             raise ModuleNotFoundError(
-                f"plotly is required for {func.__name__}(). "
-                f"Install it or avoid calling {func.__name__}()."
+                f"plotly is required for {func.__name__}(). Install it or avoid calling {func.__name__}()."
             )
         return func(*args, **kwargs)
 
     return wrapper
-
 
 
 def adj_matrix(data, method: int = 1):
@@ -68,6 +68,8 @@ def adj_matrix(data, method: int = 1):
                 rho, _ = spearmanr(data[i], data[j])
                 distance_matrix[i, j] = distance_matrix[j, i] = 1 - abs(rho)
         return np.round(distance_matrix, decimals=3)
+    if method == 4:
+        raise NotImplementedError("Method 4 ('Euclidean Distance with pdist function') is not implemented yet.")
     return None
 
 
@@ -87,12 +89,13 @@ def compute_ricci_curvature(adj_mat: np.ndarray, threshold: float = 0.5, alpha: 
 
 
 def compute_forman_curvature(adj_mat: np.ndarray, threshold: float = 0.5):
+    """Compute Forman curvature."""
     adjacency_matrix = np.copy(adj_mat)
     adjacency_matrix[adj_mat > threshold] = 0
-    g_generated = nx.from_numpy_array(adjacency_matrix)
-    frc = FormanRicci(g_generated, verbose="TRACE")
+    G_generated: nx.Graph = nx.from_numpy_array(adjacency_matrix)  # noqa: N806
+    frc = FormanRicci(G=G_generated, verbose="TRACE")
     frc.compute_ricci_curvature()
-    G_frc = frc.G.copy()  # save an intermediate result
+    G_frc: nx.Graph = frc.G.copy()  # save an intermediate result # noqa: N806
     forman_curvtures = np.array(list(nx.get_edge_attributes(G_frc, "formanCurvature").values()))
     return forman_curvtures, G_frc
 
