@@ -121,10 +121,4 @@ class TestVecEntropy:
         assert result.shape == (3,)
         assert np.all(np.isfinite(result))
 
-
-# %% __main__  >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
-
-if __name__ == "__main__":
-    pass
-
 # o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o END

@@ -284,10 +284,4 @@ class TestClassifyCurvatureVsBenchmarks:
                 classifier="xgboost",
             )
 
-
-# %% __main__  >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
-
-if __name__ == "__main__":
-    pass
-
 # o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o END
