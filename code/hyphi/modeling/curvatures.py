@@ -6,16 +6,18 @@ Years: 2024
 """
 
 # %% Import
+from functools import wraps
+
 import networkx as nx
 import numpy as np
 
 try:
-    import plotly.graph_objects as go
+    import plotly.graph_objects as go   # TODO: need to be added as optional dependency
 except ModuleNotFoundError:
     go = None
 from GraphRicciCurvature.FormanRicci import FormanRicci  # noqa: F401
 from GraphRicciCurvature.OllivierRicci import OllivierRicci
-from pynndescent import NNDescent  # TODO: need to be added to depedencies
+from pynndescent import NNDescent  # TODO: pynndescent needs to be added to the main dependencies
 from scipy import linalg
 from scipy.spatial.distance import cdist, pdist  # noqa: F401
 from scipy.stats import spearmanr
@@ -23,6 +25,22 @@ from sklearn.metrics.pairwise import cosine_similarity, euclidean_distances
 from sklearn.neighbors import NearestNeighbors
 
 # %% Functions >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
+
+
+def requires_go(func):
+    """Decorate to guard functions that require plotly.graph_objects as `go`."""
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        """Wrap function."""
+        if go is None:
+            raise ModuleNotFoundError(
+                f"plotly is required for {func.__name__}(). "
+                f"Install it or avoid calling {func.__name__}()."
+            )
+        return func(*args, **kwargs)
+
+    return wrapper
+
 
 
 def adj_matrix(data, method: int = 1):
@@ -88,12 +106,9 @@ def compute_curvature_graph(graph: nx.Graph, alpha: float = 0.5):
     return ricci_curvtures, _graph
 
 
+@requires_go
 def graph_vis(dist_mat: np.ndarray, threshold: float) -> None:
     """Visualize the Graph with Plotly for distance-based graph embeddings."""
-    if go is None:
-        raise ModuleNotFoundError(
-            "plotly is required for graph_vis(). Install it with `pip install plotly` or avoid calling graph_vis()."
-        )
     dist = np.copy(dist_mat)
     dist[dist > threshold] = 0
     graph = nx.from_numpy_array(dist)
@@ -152,6 +167,7 @@ def graph_vis(dist_mat: np.ndarray, threshold: float) -> None:
     print(nx.is_connected(graph))
 
 
+@requires_go
 def graph_vis_direct(graph: nx.Graph) -> None:
     """Visualize the graph with Plotly directly on a graph G."""
     pos = nx.spring_layout(graph)  # Positions for all nodes
@@ -216,9 +232,10 @@ def graph_vis_direct(graph: nx.Graph) -> None:
     print(nx.is_connected(graph))
 
 
-def visualise_dist_distribution(dist_matrix: np.ndarray) -> None:
+@requires_go
+def visualize_dist_distribution(dist_matrix: np.ndarray) -> None:
     """
-    Visualise the distance distribution.
+    Visualize the distance distribution.
 
     It shows the histogram of the distance distribution
     and within illustrates the mean, mode, and standard deviation of the distribution.
@@ -326,6 +343,7 @@ def visualise_dist_distribution(dist_matrix: np.ndarray) -> None:
     fig.show()
 
 
+@requires_go
 def visualise_box_plot(data1, data2, data3) -> None:
     """
     Visualize the datasets with box plots.
@@ -405,8 +423,7 @@ def nearest_neighbor_graph(data: np.ndarray, k: int = 5, weight: bool = False):
     distance_matrix = np.zeros((n, n))
     # Add edges to the graph based on the n_neighbor array
     for i, neighbors in enumerate(n_neighbor):
-        for neighbor, distance in zip(neighbors, dist_neighbor[i]):
-            # distance_matrix.append(distance)
+        for neighbor, distance in zip(neighbors, dist_neighbor[i], strict=True):
             if i != neighbor:  # Avoid self-loops
                 if weight:
                     graph.add_edge(i, neighbor, weight=distance)
@@ -421,15 +438,12 @@ def nearest_neighbor_graph(data: np.ndarray, k: int = 5, weight: bool = False):
 
 def sim_graph(data: np.ndarray, k: int = 5, weight: bool = True):
     """
-    Create graph embedding with k nearest neighbors from dissimilarity or distance matrix.
+    Create a graph embedding with k nearest neighbors from dissimilarity or distance matrix.
 
     :param data: data (dissimilarity, distance measures)
     :param k: shows the number of neighbors [default: k=10].
-
+    :param weight: selective option for weighted or unweighted graph
     :return: generated graph for nearest neighbors, distance matrix
-
-    :param weight: selctive option for weighted or unweighted graph
-    :return: generated graph, distances
 
     """
     # Sort each row separately and store the sorted tuples of index and values
@@ -442,8 +456,7 @@ def sim_graph(data: np.ndarray, k: int = 5, weight: bool = True):
     n = data.shape[0]
     distance_matrix = np.zeros((n, n))
     for i, neighbors in enumerate(nn_indices):
-        for neighbor, distance in zip(neighbors, nn_distances[i]):
-            # distances.append(distance)
+        for neighbor, distance in zip(neighbors, nn_distances[i], strict=True):
             if i != neighbor:
                 graph.add_edge(i, neighbor, weight=distance)
             if weight:
@@ -458,9 +471,11 @@ def sim_graph(data: np.ndarray, k: int = 5, weight: bool = True):
 
 def adaptive_neighborhood_graph(X, k_min=5, k_max=50, density_method="knn"):
     """
-    This function is based on the distance of the data points and the density is defined as the inverse of the distance
+    Compute adapative k and distnaces.
+
+    This function is based on the distance of the data points, and the density is defined as the inverse of the distance
     weight= non : no weight is considered for the edges, and all have the similar value 1
-    weight= distance: the atrributed weight to each is equal to the euclidean distance between the nodes
+    weight= distance: the attribute weight to each neighbor is equal to the Euclidean distance between the nodes
     """
     n_samples = X.shape[0]
 
@@ -494,16 +509,8 @@ def adaptive_neighborhood_graph(X, k_min=5, k_max=50, density_method="knn"):
     return G, distances, adaptive_k
 
 
-"""
-distance function between two weighted graphs
-it is based on the heat diffusion method
-laplacian of the graphs and eigenvalue decomposition
-here we have to take care that the weights should be non negative and we need to adapt the weights (curvature values) for this computation
-"""
-
-
 def compute_laplacian_matrix(graph, g_weight="ricciCurvature"):
-    """Computes the Laplacian matrix of a given weighted graph."""
+    """Compute the Laplacian matrix of a given weighted graph."""
     if g_weight == "non":
         laplacian_matrix = nx.laplacian_matrix(graph).toarray()
     else:
@@ -513,7 +520,7 @@ def compute_laplacian_matrix(graph, g_weight="ricciCurvature"):
 
 def heat_kernel_distance(L1, L2):
     """
-    Computes the diffusion distance between two Laplacian matrices using the heat kernel.
+    Compute the diffusion distance between two Laplacian matrices using the heat kernel.
 
     Parameters
     ----------
@@ -539,15 +546,18 @@ def heat_kernel_distance(L1, L2):
 
 
 def update_weight(graph):
+    """Update weight."""
     _g = graph.copy()
-    for u, v, weight in _g.edges(data=True):
+    for _, _, weight in _g.edges(data=True):  # _, _ == u, v
         weight["ricciCurvature"] += 1  # changed from 1 to two just for the experiment
     return _g
 
 
 def update_weights(graph):
     """
-    Return a copy of the graph where each edge's 'ricciCurvature' is updated as:
+    Return a copy of the graph where each edge's 'ricciCurvature' is updated.
+
+    Each edge is update as:
         new_ricciCurvature = 1 - old_ricciCurvature
     """
     _g = graph.copy()
@@ -602,14 +612,13 @@ def ricci_flow(
     graph: nx.Graph,
     iteration: int = 30,
     alpha: float = 0.5,
-):
+) -> nx.Graph:
     """Compute Ricci flow for a given graph."""
     orf = OllivierRicci(
-        graph, weight="weight", alpha=alpha, method="OTD", chunksize=1, base=1, exp_power=0, verbose="INFO"
+        G=graph, weight="weight", alpha=alpha, method="OTD", chunksize=1, base=1, exp_power=0, verbose="INFO"
     )
     orf.compute_ricci_flow(iterations=iteration)
-    # cc = orf.ricci_community(cutoff_step=0.04)
-    graph = orf.G.copy()
+    graph: nx.Graph = orf.G.copy()
     return graph
 
 
