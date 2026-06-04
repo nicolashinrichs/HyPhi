@@ -35,10 +35,6 @@ clean: ## Remove build artifacts and caches
 	rm -rf code/hyphi.egg-info .pytest_cache .ruff_cache
 	find . -type d -name __pycache__ -exec rm -rf {} +
 
-run-simulations: ## Execute HyPhi E2E simulations
-	@echo "Executing HyPhi E2E Pipeline..."
-	uv run python -m hyphi.main
-
 tutorial: ## Open the quickstart notebook (marimo) for new HyPhi users
 	uv run --extra notebook --extra tutorial marimo edit tutorials/01_quickstart.py
 

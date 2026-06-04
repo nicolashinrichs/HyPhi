@@ -4,7 +4,7 @@ name = "hyphi"
 version = "2.1.1"
 description = "A Python package for hyperscanning data analysis via geometric entropy."
 readme = "README.md"
-requires-python = ">=3.11" # TODO: check if old Python versions need to be supported (ideally keep it as high as possible)
+requires-python = ">=3.11"
 license = { file = "LICENSE" }
 authors = [
     { name = "Nicolas Hinrichs", email = "hinrichs@cbs.mpg.de" }, # TODO: add authors
@@ -23,14 +23,12 @@ classifiers = [
     "Natural Language :: English",
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.11", # TODO: remove versions not supported
+    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
 ]
 
-# Similar to a requirements.txt file, fill in the dependencies your project requires
-# Install the project code as a Python module with `pip install -e .` or other package managers (e.g., conda, uv, pixi)
 dependencies = [
     "numpy>=1.24,<2.0",
     "scipy>=1.10,<2.0",
@@ -50,24 +48,23 @@ dependencies = [
     "astropy>=5.0,<7.0", # Circular statistics
     "statsmodels>=0.14,<1.0", # Statistics & machine learning
     "scikit-learn>=1.3,<2.0",
-    "tomli>=2.0,<3.0; python_version < '3.11'", # Configuration  # TODO: could be removed if Python>=3.11
+    "tomli>=2.0,<3.0",
     "ipykernel",
     "scipy-stubs~=1.17.1",
 ]
 
-# Following can be co-installed with `pip install -e .[develop]`
 [project.optional-dependencies]
 develop = [
-    "ruff>=0.15.10,<1",
+    "ruff>=0.15.15,<1",
     "pytest>=9.0.3,<10",
     "pytest-cov>=7.1.0,<8",
-    "ty>=0.0.29,<0.2.0",
+    "ty>=0.0.43,<0.2.0",
     "bumpver>=2025.1131,<2026",
 ]
 
 notebook = [
-    "marimo>=0.23.0,<1",
-    "jupyterlab>=4.5.6,<5",
+    "marimo>=0.23.8,<1",
+    "jupyterlab>=4.5.7,<5",
 ]
 
 experiments = []  # TODO: move depdencies here, that are only relevant for running scripts in `./experiments/`
@@ -80,11 +77,6 @@ tutorial = []  # TODO: move depdencies here, that are only relevant for running 
 repository = "https://github.com/nicolashinrichs/HyPhi/"
 # Consider other URLs: pre-registration, data repository, etc.
 
-# Entry points for the project
-# For a command line interface (CLI) [uncomment and/or adopt the following if needed]
-# [project.scripts]
-# hyphi = "hyphi.main:run_pipeline"
-
 [tool.setuptools]
 platforms = [
     "unix",
@@ -95,7 +87,7 @@ platforms = [
 ] # TODO: keep only intended platforms
 zip-safe = false
 
-# To automatically find the package(s) (Beta feature (Oct, 2022)):
+# To automatically find the package(s)
 [tool.setuptools.packages.find]
 where = ["code"]
 include = [
@@ -111,9 +103,6 @@ exclude = ["tests", "notebooks", "configs"]
 # Exclude specific non-python files in the package (uncomment if needed)
 # [tool.setuptools.exclude-package-data]
 # hyphi = [".gitattributes"]
-
-# ALL ABOVE IS AN ADAPTATION OF THE FORMER setup.cfg
-# ALL BELOW WAS ALREADY PART OF pyproject.toml [Oct, 2022]
 
 [build-system]
 requires = ["setuptools>=62.0", "wheel"]
