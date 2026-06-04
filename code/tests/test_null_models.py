@@ -16,7 +16,6 @@ Years: 2026
 # %% Import
 import numpy as np
 import pytest
-
 from hyphi.null_models import (
     circular_time_shift,
     condition_label_shuffle_within_dyad,

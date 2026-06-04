@@ -2,7 +2,6 @@
 
 # %% Import
 import networkx as nx
-import numpy as np
 import pytest
 from hyphi.analyses import (
     build_sliding_window_graphs,

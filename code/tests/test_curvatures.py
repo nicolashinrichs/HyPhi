@@ -12,12 +12,12 @@ Forman-Ricci (unweighted, 1d method):
 import numpy as np
 import pytest
 from hyphi.modeling.graph_curvatures import (
+    compute_afrc,
     compute_frc,
     compute_frc_vec,
-    compute_afrc,
+    extract_curvature_matrices,
     extract_curvatures,
     extract_curvatures_vec,
-    extract_curvature_matrices,
 )
 
 # %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o

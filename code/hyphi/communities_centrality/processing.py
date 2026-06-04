@@ -118,7 +118,7 @@ def plot_processed_graph(
     cmap: str = "tab20",
     seed: int = 42,
     show: bool = False,
-):  # TODO: add return type-hints
+) -> plt.Figure:
     """
     Render a community / centrality plot for a single ``find_centrality`` result.
 

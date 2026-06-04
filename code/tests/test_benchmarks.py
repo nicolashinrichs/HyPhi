@@ -16,7 +16,6 @@ Years: 2026
 import networkx as nx
 import numpy as np
 import pytest
-
 from hyphi.benchmarks import (
     classify_curvature_vs_benchmarks,
     compute_assortativity,

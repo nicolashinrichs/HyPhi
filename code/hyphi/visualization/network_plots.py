@@ -12,17 +12,21 @@ during Brainhack 2026.
 Years: 2026
 """
 
+# %% Import
 from __future__ import annotations
 
-# %% Import
-from collections.abc import Iterable
+from typing import TYPE_CHECKING
 
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 from matplotlib.cm import ScalarMappable
 from matplotlib.colors import Normalize
-from matplotlib.figure import Figure
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+
+    from matplotlib.figure import Figure
 
 # %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 

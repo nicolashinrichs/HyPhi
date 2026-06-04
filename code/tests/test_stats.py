@@ -16,7 +16,6 @@ Years: 2026
 import numpy as np
 import pandas as pd
 import pytest
-
 from hyphi.stats import (
     cohens_d,
     cohens_d_timeseries,

@@ -9,10 +9,10 @@ using synthetic distributions.
 import numpy as np
 import pytest
 from hyphi.modeling.entropies import (
-    entropy_vasicek,
     entropy_kde_plugin,
-    vec_entropy,
+    entropy_vasicek,
     get_quantiles,
+    vec_entropy,
     vec_quantiles,
 )
 

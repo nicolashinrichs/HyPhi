@@ -1,8 +1,8 @@
 """TODO: add docstring"""
 
 # %% Import
-from hyphi.modeling.entropies import vec_entropy, entropy_kde_plugin
 from hyphi.modeling.density_estimation import fit_kde
+from hyphi.modeling.entropies import entropy_kde_plugin, vec_entropy
 from hyphi.modeling.graph_curvatures import compute_frc_vec
 from hyphi.simulation.graph_simulations import gen_nature_sw
 from scipy.stats import norm

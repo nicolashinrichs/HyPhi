@@ -8,7 +8,7 @@ synthetic phase signals.
 # %% Import
 import numpy as np
 import pytest
-from hyphi.modeling.windowing import sliding_window_plv, compute_plv_matrix, build_graphs_from_matrices
+from hyphi.modeling.windowing import build_graphs_from_matrices, compute_plv_matrix, sliding_window_plv
 
 # %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 pass
