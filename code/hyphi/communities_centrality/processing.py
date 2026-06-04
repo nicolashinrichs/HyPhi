@@ -24,6 +24,7 @@ Years: 2024
 # %% Import
 
 import pickle
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import networkx as nx
@@ -31,15 +32,13 @@ import numpy as np
 import pandas as pd
 from networkx.algorithms import community
 
-from hyphi.communities_centrality.adjacency_from_pickle import load_pickle_adjacency
+from .adjacency_from_pickle import load_pickle_adjacency
 
-# %% Function
+# %% Functions >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
 
-def find_centrality(file_path):
-    """
-    Calculates matrix, graph, communities, and centrality.
-    """
+def find_centrality(file_path: str | Path):  # TODO: add type-hints for return
+    """Calculate matrix, graph, communities, and centrality."""
     adj_matrix = load_pickle_adjacency(file_path)
     graph = nx.from_numpy_array(adj_matrix)
 
@@ -63,34 +62,46 @@ def find_centrality(file_path):
     return adj_matrix, graph, results
 
 
-# %% Process & save
-
-
+# TODO (smh): I would revise (lets discuss) or drop this function
 def process_folder(
-    input_folder="code/hyphi/communities_centrality/data",
-    output_folder="code/hyphi/communities_centrality/results",
-    pattern="*.pkl",
+    input_folder: str | Path,
+    output_folder: str | Path,
+    pattern: str = "*.pkl",
 ):
     """
-    Run :func:`find_centrality` on every ``pattern`` file in ``input_folder``
-    and write the resulting graph / adjacency / stats CSV triples to
-    ``output_folder``.  Returns the list of processed prefixes.
+    Find centrality measures in a set of files.
+
+    Parameters
+    ----------
+    input_folder
+        Folder containing ...
+
+    output_folder
+        Folder containing sample-based results of ``find_centrality``
+
+    pattern
+        file pattern to detect in input_folder
+
+    Returns
+    -------
+    Returns the list of processed prefixes.
+
     """
-    os.makedirs(output_folder, exist_ok=True)
-    input_files = sorted(glob.glob(os.path.join(input_folder, pattern)))
+    output_folder = Path(output_folder)
+    output_folder.mkdir(exist_ok=True)
 
     processed = []
-    for file_path in input_files:
+    for file_path in sorted(Path(input_folder).glob(pattern)):
         adj_matrix, graph, results = find_centrality(file_path)
 
-        prefix = os.path.basename(file_path).split("_")[0]
+        prefix = file_path.name.split("_")[0]
         output_base = f"{prefix}_processed"
 
-        with open(os.path.join(output_folder, f"{output_base}_graph.pkl"), "wb") as f:
+        with (output_folder / f"{output_base}_graph.pkl").open("wb") as f:
             pickle.dump(graph, f)
 
-        np.save(os.path.join(output_folder, f"{output_base}_matrix.npy"), adj_matrix)
-        results.to_csv(os.path.join(output_folder, f"{output_base}_stats.csv"))
+        np.save(output_folder / f"{output_base}_matrix.npy", adj_matrix)
+        results.to_csv(output_folder / f"{output_base}_stats.csv")
 
         processed.append(prefix)
 
@@ -101,13 +112,13 @@ def process_folder(
 
 
 def plot_processed_graph(
-    graph_pkl_path,
-    stats_csv_path,
-    figsize=(10, 8),
-    cmap="tab20",
-    seed=42,
-    show=False,
-):
+    graph_pkl_path: str | Path,
+    stats_csv_path: str | Path,
+    figsize: tuple[int, int] = (10, 8),
+    cmap: str = "tab20",
+    seed: int = 42,
+    show: bool = False,
+):  # TODO: add return type-hints
     """
     Render a community / centrality plot for a single ``find_centrality`` result.
 
@@ -127,9 +138,9 @@ def plot_processed_graph(
     matplotlib.figure.Figure
 
     """
-    with open(graph_pkl_path, "rb") as f:
-        G = pickle.load(f)
-    df = pd.read_csv(stats_csv_path, index_col=0)
+    with Path(graph_pkl_path).open("rb") as f:
+        G: nx.Graph = pickle.load(f)  # noqa: N806
+    df: pd.DataFrame = pd.read_csv(filepath_or_buffer=stats_csv_path, index_col=0)
 
     node_colors = [df.loc[node, "Community"] for node in G.nodes()]
     node_sizes = [df.loc[node, "Betweenness"] * 5000 + 50 for node in G.nodes()]
