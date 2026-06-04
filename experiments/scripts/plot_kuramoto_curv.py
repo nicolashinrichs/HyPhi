@@ -3,17 +3,20 @@
 # %% Import
 import os
 import sys
-import numpy as np
-import matplotlib.pyplot as plt
+
 import matplotlib as mpl
-from matplotlib.gridspec import GridSpec
 import matplotlib.cm as cm
 import matplotlib.colors as mpc
+import matplotlib.pyplot as plt
+import numpy as np
+from hyphi.configs import config as hyphi_config
+from matplotlib.gridspec import GridSpec
 
-from hyphi.configs import paths
 from hyphi.io import load_config, make_dir
 
 # %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
+hyphi_config.init()  # load hyphi config
+
 # Colorblind friendly palette (8 colors) to set the color cycle of plots (Bang Wong's palette)
 wong = ["#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7"]
 
@@ -31,7 +34,7 @@ params = {
 plt.rcParams.update(params)
 
 # Analysis configuration file
-config_file = os.path.join(paths.experiments.configs, sys.argv[1])
+config_file = os.path.join(hyphi_config.paths.experiments.configs, sys.argv[1])
 
 # Load the configuration parameters into a dictionary
 config = load_config(config_file)

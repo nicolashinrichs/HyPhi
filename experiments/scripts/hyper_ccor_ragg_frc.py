@@ -2,27 +2,25 @@
 
 # %% Import
 
-import os
 import json
+import os
 import sys
 
-import dcor
-from dcor import EstimationStatistic
-from hyphi.io import load_config, make_dir
 import numpy as np
+from hyphi.configs import config
+from hyphi.io import load_config, make_dir
 from joblib import Parallel, delayed
 from scipy.stats import energy_distance
 from statsmodels.stats.multitest import multipletests
 from tqdm import tqdm
 from tqdm_joblib import tqdm_joblib
 
-from hyphi.configs import paths
-
-
 # %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
+config.init()  # load hyphi config
+
 # Analysis configuration file
-config_file = os.path.join(paths.experiments.configs, sys.argv[1])
+config_file = os.path.join(config.paths.experiments.configs, sys.argv[1])
 
 # Load the configuration parameters into a dictionary
 config = load_config(config_file)
@@ -768,7 +766,7 @@ print(f"\n{significant_pairs}/24 pairwise tests significant (Holm-corrected)")
 # Save the results
 fullpoolstats = os.path.abspath(
     os.path.join(
-        paths.experiments.configs,
+        config.paths.experiments.configs,
         f"fully_pooled_{curv_type}_energy_stat_trial_types_n_perm_{config['nhst_perm']}_ sample_size_{config['nhst_subsample']}.json",
     )
 )

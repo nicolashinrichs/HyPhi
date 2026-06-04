@@ -2,19 +2,21 @@
 
 # %% Import
 import os
-import numpy as np
-from hyphi.io import load_config, make_dir
 import sys
-from tqdm import tqdm
-import scipy as sp
-import networkx as nx
 
+import networkx as nx
+import numpy as np
+import scipy as sp
+from hyphi.configs import config as hyphi_config
+from hyphi.io import load_config, make_dir
 from hyphi.modeling.entropies import vec_entropy, vec_quantiles
 from hyphi.modeling.graph_curvatures import compute_frc_vec
-from hyphi.configs import paths
+from tqdm import tqdm
+
+hyphi_config.init()  # load hyphi config
 
 # %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
-config_file = os.path.join(paths.experiments.configs, sys.argv[1])
+config_file = os.path.join(hyphi_config.paths.experiments.configs, sys.argv[1])
 
 # Load the configuration parameters into a dictionary
 config = load_config(config_file)

@@ -1,24 +1,27 @@
 """Sweep Ollivier-Ricci curvature parameters over CCORR inter-brain matrices and write per-trial entropies."""
 
 # %% Import
+import multiprocessing
 import os
 import sys
-from concurrent.futures import ThreadPoolExecutor
-import multiprocessing
 import threading
-import scipy as sp
+from concurrent.futures import ThreadPoolExecutor
+
 import networkx as nx
 import numpy as np
+import scipy as sp
+from hyphi.configs import config
 from tqdm import tqdm
 
-from hyphi.configs import paths
-from hyphi.modeling.entropies import entropy_kozachenko, get_quantiles
 from hyphi.io import load_config, make_dir
+from hyphi.modeling.entropies import entropy_kozachenko, get_quantiles
 from hyphi.modeling.graph_curvatures import compute_orc
 
 # %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
+config.init()  # load hyphi config
+
 # Analysis configuration file
-config_file = os.path.join(paths.experiments.configs, sys.argv[1])
+config_file = os.path.join(config.paths.experiments.configs, sys.argv[1])
 
 # Load the configuration parameters into a dictionary
 config = load_config(config_file)

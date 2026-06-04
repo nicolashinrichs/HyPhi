@@ -9,10 +9,10 @@ Runs **alongside** ``hyper_ccor_ragg_frc.py``'s pooled energy-distance tests
 What this script does:
 
 1. **Preflight dyad check** — inspects what has actually been loaded (not just
-   what the config declares), categorises the statistical regime (single-dyad
+   what the config declares), categorizes the statistical regime (single-dyad
    demo / proof-of-concept / small-sample / exploratory), and decides which
    analyses are statistically meaningful *before* the permutation loops run.
-   Any stage that can't run given the current N is skipped with a reason.
+   Any stage that can't run given the current N is skipped for a reason.
 2. **Hierarchical permutation**: permutes condition labels *within dyad, at
    the trial level*, keeping window blocks intact — no more pooling across
    dyads/trials/windows. (``hyphi.stats.hierarchical_permutation_test``)
@@ -61,9 +61,9 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
-
 from hyphi.benchmarks import classify_curvature_vs_benchmarks, extract_window_features
-from hyphi.configs import paths
+from hyphi.configs import config as hyphi_config
+
 from hyphi.io import load_config
 from hyphi.null_models import dyad_label_shuffle
 from hyphi.stats import (
@@ -77,6 +77,8 @@ from hyphi.stats import (
 )
 
 # %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
+hyphi_config.init()  # load hyphi config
+
 logger = logging.getLogger("hyphi.hierarchical_stats_runner")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s  %(levelname)-7s %(name)s :: %(message)s")
 
@@ -551,7 +553,7 @@ def main(config_file: str, curvature: str, strict: bool = False) -> dict:
     """Entry point."""
     assert curvature in {"FRC", "AFRC"}, f"Curvature must be FRC or AFRC; got {curvature!r}"
 
-    config_path = os.path.join(paths.experiments.configs, config_file)
+    config_path = os.path.join(hyphi_config.paths.experiments.configs, config_file)
     config = load_config(config_path)
     freq_bands = list(config.get("freq_bands", [f"band{i}" for i in range(int(config.get("num_freqs", 8)))]))
 
@@ -631,7 +633,7 @@ def main(config_file: str, curvature: str, strict: bool = False) -> dict:
         "classifier_comparison": clf_res,
     }
 
-    out_dir = Path(config.get("pooled_result_loc", paths.experiments.configs))
+    out_dir = Path(config.get("pooled_result_loc", hyphi_config.paths.experiments.configs))
     out_path = out_dir / (f"hierarchical_stats_{curvature}_n_perm_{n_perms}_config_{config['config_id']}.json")
     save_results_json(report, out_path)
     return report

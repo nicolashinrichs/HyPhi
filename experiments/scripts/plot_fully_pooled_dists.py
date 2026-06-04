@@ -2,17 +2,20 @@
 
 # %% Import
 import os
-import numpy as np
 import sys
-import matplotlib.pyplot as plt
-import matplotlib as mpl
 
-from hyphi.configs import paths
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+import numpy as np
+from hyphi.configs import config as hyphi_config
+
 from hyphi.io import load_config, make_dir
 
 # %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
+hyphi_config.init()  # load hyphi config
+
 # Analysis configuration file
-config_file = os.path.join(paths.experiments.configs, sys.argv[1])
+config_file = os.path.join(hyphi_config.paths.experiments.configs, sys.argv[1])
 
 # Load the configuration parameters into a dictionary
 config = load_config(config_file)

@@ -11,7 +11,7 @@ __version__ = version(distribution_name="hyphi")
 # TODO: Add or remove imports below as your project evolves — only expose what a package user should use.
 import hyphi.benchmarks
 import hyphi.communities_centrality
-# import hyphi.configs
+import hyphi.configs
 import hyphi.io_brainhack
 import hyphi.modeling
 import hyphi.null_models

@@ -4,8 +4,8 @@ results/
 data/*.npy
 data_8node/
 
-# Private configs in ./code/configs/
-*_config.toml
+# Private configs in ./configs/ (starting with an underscore)
+_*config.toml
 
 # Consider to ignore specific file types unique to your project
 # *.png

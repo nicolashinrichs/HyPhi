@@ -2,17 +2,18 @@
 
 # %% Import
 import os
-import matplotlib.pyplot as plt
+
 import matplotlib as mpl
-from matplotlib.gridspec import GridSpec
 import matplotlib.cm as cm
 import matplotlib.colors as mpc
+import matplotlib.pyplot as plt
+import networkx as nx
+import numpy as np
+from hyphi.configs import config
+from matplotlib.gridspec import GridSpec
 from matplotlib.transforms import ScaledTranslation
 from tqdm import tqdm
-import numpy as np
-import networkx as nx
 
-from hyphi.configs import paths
 from hyphi.modeling.entropies import vec_entropy, vec_quantiles
 from hyphi.modeling.graph_curvatures import compute_frc_vec
 from hyphi.simulation.graph_simulations import gen_neureps_wsw, gen_tv_weighted_sw
@@ -37,8 +38,10 @@ plt.rcParams.update(params)
 
 
 # %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
+config.init()  # load hyphi config
+
 # Path variables
-viz_path = paths.experiments.figures
+viz_path = config.paths.experiments.figures
 neureps_viz = os.path.join(viz_path, "NeuReps_2025_Figure.png")
 
 

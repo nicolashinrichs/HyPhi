@@ -1,9 +1,12 @@
 # Config file for hyphi
+# Note, this config file is for users having their own clone of this repository.
 # Drop all relevant paths, parameters, etc. here
 # They can be accessed in the code via:
-#   from hyphi.configs import config, paths, params
-# Note, store private configs in the same folder as this file: "./[PRIVATE_PREFIX]_configs.toml"
-# They shouldn't be tracked via git
+#   from hyphi.configs import config
+#   config.init()
+# Note, store private configs in the same folder as this file with a leading underscore,
+# e.g. "_config.toml" or "_secret_config.toml" (they are git-ignored)
+# Private configs are loaded last (so they override these public settings).
 
 PROJECT_NAME = "HyPhi" # used for paths, logging, etc. Must be capitalized as the name of the project root folder
 
@@ -24,7 +27,7 @@ visualizations = "./results/datavisualization"
 
 # Set parameters
 [params]
-weight_decay = 0.01 # TODO: replace PLACEHOLDER
+weight_decay = 0.01 # TODO: replace PLACEHOLDER, and relevant parameters
 
 ################################################
 ##################  LOGGER  ####################
@@ -49,7 +52,7 @@ datefmt = "%Y-%m-%d %H:%M:%S"
 [logging.handlers.file_handler]
 level = "DEBUG"                  # == 10 (pass int or string)
 formatter = "fmtfile"
-filename = "code/logs/hyphi.log" # parent dir must exist
+filename = "logs/hyphi.log" # parent dir is created automatically
 class = "logging.FileHandler"    # for file output
 
 [logging.handlers.stream_handler]

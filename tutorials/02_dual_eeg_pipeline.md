@@ -1,13 +1,13 @@
 # Dual-EEG analysis pipeline
 
-A complete walkthrough for analysing a hyperscanning dataset with HyPhi: from raw EEG
+A complete walkthrough for analyzing a hyperscanning dataset with HyPhi: from raw EEG
 files to a publication-ready figure.  Cross-platform; works on macOS, Linux, and
 Windows once `uv sync` has succeeded.
 
 This tutorial assumes you have already:
 
 - Installed the package (`uv sync --extra develop --extra notebook`)
-- Verified the install with the [quickstart](01_quickstart.py)
+- Verified the installation with the [quickstart](01_quickstart.py)
 
 For installation help see the project [README](../README.md).
 
@@ -111,15 +111,17 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from hyphi.configs import paths
+from hyphi.configs import config
 from hyphi.modeling.windowing import sliding_window_plv
 from hyphi.modeling.graph_curvatures import compute_frc_vec, extract_curvatures_vec
 from hyphi.modeling.entropies import vec_entropy, entropy_kde_plugin
 from hyphi.null_models import phase_randomize
 from hyphi.stats import entropy_to_long_df, hierarchical_permutation_test
 
-study_dir = Path(paths.DATA) / "your-study"
-out_dir   = Path(paths.RESULTS) / "your-study"
+config.init()
+
+study_dir = Path(config.paths.DATA) / "your-study"
+out_dir   = Path(config.paths.RESULTS) / "your-study"
 out_dir.mkdir(parents=True, exist_ok=True)
 
 # Pipeline parameters

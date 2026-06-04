@@ -110,13 +110,16 @@ Keep both config toml files and the script in the places where they are.
 To use your configs in your `Python` scripts, do the following:
 
 ```python
-from hyphi.configs import config, paths
+from hyphi.configs import config
+
+# Will create a config file (configs/config.toml, if not there)
+config.init()
 
 # check out which paths are set in config.toml
-paths.show()
+config.paths.show()
 
 # get the path to data
-path_to_data: str = paths.DATA
+path_to_data: str = config.paths.DATA
 
 # Get parameter from config (example)
 weight_decay = config.params.weight_decay

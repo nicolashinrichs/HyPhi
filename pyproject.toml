@@ -141,7 +141,7 @@ include = ["*.py", "*.pyi", "**/pyproject.toml", "*.ipynb"]
 
 # Exclude a variety of commonly ignored directories:
 extend-exclude = [
-    "code/configs",
+    "configs",
     "data",
     "literature",
     "organisation",

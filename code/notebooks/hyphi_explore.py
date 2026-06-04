@@ -3,6 +3,7 @@ Template marimo notebook for the hyphi toolbox.
 
 Years: 2026
 """
+
 import marimo
 
 __generated_with = "0.23.0"
@@ -58,7 +59,7 @@ def _(Path):
 
 @app.cell
 def _(Path, paths):
-    # List all nested paths in `code/configs/config.toml`
+    # List all nested paths in `configs/config.toml`
     paths.show()
 
     # Get specific path
@@ -101,13 +102,15 @@ def _(mo):
 @app.cell
 def _():
     # Import my hyphi package and other modules
-    import marimo as mo
     from pathlib import Path
 
+    import marimo as mo
     import numpy as np
-    from hyphi.configs import config, params, paths
+    from hyphi.configs import config
 
-    return Path, mo, params, paths
+    config.init()  # load hyphi config
+
+    return Path, mo, config
 
 
 if __name__ == "__main__":

@@ -31,9 +31,11 @@ def _(mo):
 
 @app.cell
 def _():
-    from hyphi.configs import params, paths
+    from hyphi.configs import config
 
-    paths.show()
+    config.init()  # load hyphi config
+
+    config.paths.show()
     return
 
 
@@ -69,7 +71,6 @@ def _(mo):
 @app.cell
 def _(adjacencies):
     import networkx as nx
-
     from hyphi.modeling.graph_curvatures import compute_frc, extract_curvatures
 
     G = nx.from_numpy_array(adjacencies[1])
