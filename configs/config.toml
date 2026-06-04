@@ -18,6 +18,9 @@ RESULTS = "./results"
 CACHE = "./data/cache"
 EXPERIMENTS = "./experiments"
 
+[paths.data]
+connectome  = "./data/connectome"
+
 [paths.experiments]
 configs = "./experiments/configs"
 figures = "./experiments/figures"

@@ -7,8 +7,8 @@ network plot.
 
 import marimo
 
-__generated_with = "0.23.5"
-app = marimo.App()
+__generated_with = "0.23.8"
+app = marimo.App(width="medium")
 
 
 @app.cell(hide_code=True)
@@ -31,10 +31,15 @@ def _(mo):
 
 @app.cell
 def _():
+    # Load hyphi config
     from hyphi.configs import config
 
-    config.init()  # load hyphi config
+    config.init()
+    return (config,)
 
+
+@app.cell
+def _(config):
     config.paths.show()
     return
 
@@ -48,13 +53,10 @@ def _(mo):
 
 
 @app.cell
-def _():
-    from pathlib import Path
-
+def _(config):
     from hyphi.io_brainhack import load_all_kuramoto_adjacencies
 
-    base_dir = Path("data/connectome")
-    bundle = load_all_kuramoto_adjacencies(indices=range(1, 9), base_dir=base_dir)
+    bundle = load_all_kuramoto_adjacencies(indices=range(1, 9), base_dir=config.paths.data.connectome)
     adjacencies = bundle["adjacencies"]
     print(f"Loaded {len(adjacencies)} connectomes; first shape: {adjacencies[1].shape}")
     return (adjacencies,)
