@@ -5,14 +5,13 @@ import os
 import sys
 
 import matplotlib as mpl
-import matplotlib.cm as cm
 import matplotlib.colors as mpc
 import matplotlib.pyplot as plt
 import numpy as np
 from hyphi.configs import config as hyphi_config
-from matplotlib.gridspec import GridSpec
-
 from hyphi.io import load_config, make_dir
+from matplotlib import cm
+from matplotlib.gridspec import GridSpec
 
 # %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 hyphi_config.init()  # load hyphi config
