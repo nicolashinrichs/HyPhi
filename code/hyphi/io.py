@@ -19,22 +19,21 @@ pass
 
 def load_config(config_file: str | Path) -> dict:
     """Load configuration from a TOML file."""
-    with open(config_file, mode="rb") as fp:
-        config = tomllib.load(fp)
-    return config
+    with Path(config_file).open("rb") as fp:
+        return tomllib.load(fp)  # configs
 
 
-def make_dir(dirpath: str) -> None:
+def make_dir(dirpath: str | Path) -> None:
     """Create a directory if it does not exist."""
-    if not os.path.exists(dirpath):
-        os.makedirs(dirpath)
+    dirpath = Path(dirpath)
+    if not dirpath.exists():
+        dirpath.mkdir(parents=True, exist_ok=True)
 
 
-def load_network_pkl(pkl_file: str):
+def load_network_pkl(pkl_file: str | Path):
     """Load a list or array of networkx graphs from a pickle file."""
-    with open(pkl_file, mode="rb") as fp:
-        networks = pickle.load(fp)
-    return networks
+    with Path(pkl_file).open("rb") as fp:
+        return pickle.load(fp)  # networks
 
 
 def save_network_pkl(data, pkl_file: str) -> None:
@@ -69,9 +68,8 @@ def load_connectivity_data(pickle_path: str | Path):
     versions remain loadable in environments still on the legacy
     ``numpy.core`` namespace.
     """
-    with open(pickle_path, "rb") as fp:
-        data = CompatUnpickler(fp).load()
-    return data
+    with Path(pickle_path).open("rb") as fp:
+        return CompatUnpickler(fp).load()  # data
 
 
 # o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o END
