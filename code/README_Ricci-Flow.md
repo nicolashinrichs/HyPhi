@@ -5,11 +5,11 @@
 
 ***
 
-This folder contains a standalone workflow script for Kuramoto-based PLV graph analysis with Forman curvature and Ricci flow:
+`hyphi` contains a standalone workflow script for Kuramoto-based PLV graph analysis with Forman curvature and Ricci flow:
 
 - `ricci_flow_analysis.py`
 
-The script is adapted to run from the project root (`HyPhi/`).
+The script is adapted to run from the project root (here, `HyPhi/`).
 
 ## What The Script Does
 
@@ -54,7 +54,7 @@ Optional outputs (if `--save-graphs`):
 - `window_XX_ricci_flow_graph.pkl`
 
 Optional visualization (if `--enable-visualization`):
-- PNGs via `curvature_visualisation.py`
+- PNGs via `curvature_visualization.py`
 
 ## Core Functions (quick map)
 
@@ -110,12 +110,4 @@ uv run python -m hyphi.modeling.ricci_flow_analysis \
   --target-windows 24
 ```
 
-## Dependencies
-
-At minimum:
-- `Python 3.11+`
-- `numpy`, `networkx`
-- `GraphRicciCurvature`
-- `jax`, `jaxlib` (if phase simulation is needed)
-
-If visualization is enabled, ensure plotting dependencies used by `curvature_visualisation.py` are installed.
+If visualization is enabled, ensure plotting dependencies used by `curvature_visualization.py` are installed.
