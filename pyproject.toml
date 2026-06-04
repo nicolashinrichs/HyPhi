@@ -1,7 +1,7 @@
 # Check this for proper formatting: https://packaging.python.org/en/latest/specifications/declaring-project-metadata/#declaring-project-metadata
 [project]
 name = "hyphi"
-version = "2.1.1"
+version = "2.2.0"
 description = "A Python package for hyperscanning data analysis via geometric entropy."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -285,7 +285,7 @@ output-format = "concise" # or "full"
 
 # For instance, run in shell: bumpver update --patch --no-fetch --dry
 [tool.bumpver]
-current_version = "2.1.1"
+current_version = "2.2.0"
 version_pattern = "MAJOR.MINOR.PATCH"
 pre_commit_hook = "scripts/badge.sh"
 commit_message = "bump version {old_version} -> {new_version}"
