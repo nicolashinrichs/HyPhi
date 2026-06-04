@@ -27,14 +27,16 @@ Years: 2026
 from __future__ import annotations
 
 import logging
-from collections.abc import Callable, Mapping
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import pandas as pd
 import statsmodels.formula.api as smf
 from scipy.stats import energy_distance
 from statsmodels.stats.power import TTestIndPower
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Mapping
 
 # %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 logger = logging.getLogger(__name__)
@@ -279,11 +281,11 @@ def _default_test_stat(df: pd.DataFrame, value_col: str, condition_col: str) -> 
     exchangeability.  Always non-negative (use ``tail="right"``).
     """
     conditions = np.unique(df[condition_col].values)
-    means = {c: df.loc[df[condition_col] == c, value_col].mean() for c in conditions}
+    means = {str(c): df.loc[df[condition_col] == c, value_col].mean() for c in conditions}
     total = 0.0
     for i in range(len(conditions)):
         for j in range(i + 1, len(conditions)):
-            total += (means[conditions[i]] - means[conditions[j]]) ** 2
+            total += (means[str(conditions[i])] - means[str(conditions[j])]) ** 2
     return float(total)
 
 
@@ -363,7 +365,7 @@ def hierarchical_permutation_test(
         n_trials_per_dyad[d] = len(trial_ids)
 
     trial_to_row_idx: dict[tuple[Any, Any], np.ndarray] = {}
-    for (d, t), rows in data.groupby([dyad_col, trial_col]).groups.items():
+    for (d, t), rows in data.groupby(by=[dyad_col, trial_col]).groups.items():  # TODO: test for issues.
         trial_to_row_idx[(d, t)] = np.asarray(rows)
 
     null_dist = np.empty(n_perms, dtype=float)
@@ -371,7 +373,7 @@ def hierarchical_permutation_test(
     for i in range(n_perms):
         for d, (trial_ids, trial_conds) in dyad_trial_info.items():
             shuffled = rng.permutation(trial_conds)
-            for t, new_cond in zip(trial_ids, shuffled):
+            for t, new_cond in zip(trial_ids, shuffled, strict=True):
                 perm_condition[trial_to_row_idx[(d, t)]] = new_cond
         data_perm = data.assign(**{condition_col: perm_condition})
         null_dist[i] = float(test_stat_fn(data_perm, value_col, condition_col))
