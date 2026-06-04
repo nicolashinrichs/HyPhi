@@ -16,10 +16,13 @@ Importing this module has no side effects: previous versions ran the batch
 loop and rendered a plot at import time, which broke ``import hyphi``.  Use
 ``python -m hyphi.communities_centrality.processing`` from the repo root or
 call the helpers directly from your own script / notebook.
+
+Author: Nicolás Hinrichs
+Years: 2024
 """
 
-import glob
-import os
+# %% Import
+
 import pickle
 
 import matplotlib.pyplot as plt
@@ -150,13 +153,4 @@ def plot_processed_graph(
     return fig
 
 
-if __name__ == "__main__":
-    prefixes = process_folder()
-    print(f"Processed {len(prefixes)} pickle(s).")
-    if prefixes:
-        first = prefixes[0]
-        plot_processed_graph(
-            f"code/hyphi/communities_centrality/results/{first}_processed_graph.pkl",
-            f"code/hyphi/communities_centrality/results/{first}_processed_stats.csv",
-            show=True,
-        )
+# o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o END

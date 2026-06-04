@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Minimal helper to load a graph pickle and return its adjacency matrix.
 
@@ -107,10 +106,7 @@ def load_pickle_adjacency(
             raise ValueError("Pickle contains an empty list/tuple.")
         obj = obj[0]
 
-    if isinstance(obj, dict) and "_adj" in obj:
-        adj = obj["_adj"]
-    else:
-        adj = getattr(obj, "_adj", None)
+    adj = obj["_adj"] if isinstance(obj, dict) and "_adj" in obj else getattr(obj, "_adj", None)
 
     if not isinstance(adj, dict):
         raise TypeError("Could not find dictionary-like '_adj' in the pickle object.")
