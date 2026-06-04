@@ -32,9 +32,9 @@ For each time window:
 - Per-run phases (expected pattern by default):
   - `data/<run>_kuramoto_phases.npy`
 - Optional precomputed per-run graph windows (for `merge_graphs` mode):
-  - `data/<run>_connectome_kuramoto.pkl`
+  - `data/connectome/<run>_connectome_kuramoto.pkl`
 - Connectome file (optional, only if `--attach-connectome-weights`):
-  - `software_module/connectivity_data.pkl`
+  - `data/connectivity_data.pkl`
 
 ## Outputs
 
@@ -53,10 +53,6 @@ Optional visualization (if `--enable-visualization`):
 
 ## Core Functions (quick map)
 
-- `load_config_file`: load TOML config.
-- `load_connectome_matrix`: load structural connectivity matrix.
-- `compute_plv_matrix_window`: wrapper to repo PLV function.
-- `compute_frc_graph`: wrapper to repo Forman curvature function.
 - `simulate_missing_phase_files`: generate missing phase trajectories with existing Kuramoto simulation code.
 - `load_phase_windows` / `phase_windows_from_array`: normalize phase arrays into per-window matrices.
 - `build_merged_plv_graph`: build merged PLV graph per window.
@@ -112,6 +108,7 @@ uv run python -m hyphi.modeling.ricci_flow_analysis \
 ## Dependencies
 
 At minimum:
+- `Python 3.11+`
 - `numpy`, `networkx`
 - `GraphRicciCurvature`
 - `jax`, `jaxlib` (if phase simulation is needed)

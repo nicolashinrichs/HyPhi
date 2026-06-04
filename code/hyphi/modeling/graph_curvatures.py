@@ -11,7 +11,7 @@ from GraphRicciCurvature.OllivierRicci import OllivierRicci
 # %% Functions >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
 
-def compute_frc(G: nx.Graph, method: str = "1d") -> nx.Graph:
+def compute_frc(G: nx.Graph, method: str = "1d") -> nx.Graph:  # noqa: N803
     """
     Compute Forman-Ricci curvature on graph G.
 

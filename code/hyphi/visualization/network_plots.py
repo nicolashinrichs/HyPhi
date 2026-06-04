@@ -1,7 +1,7 @@
 """
 Network plotting utilities for HyPhi.
 
-Complements ``curvature_visualisation.py`` with lightweight, layout-aware
+Complements ``curvature_visualization.py`` with lightweight, layout-aware
 plotting helpers for ad-hoc inspection of inter-brain graphs and their
 Forman-Ricci curvature values.  Every function returns a ``matplotlib``
 figure so downstream code can further customize or save it.

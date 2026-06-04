@@ -34,7 +34,7 @@ def simulate_kuramoto(func, solver, init_state, dt, n_steps):
 
     # compiled single-step RK4
     @jit
-    def update(state):
+    def update_state(state):
         return solver(func, state, dt)
 
     N = init_state.size
@@ -42,11 +42,10 @@ def simulate_kuramoto(func, solver, init_state, dt, n_steps):
     theta_hist = theta_hist.at[0].set(init_state)
 
     def body(i, hist):
-        new_state = update(hist[i - 1])
+        new_state = update_state(hist[i - 1])
         return hist.at[i].set(new_state)
 
-    theta_hist = lax.fori_loop(1, n_steps + 1, body, theta_hist)
-    return theta_hist
+    return lax.fori_loop(1, n_steps + 1, body, theta_hist)  # theta hist
 
 
 def get_plv_pair(phi_i, phi_j):
@@ -56,7 +55,7 @@ def get_plv_pair(phi_i, phi_j):
 
 # TODO: should this be here, alone?
 # vectorize across j to build full row (PLV for )  # TODO: for ...?!
-getPLVRow = vmap(get_plv_pair, in_axes=(None, 0), out_axes=0)
+get_plv_row = vmap(get_plv_pair, in_axes=(None, 0), out_axes=0)
 
 
 def get_plv_matrix(phase_window):
@@ -69,7 +68,7 @@ def get_plv_matrix(phase_window):
     n = phase_window.shape[0]
     c = jnp.zeros((n, n))
     for i in range(n):  # plv pair of osc. i with every other osc.
-        c = c.at[i].set(getPLVRow(phase_window[i], phase_window))
+        c = c.at[i].set(get_plv_row(phase_window[i], phase_window))
     # ensure symmetry (c_ij = c_ji)
     return (c + c.T) / 2.0
 

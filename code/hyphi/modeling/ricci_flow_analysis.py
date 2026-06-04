@@ -16,72 +16,36 @@ from __future__ import annotations
 import argparse
 import json
 import pickle
-import sys
-from collections.abc import Iterable
 from pathlib import Path
-from typing import Dict, List
+from typing import TYPE_CHECKING
 
+import jax.numpy as jnp
 import networkx as nx
 import numpy as np
+from jax import random
 
-# %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
-PROJECT_ROOT = Path(__file__).resolve().parent
-SRC_DIR = PROJECT_ROOT / "src"
-if str(SRC_DIR) not in sys.path:
-    sys.path.insert(0, str(SRC_DIR))
+from ..io import load_config
+from ..simulation.kuramoto_simulations import get_plv_graphs, kuramoto_vector_field, rk4, simulate_kuramoto
+from ..simulation.simulations import load_connectome
 
-HYPHI_MODULE_DIR = SRC_DIR / "hyphi"
-if str(HYPHI_MODULE_DIR) not in sys.path:
-    sys.path.insert(0, str(HYPHI_MODULE_DIR))
+# from ..visualization.curvature_visualization import visualize_graph_partitions_markers  # noqa: ERA001
+from .graph_curvatures import compute_frc
+from .windowing import compute_plv_matrix
 
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 # %% Functions >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
 
-def load_config_file(config_path: Path):
-    # TODO: this need to be integrated into general config loader framework of the project
-    try:
-        from ..io import load_config
-
-        return load_config(config_path)
-    except ModuleNotFoundError:
-        try:
-            import tomllib
-        except ModuleNotFoundError:
-            try:
-                import tomli as tomllib
-            except ModuleNotFoundError as exc:
-                raise ModuleNotFoundError("TOML parser not available. Install tomli for Python < 3.11.") from exc
-
-        with open(config_path, "rb") as fp:
-            return tomllib.load(fp)
-
-
-def load_connectome_matrix(connectivity_pkl: Path):
-    from hyphi.simulation.simulations import load_connectome
-
-    W, _, _ = load_connectome(str(connectivity_pkl))
-    return W
-
-
-def compute_plv_matrix_window(phase_window: np.ndarray) -> np.ndarray:
-    from windowing import compute_plv_matrix
-
-    return compute_plv_matrix(phase_window)
-
-
-def compute_frc_graph(graph: nx.Graph, method: str) -> nx.Graph:
-    from curvatures import compute_frc
-
-    return compute_frc(graph, method=method).copy()
-
-
-def save_pickle(obj, path: Path) -> None:
+def _save_pickle(obj, path: Path) -> None:
+    """Save pickle file."""
     with path.open("wb") as f:
         pickle.dump(obj, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 
-def load_graph_series(pkl_path: Path) -> list[nx.Graph]:
+def _load_graph_series(pkl_path: Path) -> list[nx.Graph]:
+    """Load a graph series from a pickle file."""
     with pkl_path.open("rb") as f:
         series = pickle.load(f)
     if not isinstance(series, list) or not series:
@@ -90,16 +54,20 @@ def load_graph_series(pkl_path: Path) -> list[nx.Graph]:
 
 
 def parse_run_ids(raw_runs: Iterable[object]) -> list[int]:
+    """Parse run IDs from a list of raw run IDs or strings."""
     run_ids: list[int] = []
     for item in raw_runs:
         if isinstance(item, int):
             run_ids.append(item)
         elif isinstance(item, str) and item.isdigit():
             run_ids.append(int(item))
+        else:
+            raise ValueError(f"Invalid run ID: {item}")
     return run_ids
 
 
 def phase_windows_from_array(arr: np.ndarray, win_size: int, win_stride: int) -> list[np.ndarray]:
+    """Compute phase windows from a 2D array."""
     arr = np.asarray(arr)
     if arr.ndim == 3:
         # Supports (W, N, T) and (W, T, N).
@@ -122,6 +90,7 @@ def phase_windows_from_array(arr: np.ndarray, win_size: int, win_stride: int) ->
 
 
 def load_phase_windows(phase_path: Path, win_size: int, win_stride: int) -> list[np.ndarray]:
+    """Load phase windows from a file."""
     suffix = phase_path.suffix.lower()
     if suffix == ".npy":
         arr = np.load(phase_path, allow_pickle=True)
@@ -152,15 +121,7 @@ def simulate_missing_phase_files(
     omega_std: float,
     seed_base: int,
 ) -> None:
-    import jax.numpy as jnp
-    from jax import random
-    from software_module.KuramotoSimulations import (
-        getPLVGraphs,
-        kuramotoVectorField,
-        rk4,
-        simulateKuramoto,
-    )
-
+    """Simulate missing phase files for a list of runs."""
     n_steps = win_size + (target_windows - 1) * win_stride
     phase_dir.mkdir(parents=True, exist_ok=True)
     data_dir.mkdir(parents=True, exist_ok=True)
@@ -171,12 +132,12 @@ def simulate_missing_phase_files(
         omegas = omega_std * random.normal(key_omega, (n_osc,))
         init_thetas = random.uniform(key_init, (n_osc,), maxval=2 * jnp.pi)
 
-        theta_hist = simulateKuramoto(
-            lambda th, _omegas=omegas: kuramotoVectorField(th, k, _omegas),
-            rk4,
-            init_thetas,
-            dt,
-            n_steps,
+        theta_hist = simulate_kuramoto(
+            func=lambda th, _omegas=omegas: kuramoto_vector_field(thetas=th, K=k, omegas=_omegas),
+            solver=rk4,
+            init_state=init_thetas,
+            dt=dt,
+            n_steps=n_steps,
         )
         theta_hist_np = np.asarray(theta_hist)
         phases_nt = theta_hist_np.T
@@ -186,13 +147,19 @@ def simulate_missing_phase_files(
 
         graph_path = data_dir / f"{rid}_connectome_kuramoto.pkl"
         if not graph_path.exists():
-            run_graphs = getPLVGraphs(n_steps, win_size, win_stride, theta_hist_np)
-            save_pickle(run_graphs, graph_path)
+            run_graphs = get_plv_graphs(
+                n_steps=n_steps,
+                w_size=win_size,
+                w_stride=win_stride,
+                theta_hist=theta_hist_np
+            )
+            _save_pickle(run_graphs, graph_path)
 
 
 def resolve_connectome_weights(connectivity_pkl: Path, nodes_per_run: int) -> np.ndarray:
-    # Reuse consolidated connectome loader from src/hyphi/simulations.py.
-    W = load_connectome_matrix(connectivity_pkl)
+    """Resolve connectome weights for a given number of nodes per run."""
+    # Reuse consolidated connectome loader from code/hyphi/simulation/simulations.py.
+    W, _, _ = load_connectome(str(connectivity_pkl))
     W = np.asarray(W, dtype=float)
     np.fill_diagonal(W, 0.0)
 
@@ -224,6 +191,7 @@ def attach_connectome_weights(
     nodes_per_run: int,
     run_ids: list[int],
 ) -> None:
+    """Attach connectome weights to graph edges."""
     for u, v, data in graph.edges(data=True):
         run_idx_u = u // nodes_per_run
         run_idx_v = v // nodes_per_run
@@ -242,13 +210,10 @@ def attach_connectome_weights(
             data["source_run"] = -1
 
 
-def aggregate_window_graphs(window_graphs: list[nx.Graph]) -> nx.Graph:
-    return nx.disjoint_union_all(window_graphs)
-
-
 def build_merged_plv_graph(window_phases_by_run: list[np.ndarray], plv_threshold: float | None = None) -> nx.Graph:
+    """Build a merged graph from a list of phase windows."""
     merged_phase_window = np.concatenate(window_phases_by_run, axis=0)
-    C = compute_plv_matrix_window(merged_phase_window)
+    C = compute_plv_matrix(merged_phase_window)
 
     # Optional sparsification to reduce runtime/memory on large merged graphs.
     if plv_threshold is not None:
@@ -268,12 +233,13 @@ def forman_ricci_flow(
     method: str,
     weight: str = "weight",
 ) -> nx.Graph:
-    G = graph.copy()
+    """Compute the Forman-Ricci flow on a graph."""
+    G = graph.copy()  # noqa: N806
     eps = 1e-12
     normalized_weight = float(max(1, G.number_of_edges()))
 
     if not nx.get_edge_attributes(G, "formanCurvature"):
-        G = compute_frc_graph(G, method=method)
+        G = compute_frc(G, method=method)  # noqa: N806
 
     if not nx.get_edge_attributes(G, "original_FRC"):
         for u, v in G.edges():
@@ -295,7 +261,7 @@ def forman_ricci_flow(
             weights[edge] = max(eps, weights[edge] * scale)
         nx.set_edge_attributes(G, values=weights, name=weight)
 
-        G = compute_frc_graph(G, method=method)
+        G = compute_frc(G, method=method)  # noqa: N806
         rc = nx.get_edge_attributes(G, "formanCurvature")
         if not rc or (max(rc.values()) - min(rc.values()) < delta):
             break
@@ -304,6 +270,7 @@ def forman_ricci_flow(
 
 
 def edge_stats(graph: nx.Graph, key: str) -> dict[str, float]:
+    """Compute edge statistics for a graph."""
     vals = [float(d.get(key, 0.0)) for _, _, d in graph.edges(data=True)]
     arr = np.asarray(vals, dtype=float)
     if arr.size == 0:
@@ -311,32 +278,13 @@ def edge_stats(graph: nx.Graph, key: str) -> dict[str, float]:
     return {"min": float(arr.min()), "max": float(arr.max()), "mean": float(arr.mean())}
 
 
-def save_partition_visualization(
-    graph: nx.Graph,
-    partitions: list[list[int]],
-    name: str,
-    save_path: Path,
-    title: str,
-) -> None:
-    from curvature_visualisation import visualize_graph_partitions_markers
-
-    visualize_graph_partitions_markers(
-        graph=graph,
-        partitions=partitions,
-        name=name,
-        save=True,
-        save_path=str(save_path),
-        show=False,
-        title=title,
-    )
-
-
 def parse_args() -> argparse.Namespace:
+    """Parse command-line arguments."""
     parser = argparse.ArgumentParser(description="Per-window merged PLV Forman Ricci-flow analysis.")
     parser.add_argument(
         "--config",
         type=Path,
-        default=Path("experiments/analysis/CCORRconfig_001.toml"),
+        default=Path("experiments/configs/CCORRconfig_001.toml"),
         help="Config used for default runs/data paths/window count.",
     )
     parser.add_argument("--phase-dir", type=Path, default=None, help="Directory containing *_kuramoto_phases files.")
@@ -346,7 +294,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--output-dir", type=Path, default=Path("results/ricci_flow_analysis"), help="Output directory."
     )
-    parser.add_argument("--connectivity-pkl", type=Path, default=Path("software_module/connectivity_data.pkl"))
+    parser.add_argument("--connectivity-pkl", type=Path, default=Path("data/connectivity_data.pkl"))
     parser.add_argument("--runs", type=int, nargs="+", default=None, help="Run IDs to process.")
     parser.add_argument(
         "--graph-construction",
@@ -412,14 +360,14 @@ def main() -> None:
     args = parse_args()
 
     need_config = any(v is None for v in (args.runs, args.data_dir, args.phase_dir, args.target_windows))
-    cfg = load_config_file(args.config) if need_config else {}
+    cfg = load_config(args.config) if need_config else {}
 
     runs = args.runs if args.runs is not None else parse_run_ids(cfg.get("num_kuramotos", []))
     if not runs:
         raise ValueError("No run IDs provided and none found in config num_kuramotos.")
 
-    data_dir = args.data_dir if args.data_dir is not None else Path(cfg.get("kuramoto_loc", "data"))
-    phase_dir = args.phase_dir if args.phase_dir is not None else data_dir
+    data_dir: Path = args.data_dir if args.data_dir is not None else Path(cfg.get("kuramoto_loc", "data"))
+    phase_dir: Path = args.phase_dir if args.phase_dir is not None else data_dir
     target_windows = args.target_windows if args.target_windows is not None else int(cfg.get("kuramoto_time", 24))
 
     if args.win_size is None and args.win_stride is None:
@@ -431,11 +379,11 @@ def main() -> None:
     else:
         raise ValueError("Provide both --win-size and --win-stride, or neither.")
 
-    phase_dir = phase_dir.resolve()
-    data_dir = data_dir.resolve()
-    output_dir = args.output_dir.resolve()
+    phase_dir: Path = phase_dir.resolve()
+    data_dir: Path = data_dir.resolve()
+    output_dir: Path = args.output_dir.resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
-    viz_dir = output_dir / args.viz_dirname if args.enable_visualization else None
+    viz_dir: Path | None = output_dir / args.viz_dirname if args.enable_visualization else None
     if viz_dir is not None:
         viz_dir.mkdir(parents=True, exist_ok=True)
 
@@ -454,7 +402,7 @@ def main() -> None:
             run_graph_path = (data_dir / f"{rid}_connectome_kuramoto.pkl").resolve()
             if not run_graph_path.exists():
                 raise FileNotFoundError(f"Missing run graph file: {run_graph_path}")
-            series_by_run[rid] = load_graph_series(run_graph_path)
+            series_by_run[rid] = _load_graph_series(run_graph_path)
             print(f"[load] run={rid} graph_windows={len(series_by_run[rid])}", flush=True)
 
         available_windows = min(len(series) for series in series_by_run.values())
@@ -519,7 +467,7 @@ def main() -> None:
                 seed_base=args.sim_seed_base,
             )
             for rid in missing_phase_runs:
-                phase_path = phase_dir / args.phase_pattern.format(run=rid)
+                phase_path: Path = phase_dir / args.phase_pattern.format(run=rid)
                 phase_windows_by_run[rid] = load_phase_windows(phase_path, win_size=win_size, win_stride=win_stride)
                 first_shape = phase_windows_by_run[rid][0].shape
                 print(
@@ -552,6 +500,7 @@ def main() -> None:
     if args.attach_connectome_weights:
         connectome_w = resolve_connectome_weights(args.connectivity_pkl.resolve(), nodes_per_run=nodes_per_run)
 
+    # TODO (smh): both conditions in if-else lead to same output
     est_nodes = (
         len(runs) * nodes_per_run if args.graph_construction == "merge_signals_plv" else len(runs) * nodes_per_run
     )
@@ -567,7 +516,7 @@ def main() -> None:
 
         if args.graph_construction == "merge_graphs":
             window_graphs = [series_by_run[rid][widx] for rid in runs]
-            agg_graph = aggregate_window_graphs(window_graphs)
+            agg_graph = nx.disjoint_union_all(window_graphs)  # aggregate window graphs
         else:
             window_phase_list = [phase_windows_by_run[rid][widx] for rid in runs]
             agg_graph = build_merged_plv_graph(window_phase_list, plv_threshold=args.plv_threshold)
@@ -578,7 +527,7 @@ def main() -> None:
         if connectome_w is not None:
             attach_connectome_weights(agg_graph, connectome_w, nodes_per_run, runs)
 
-        forman_graph = compute_frc_graph(agg_graph.copy(), method=args.flow_method)
+        forman_graph = compute_frc(agg_graph.copy(), method=args.flow_method)
         graph_flow = forman_ricci_flow(
             graph=forman_graph,
             iterations=args.flow_iterations,
@@ -590,9 +539,9 @@ def main() -> None:
 
         base = output_dir / f"window_{widx:02d}"
         if args.save_graphs:
-            save_pickle(agg_graph, base.with_name(base.name + "_aggregated_graph.pkl"))
-            save_pickle(forman_graph, base.with_name(base.name + "_forman_graph.pkl"))
-            save_pickle(graph_flow, base.with_name(base.name + "_ricci_flow_graph.pkl"))
+            _save_pickle(agg_graph, base.with_name(base.name + "_aggregated_graph.pkl"))
+            _save_pickle(forman_graph, base.with_name(base.name + "_forman_graph.pkl"))
+            _save_pickle(graph_flow, base.with_name(base.name + "_ricci_flow_graph.pkl"))
 
         frc_vals = np.array(
             [float(d.get("formanCurvature", 0.0)) for _, _, d in forman_graph.edges(data=True)],
@@ -601,16 +550,18 @@ def main() -> None:
         np.save(base.with_name(base.name + "_forman_values.npy"), frc_vals)
 
         # Visualization disabled by default for performance.
-        # To re-enable, pass --enable-visualization.
+        # To re-enable, pass --enable-visualization. # TODO: must be re-enabled with this flag below
         # partitions = [sorted(list(comp)) for comp in nx.connected_components(graph_flow)]
         # n_clusters = len(partitions)
         # viz_name = f"window_{widx:02d}_clusters_{n_clusters}"
-        # save_partition_visualization(
-        #     graph=graph_flow,
+        # visualize_graph_partitions_markers(
+        #     graph=graph,
         #     partitions=partitions,
-        #     name=viz_name,
-        #     save_path=viz_dir,
-        #     title=f"Ricci Flow Graph | window={widx:02d} | clusters={n_clusters}",
+        #     name=name,
+        #     save=True,
+        #     save_path=str(save_path),
+        #     show=False,
+        #     title=title,
         # )
         n_clusters = int(nx.number_connected_components(graph_flow))
 
