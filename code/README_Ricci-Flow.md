@@ -112,6 +112,5 @@ At minimum:
 - `numpy`, `networkx`
 - `GraphRicciCurvature`
 - `jax`, `jaxlib` (if phase simulation is needed)
-- TOML parser (`tomllib` on Python 3.11+, otherwise `tomli`)
 
 If visualization is enabled, ensure plotting dependencies used by `curvature_visualisation.py` are installed.
