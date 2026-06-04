@@ -218,7 +218,7 @@ class _CONFIG:
             str_out += ", " if ctn < len(list_attr) else ""
         return str_out + ")"
 
-    def init(self, project_name: str | None = None) -> _CONFIG:
+    def init(self, project_name: str | None = None) -> None:
         """
         Create the config infrastructure (if missing) and load it.
 
@@ -226,9 +226,9 @@ class _CONFIG:
         `configs/config.toml` is created.
 
         :param project_name: value for `PROJECT_NAME` when creating a new config (default: root folder name)
-        :return: the configured config object (self)
+        :return: None (configured config object (self) is update)
         """
-        return _configure(self, project_name=project_name)
+        _configure(self, project_name=project_name)
 
     def update(self, new_configs: dict[str, Any]):
         """Update the config object with new entries."""
@@ -267,7 +267,7 @@ class _CONFIG:
     def update_paths(self, parent_path: str | None = None, for_logging: bool = False):
         """Update relative paths to PROJECT_ROOT dir."""
         # Use the project root dir as the parent path if not specified
-        parent_path = self.PROJECT_ROOT if hasattr(self, "PROJECT_ROOT") else parent_path
+        parent_path = self.PROJECT_ROOT if hasattr(self, "PROJECT_ROOT") else parent_path  # ty:ignore[invalid-assignment]
 
         if parent_path is not None:
             parent_path = str(Path(parent_path).absolute())
@@ -346,13 +346,13 @@ PROJECT_ROOT: str = str(_find_project_root())
 PROJECT_NAME: str | None = None
 
 
-def _configure(config_obj: _CONFIG, *, project_name: str | None = None) -> _CONFIG:
+def _configure(config_obj: _CONFIG, *, project_name: str | None = None) -> None:
     """
     Discover, create (if missing), load and apply the hyphi configuration.
 
     :param config_obj: the config object to populate (the module-level `config`)
     :param project_name: `PROJECT_NAME` for a newly created config (default: project root folder name)
-    :return: the configured config object
+    :return: None
     """
     global PROJECT_NAME, PROJECT_ROOT  # noqa: PLW0603 (module-level config singletons)
 
@@ -365,7 +365,7 @@ def _configure(config_obj: _CONFIG, *, project_name: str | None = None) -> _CONF
     # No config file present yet -> inform the user and create a default config
     if not config_files:
         name = project_name or project_root.name
-        print(f"No hyphi config found in '{config_dir}'. Creating a default 'config.toml' (PROJECT_NAME='{name}')...")
+        print(f"No hyphi config found in '{config_dir}'.\nCreating a default 'config.toml' (PROJECT_NAME='{name}') ...")
         config_files = [_create_default_config(config_dir=config_dir, project_name=name)]
 
     # Load config file(s) (public first, private last so private overrides public)
@@ -378,31 +378,32 @@ def _configure(config_obj: _CONFIG, *, project_name: str | None = None) -> _CONF
     if missing_keys:
         print(
             "\033[91m"
-            f"Found config file(s) in '{config_dir}', but they do not define the keys hyphi expects "
-            f"(missing: {missing_keys}).\n"
+            f"Found *config.toml file(s) in '{config_dir}',\n"
+            f"but they do not define the keys hyphi expects (missing: {missing_keys}).\n"
             "hyphi was NOT configured and your files were left untouched.\n"
-            f"If a file in '{config_dir}' belongs to another tool, move hyphi's config elsewhere or "
-            "remove the conflicting file, then call `config.init()` to create a valid hyphi config.\n"
-            "Alternatively, add the missing keys to the config file(s) and call `config.init()` again."
+            f"If a file in '{config_dir}' belongs to another tool either:\n"
+            f"\trename/remove the conflicting file, or ...\n"
+            "\tadd the missing keys to the config file(s) and call `config.init()` again."
             "\033[0m"
         )
-        return config_obj
+        return
 
     # Resolve the project root path: an explicit PROJECT_ROOT in the config file takes precedence
-    PROJECT_NAME = config_obj.PROJECT_NAME
-    if hasattr(config_obj.paths, "PROJECT_ROOT"):
-        PROJECT_ROOT = config_obj.paths.PROJECT_ROOT
+    PROJECT_NAME = config_obj.PROJECT_NAME  # ty:ignore[unresolved-attribute]
+    if hasattr(config_obj.paths, "PROJECT_ROOT"):  # ty:ignore[unresolved-attribute]
+        PROJECT_ROOT = config_obj.paths.PROJECT_ROOT  # ty:ignore[unresolved-attribute]
     else:
-        config_obj.paths.PROJECT_ROOT = PROJECT_ROOT
+        config_obj.paths.PROJECT_ROOT = PROJECT_ROOT  # ty:ignore[unresolved-attribute]
     # Make all relative paths absolute w.r.t. the project root
-    config_obj.paths.update_paths()
+    config_obj.paths.update_paths()  # ty:ignore[unresolved-attribute]
 
     # Prepare logging
-    config_obj.logging.update_paths(parent_path=PROJECT_ROOT, for_logging=True)
-    _create_parent_dirs(config_as_dict=config_obj.logging.asdict())
+    config_obj.logging.update_paths(parent_path=PROJECT_ROOT, for_logging=True)  # ty:ignore[unresolved-attribute]
+    _create_parent_dirs(config_as_dict=config_obj.logging.asdict())  # ty:ignore[unresolved-attribute]
 
     # Set logging configs
-    logging.config.dictConfig(config_obj.logging.asdict())  # in scripts: import logging & logging.getLogger(__name__)
+    logging.config.dictConfig(config_obj.logging.asdict())  # ty:ignore[unresolved-attribute]
+    # in scripts: import logging & logging.getLogger(__name__)
 
     # Welcome
     _w = 95
@@ -411,7 +412,7 @@ def _configure(config_obj: _CONFIG, *, project_name: str | None = None) -> _CONF
     # Set the project working directory
     _set_wd(PROJECT_ROOT)
 
-    return config_obj
+    return
 
 
 # o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o END
