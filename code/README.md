@@ -1,6 +1,6 @@
 # hyphi – **code**
 
-    Last update:    April 14, 2026
+    Last update:    June 4, 2026
     Status:         work in progress
 
 ***
@@ -34,13 +34,13 @@ Or use other package management tools (e.g., `conda`, `pip`, or `pixi`) to insta
 
 ### Configs
 
-Paths to data, parameter settings, etc. are stored in the config file: `./code/configs/config.toml`
+Paths to data, parameter settings, etc. are stored in the config file: `./configs/config.toml`
 
-Private config files that contain, e.g., passwords, and therefore should not be shared,
-or mirrored to a remote repository can be listed in: `./code/configs/private_config.toml`
+Private config files (starting with `_`) that contain, e.g., passwords, and therefore should not be shared,
+or mirrored to a remote repository can be listed in: `./configs/_private_config.toml`
 
-Both files will be read out by the script in `./code/hyphi/configs.py`.
-Keep both config toml files and the script in the places where they are.
+Both public and private config files will be read out by the script in `./code/hyphi/configs.py`.
+Keep config toml files and the script in the places where they are.
 
 To use your configs in your `Python` scripts, do the following:
 
