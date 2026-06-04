@@ -1,36 +1,34 @@
 """Run Kuramoto simulations and compute Forman-Ricci curvatures on the resulting PLV graph series."""
 
 # %% Import
-import os
 import sys
+from pathlib import Path
 
 import networkx as nx
 import numpy as np
 from hyphi.configs import config as hyphi_config
-from hyphi.io import load_config, load_network_pkl, make_dir
+from hyphi.io import load_config, load_network_pkl
 from hyphi.modeling.entropies import vec_entropy, vec_quantiles
+from hyphi.modeling.graph_curvatures import compute_frc_vec
 from tqdm import tqdm
 
-from hyphi.modeling.graph_curvatures import compute_frc_vec
-
 # %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
-hyphi_config.init()  # load hyphi config
 
-# Analysis configuration file
-config_file = os.path.join(hyphi_config.paths.experiments.configs, sys.argv[1])
+# Load hyphi config
+hyphi_config.init()
 
 # Load the configuration parameters into a dictionary
-config = load_config(config_file)
+config = load_config(Path(hyphi_config.paths.experiments.configs, sys.argv[1]))
 
 # Type of curvature
-curv_type = sys.argv[2]
-assert curv_type in ["FRC", "AFRC"], f"Curvature type ({curv_type}) must be one of (FRC, AFRC)!"
-if curv_type == "FRC":
-    cmethod = "1d"
-elif curv_type == "AFRC":
-    cmethod = "augmented"
+curv_type: str = sys.argv[2]
 
-make_dir(config["kuramoto_result_loc"])
+if curv_type not in ["FRC", "AFRC"]:
+    raise ValueError("Curvature type ({curv_type}) must be one of (FRC, AFRC)!")
+
+c_method = "1d" if curv_type == "FRC" else "augmented"
+
+Path(config["kuramoto_result_loc"]).mkdir(exist_ok=True, parents=True)
 
 # %% __main__  >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
@@ -39,14 +37,13 @@ if __name__ == "__main__":
 
     for num in tqdm(config["num_kuramotos"], desc="Kuramoto Simulations"):
         # Load condition network time series
-        pklf = os.path.abspath(os.path.join(config["kuramoto_loc"], f"{num}_connectome_kuramoto.pkl"))
-        Gt = load_network_pkl(pklf)
+        Gt: nx.Graph = load_network_pkl(Path(config["kuramoto_loc"], f"{num}_connectome_kuramoto.pkl").absolute())
 
         # Allocate memory
         FRCvals = np.zeros((len(Gt), config["kuramoto_size"], config["kuramoto_size"]))
 
         # Compute Forman-Ricci curvatures across windows for this trial and frequency band
-        FRCt = compute_frc_vec(Gt, method_val=cmethod)
+        FRCt = compute_frc_vec(list_of_graphs=Gt, method_val=c_method)
 
         # Convert IBCs (networkx graphs) with window curvatures to window curvature matrices
         for window in tqdm(range(len(Gt)), desc="Timepoints"):
@@ -61,24 +58,18 @@ if __name__ == "__main__":
         # Save data by condition
 
         # First, construct save paths
-        FRCpath = os.path.abspath(
-            os.path.join(
-                config["kuramoto_result_loc"],
-                f"Kuramoto_PLV_{cmethod}_FRC_matrix_cond_{num}_config_{config['config_id']}.npy",
-            )
-        )
-        Hpath = os.path.abspath(
-            os.path.join(
-                config["kuramoto_result_loc"],
-                f"Kuramoto_PLV_{cmethod}_FRC_entropy_cond_{num}_config_{config['config_id']}.npy",
-            )
-        )
-        Qpath = os.path.abspath(
-            os.path.join(
-                config["kuramoto_result_loc"],
-                f"Kuramoto_PLV_{cmethod}_FRC_quantiles_cond_{num}_config_{config['config_id']}.npy",
-            )
-        )
+        FRCpath = Path(
+            config["kuramoto_result_loc"],
+            f"Kuramoto_PLV_{c_method}_FRC_matrix_cond_{num}_config_{config['config_id']}.npy",
+        ).absolute()
+        Hpath = Path(
+            config["kuramoto_result_loc"],
+            f"Kuramoto_PLV_{c_method}_FRC_entropy_cond_{num}_config_{config['config_id']}.npy",
+        ).absolute()
+        Qpath = Path(
+            config["kuramoto_result_loc"],
+            f"Kuramoto_PLV_{c_method}_FRC_quantiles_cond_{num}_config_{config['config_id']}.npy",
+        ).absolute()
 
         # Now save the NPY files
         np.save(FRCpath, FRCvals)

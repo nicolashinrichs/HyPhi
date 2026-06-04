@@ -3,6 +3,7 @@
 # %% Import
 import os
 import sys
+from pathlib import Path
 
 import networkx as nx
 import numpy as np
@@ -12,32 +13,29 @@ from tqdm import tqdm
 
 config.init()  # load hyphi config
 from hyphi.configs import config
-from hyphi.io import load_config, make_dir
+from hyphi.io import load_config
 from hyphi.modeling.entropies import vec_entropy, vec_quantiles
 from hyphi.modeling.graph_curvatures import compute_frc_vec
 
 # %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 config.init()
 
-# Analysis configuration file
-config_file = os.path.join(config.paths.experiments.configs, sys.argv[1])
-
 # Load the configuration parameters into a dictionary
-config = load_config(config_file)
+config = load_config(Path(config.paths.experiments.configs, sys.argv[1]))
 
 # Load the CCORR data tensors from .mat files
 # We store data for each trial type separately
 ccorr_data = {}
 for dyad in config["dyads"]:
     # Construct file path for dyad
-    dyad_file = os.path.abspath(os.path.join(config["data_loc"], f"CCORR_{dyad}.mat"))
+    dyad_file = Path(config["data_loc"], f"CCORR_{dyad}.mat").absolute()
     # Load dyad CCORR dictionary
     dyad_ccorr = sp.io.loadmat(dyad_file)
     # Throw away unused metadata, keep only CCORR matrices by trial type
     ccorr_data[dyad] = {trial_type: dyad_ccorr[f"CCORR_{trial_type}"] for trial_type in config["trial_types"]}
 
 # If the results directory doesn't exist, make it
-make_dir(os.path.abspath(config["result_loc"]))
+Path(config["result_loc"]).absolute().mkdir(parents=True, exist_ok=True)
 
 # %% __main__  >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
@@ -144,12 +142,10 @@ if __name__ == "__main__":
                     f"CCORR_FRC_entropy_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy",
                 )
             )
-            Qpath = os.path.abspath(
-                os.path.join(
-                    config["result_loc"],
-                    f"CCORR_FRC_quantiles_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy",
-                )
-            )
+            Qpath = Path(
+                config["result_loc"],
+                f"CCORR_FRC_quantiles_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy",
+            ).absolute()
 
             # Now save the NPY files
             np.save(FRCpath, FRCvals)

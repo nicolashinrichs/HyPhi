@@ -6,22 +6,22 @@ import os
 import sys
 import threading
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 
 import networkx as nx
 import numpy as np
 import scipy as sp
 from hyphi.configs import config
-from tqdm import tqdm
-
-from hyphi.io import load_config, make_dir
+from hyphi.io import load_config
 from hyphi.modeling.entropies import entropy_kozachenko, get_quantiles
 from hyphi.modeling.graph_curvatures import compute_orc
+from tqdm import tqdm
 
 # %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 config.init()  # load hyphi config
 
 # Analysis configuration file
-config_file = os.path.join(config.paths.experiments.configs, sys.argv[1])
+config_file = Path(config.paths.experiments.configs, sys.argv[1])
 
 # Load the configuration parameters into a dictionary
 config = load_config(config_file)
@@ -32,11 +32,8 @@ ccorr_data = {}
 for dyad in config["dyads"]:
     ccorr_data[dyad] = {}
 
-    # Construct file path for dyad
-    dyad_file = os.path.abspath(os.path.join(config["data_loc"], f"CCORR_{dyad}.mat"))
-
     # Load dyad CCORR dictionary
-    dyad_ccorr = sp.io.loadmat(dyad_file)
+    dyad_ccorr = sp.io.loadmat(Path(config["data_loc"], f"CCORR_{dyad}.mat").absolute())
 
     # Throw away unused metadata, keep only CCORR matrices by trial type
     for trial_type in tqdm(config["trial_types"], desc="Trial Types"):
@@ -70,7 +67,7 @@ for dyad in config["dyads"]:
         ccorr_data[dyad][trial_type] = ccorr_mat
 
 # If the results directory doesn't exist, make it
-make_dir(os.path.abspath(config["result_loc"]))
+Path(config["result_loc"]).absolute().mkdir(parents=True, exist_ok=True)
 
 # %% Functions >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
@@ -87,7 +84,7 @@ make_dir(os.path.abspath(config["result_loc"]))
 
 
 # Function to parallelize over frequency bands
-def freqBandAnalysis(freq_data, band_idx, config, progress_queue):
+def freq_band_analysis(freq_data, band_idx, config, progress_queue):
 
     # Store outputs
     output_data = {}
@@ -185,7 +182,7 @@ def freqBandAnalysis(freq_data, band_idx, config, progress_queue):
 
 
 def progress_monitor(progress_queue, total_networks, pbar):
-    """Monitor progress updates and update tqdm bar"""
+    """Monitor progress updates and update tqdm bar."""
     processed = 0
     while processed < total_networks:
         try:
@@ -248,7 +245,7 @@ if __name__ == "__main__":
             # This single tqdm tracks frequency band progress
             band_results = list(
                 tqdm(
-                    executor.map(lambda x: freqBandAnalysis(*x), args),
+                    executor.map(lambda x: freq_band_analysis(*x), args),
                     total=len(args),
                     desc="Processing frequency bands",
                 )

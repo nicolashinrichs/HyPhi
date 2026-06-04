@@ -3,22 +3,20 @@
 # %% Import
 import os
 import sys
+from pathlib import Path
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 from hyphi.configs import config as hyphi_config
 
-from hyphi.io import load_config, make_dir
+from hyphi.io import load_config
 
 # %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 hyphi_config.init()  # load hyphi config
 
-# Analysis configuration file
-config_file = os.path.join(hyphi_config.paths.experiments.configs, sys.argv[1])
-
 # Load the configuration parameters into a dictionary
-config = load_config(config_file)
+config = load_config(Path(hyphi_config.paths.experiments.configs, sys.argv[1]))
 
 # Type of curvature
 curv_type = sys.argv[2]
@@ -116,8 +114,8 @@ if __name__ == "__main__":
     data_downsamp = downsample_fully_pooled(data, sample_size=200_000)  # downsample first
 
     # Visualization path variables
-    hyperviz = os.path.abspath(config["pool_viz_loc"])
-    make_dir(hyperviz)
+    hyperviz = Path(config["pool_viz_loc"]).absolute()
+    hyperviz.mkdir(parents=True, exist_ok=True)
 
     # Colorblind friendly palette (8 colors) to set the color cycle of plots (Bang Wong's palette)
     wong = ["#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7"]
@@ -139,7 +137,7 @@ if __name__ == "__main__":
     fullpool_ecdfs = plot_all_bands_ecdf(data_downsamp, curv_type)
 
     # Save figure
-    figpath = os.path.abspath(os.path.join(hyperviz, f"fully_pooled_{curv_type}_ecdfs.png"))
-    fullpool_ecdfs.savefig(figpath, bbox_inches="tight")
+    fig_path = hyperviz / f"fully_pooled_{curv_type}_ecdfs.png"
+    fullpool_ecdfs.savefig(fig_path, bbox_inches="tight")
 
 # o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o END

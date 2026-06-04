@@ -3,23 +3,24 @@
 # %% Import
 import os
 import sys
+from pathlib import Path
 
 import matplotlib as mpl
-import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy as sp
 from hyphi.configs import config as hyphi_config
+from hyphi.io import load_config
+from matplotlib import cm
 from matplotlib.colors import BoundaryNorm, ListedColormap
 from matplotlib.lines import Line2D  # for custom legend handles
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from tqdm import tqdm
 
-from hyphi.io import load_config, make_dir
-
 # %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
-hyphi_config.init()  # load hyphi config
+# Load hyphi config
+hyphi_config.init()
 
 # Colorblind friendly palette (8 colors) to set the color cycle of plots (Bang Wong's palette)
 wong = ["#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7"]
@@ -37,34 +38,31 @@ params = {
 }
 plt.rcParams.update(params)
 
-# Analysis configuration file
-config_file = os.path.join(hyphi_config.paths.experiments.configs, sys.argv[1])
-
 # Load the configuration parameters into a dictionary
-config = load_config(config_file)
+config = load_config(Path(hyphi_config.paths.experiments.configs, sys.argv[1]))
 
 # Create map between dyads and dates
-dyad_date_map = dict(zip(config["dyads"], config["dyad_dates"]))
+dyad_date_map = dict(zip(config["dyads"], config["dyad_dates"], strict=True))
 
 # Create map between trial types and numeric identifiers
 # Map to 0, 1, 2 instead of 1, 2, 3 for later
 trial_type_ids = list(np.array(config["trial_type_ids"]) - 1)
-trial_type_map = dict(zip(trial_type_ids, config["trial_types"]))
+trial_type_map = dict(zip(trial_type_ids, config["trial_types"], strict=True))
 
 # Visualization path variables
-hyperviz = os.path.abspath(config["viz_loc"])
-make_dir(hyperviz)
+hyperviz = Path(config["viz_loc"]).absolute()
+hyperviz.mkdir(parents=True, exist_ok=True)
 
 # %% Functions >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
 
-def plot_hyper_frc(entropy, quantiles, title=None, band_labels=None, window_labels=None, q_labels=None):
-    """Render per-band, per-trial entropy and curvature-quantile time courses on a shared figure.
-
-    entropy:   array of shape (n_bands, n_trials, n_windows)
-    quantiles: array of shape (n_bands, n_trials, n_windows, n_quantiles)
+def plot_hyper_frc(entropy, quantiles, title=None, band_labels=None, window_labels=None, q_labels=None):  # noqa: PLR0915
     """
+    Render per-band, per-trial entropy and curvature-quantile time courses on a shared figure.
 
+    :param entropy: array of shape (n_bands, n_trials, n_windows)
+    :param quantiles: array of shape (n_bands, n_trials, n_windows, n_quantiles)
+    """
     n_bands, n_trials, n_windows = entropy.shape
     _, _, _, n_q = quantiles.shape
     x = np.arange(n_windows)

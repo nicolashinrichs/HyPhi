@@ -3,20 +3,21 @@
 # %% Import
 import os
 import sys
+from pathlib import Path
 
 import networkx as nx
 import numpy as np
 import scipy as sp
 from hyphi.configs import config as hyphi_config
-from hyphi.io import load_config, make_dir
+from hyphi.io import load_config
 from hyphi.modeling.entropies import vec_entropy, vec_quantiles
 from hyphi.modeling.graph_curvatures import compute_frc_vec
 from tqdm import tqdm
 
+# %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 hyphi_config.init()  # load hyphi config
 
-# %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
-config_file = os.path.join(hyphi_config.paths.experiments.configs, sys.argv[1])
+config_file = Path(hyphi_config.paths.experiments.configs, sys.argv[1])
 
 # Load the configuration parameters into a dictionary
 config = load_config(config_file)
@@ -33,7 +34,7 @@ for dyad in config["dyads"]:
     ccorr_data[dyad] = {trial_type: dyad_ccorr[f"CCORR_{trial_type}"] for trial_type in config["trial_types"]}
 
 # If the results directory doesn't exist, make it
-make_dir(os.path.abspath(config["result_loc"]))
+Path(config["result_loc"]).absolute().mkdir(parents=True, exist_ok=True)
 
 # %% __main__  >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 

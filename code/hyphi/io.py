@@ -1,18 +1,13 @@
 """
-I/O module for HyPhi: Loading configurations, reading and writing network data.
+I/O module for HyPhi: Loading configurations, reading, and writing network data.
 
 Years: 2026
 """
 
 # %% Import
-import os
 import pickle
 import tomllib
 from pathlib import Path
-
-# %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
-pass
-
 
 # %% Functions >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
@@ -23,29 +18,23 @@ def load_config(config_file: str | Path) -> dict:
         return tomllib.load(fp)  # configs
 
 
-def make_dir(dirpath: str | Path) -> None:
-    """Create a directory if it does not exist."""
-    dirpath = Path(dirpath)
-    if not dirpath.exists():
-        dirpath.mkdir(parents=True, exist_ok=True)
-
-
 def load_network_pkl(pkl_file: str | Path):
     """Load a list or array of networkx graphs from a pickle file."""
     with Path(pkl_file).open("rb") as fp:
         return pickle.load(fp)  # networks
 
 
-def save_network_pkl(data, pkl_file: str) -> None:
+def save_network_pkl(data, pkl_file: str | Path) -> None:
     """Save data to a pickle file."""
-    make_dir(os.path.dirname(pkl_file) or ".")
-    with open(pkl_file, mode="wb") as fp:
+    pkl_file = Path(pkl_file)
+    pkl_file.parent.mkdir(parents=True, exist_ok=True)
+    with pkl_file.open("wb") as fp:
         pickle.dump(data, fp)
 
 
 class CompatUnpickler(pickle.Unpickler):
     """
-    Compatibility unpickler for older NumPy-internal module paths.
+    Compatibility unpickler for older NumPy-in.
 
     Pickles produced under ``numpy >= 1.25`` reference the private
     ``numpy._core`` namespace.  When loaded under older NumPy releases that
@@ -55,6 +44,7 @@ class CompatUnpickler(pickle.Unpickler):
     """
 
     def find_class(self, module, name):
+        """Find class."""
         if module.startswith("numpy._core"):
             module = module.replace("numpy._core", "numpy.core")
         return super().find_class(module, name)

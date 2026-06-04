@@ -3,13 +3,14 @@
 # %% Import
 import os
 import sys
+from pathlib import Path
 
 import matplotlib as mpl
 import matplotlib.colors as mpc
 import matplotlib.pyplot as plt
 import numpy as np
 from hyphi.configs import config as hyphi_config
-from hyphi.io import load_config, make_dir
+from hyphi.io import load_config
 from matplotlib import cm
 from matplotlib.gridspec import GridSpec
 
@@ -46,7 +47,7 @@ if curv_type == "FRC":
 elif curv_type == "AFRC":
     cmethod = "augmented"
 
-make_dir(config["kuramoto_viz_loc"])
+Path(config["kuramoto_viz_loc"]).mkdir(exist_ok=True, parents=True)
 
 # %% Functions >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 

@@ -5,28 +5,27 @@
 import json
 import os
 import sys
+from pathlib import Path
 
 import numpy as np
 from hyphi.configs import config
-from hyphi.io import load_config, make_dir
+from hyphi.io import load_config
 from joblib import Parallel, delayed
 from scipy.stats import energy_distance
 from statsmodels.stats.multitest import multipletests
 from tqdm import tqdm
-from tqdm_joblib import tqdm_joblib
+from tqdm_joblib import tqdm_joblib  # TODO: needs to be added to optional dependencies of experiment in pyproject.toml
 
 # %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
-config.init()  # load hyphi config
-
-# Analysis configuration file
-config_file = os.path.join(config.paths.experiments.configs, sys.argv[1])
+# Load hyphi config
+config.init()
 
 # Load the configuration parameters into a dictionary
-config = load_config(config_file)
+config = load_config(Path(config.paths.experiments.configs, sys.argv[1]))
 
 # If the pooled results directory doesn't exist, make it
-make_dir(os.path.abspath(config["pooled_result_loc"]))
+Path(config["pooled_result_loc"]).absolute().mkdir(parents=True, exist_ok=True)
 
 # Type of curvature
 curv_type = sys.argv[2]
@@ -52,6 +51,7 @@ def data_path_constructor(dyad, trial_type, curvature, config):
                 f"CCORR_aug_FRC_matrix_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy",
             )
         )
+    return None
 
 
 def result_path_constructor(dyad, trial_type, curvature, config, pooling):
