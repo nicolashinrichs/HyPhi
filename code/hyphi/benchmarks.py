@@ -173,17 +173,15 @@ def compute_global_efficiency(G: nx.Graph, weight: str | None = None) -> float:
     return float(nx.global_efficiency(G))
 
 
-def compute_modularity(G: nx.Graph, weight: str = "weight") -> float:
+def compute_modularity(G: nx.Graph, weight: str | None = "weight") -> float:  # noqa: N803
     """Modularity via greedy community detection; 0.0 if no edges."""
     if G.number_of_edges() == 0:
         return 0.0
-    from networkx.algorithms.community import greedy_modularity_communities
-
-    communities = greedy_modularity_communities(G, weight=weight)
+    communities = nx.algorithms.community.greedy_modularity_communities(G, weight=weight)
     return float(nx.algorithms.community.quality.modularity(G, communities, weight=weight))
 
 
-def compute_assortativity(G: nx.Graph, weight: str | None = "weight") -> float:
+def compute_assortativity(G: nx.Graph, weight: str | None = "weight") -> float:  # noqa: N803
     """Degree assortativity coefficient; 0.0 when undefined on the graph."""
     if G.number_of_edges() == 0:
         return 0.0
@@ -212,10 +210,11 @@ def connectivity_matrix_features(
     weight_threshold: float = 0.0,
 ) -> dict[str, float]:
     """
-    Extract a fixed-length vector of standard connectivity summaries from a
-    single windowed inter-brain correlation matrix.
+    Extract a fixed-length vector of standard connectivity summaries.
 
-    Splits a ``(2n × 2n)`` matrix into three blocks — within-A (top-left),
+    Extract from a single windowed inter-brain correlation matrix.
+
+    Splits a ``(2n x 2n)`` matrix into three blocks — within-A (top-left),
     within-B (bottom-right), and cross-brain A-B (top-right) — and computes
     block-wise means/std plus whole-graph summaries.  All outputs are real
     scalars suitable as classifier features.
@@ -354,7 +353,7 @@ def classify_curvature_vs_benchmarks(
     y : np.ndarray
         Sample labels of length ``n_samples``.
     groups : np.ndarray, optional
-        Group labels (e.g. dyad id) for group-aware splitting.
+        Group labels (e.g., dyad id) for group-aware splitting.
     cv : int
         Number of CV folds; automatically reduced if fewer groups exist.
     scoring : str
@@ -364,8 +363,8 @@ def classify_curvature_vs_benchmarks(
     random_state : int
         RNG seed.
     X_combined : np.ndarray, optional
-        Optional concatenated feature matrix to evaluate as well (e.g. the
-        stack of curvature + benchmark features).
+        Optional concatenated feature matrix to evaluate as well (e.g., the
+        stack of curvature and benchmark features).
 
     Returns
     -------
@@ -378,7 +377,7 @@ def classify_curvature_vs_benchmarks(
     """
     from sklearn.ensemble import RandomForestClassifier
     from sklearn.linear_model import LogisticRegression
-    from sklearn.model_selection import StratifiedGroupKFold, StratifiedKFold, cross_val_score
+    from sklearn.model_selection import StratifiedGroupKFold, StratifiedKFold, cross_val_score  # noqa: PLC0415
     from sklearn.pipeline import make_pipeline
     from sklearn.preprocessing import StandardScaler
     from sklearn.svm import SVC
