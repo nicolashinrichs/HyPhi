@@ -121,4 +121,5 @@ class TestVecEntropy:
         assert result.shape == (3,)
         assert np.all(np.isfinite(result))
 
+
 # o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o END

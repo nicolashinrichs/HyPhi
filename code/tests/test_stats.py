@@ -264,4 +264,5 @@ class TestRequiredSampleSize:
         big = required_sample_size(effect_size=1.0)
         assert big["n_per_group"] < small["n_per_group"]
 
+
 # o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o END

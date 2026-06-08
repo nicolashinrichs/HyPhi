@@ -196,4 +196,5 @@ class TestGenerateSurrogateStack:
         with pytest.raises(ValueError, match="method must be one of"):
             generate_surrogate_stack(np.zeros((2, 8)), method="bogus", n_surrogates=1)
 
+
 # o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o END
