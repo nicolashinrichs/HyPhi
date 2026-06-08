@@ -44,7 +44,7 @@ _VALID_LAYOUTS = ("spring", "kamada_kawai", "spectral", "circular", "shell")
 # %% Helpers >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
 
-def _get_layout_positions(G: nx.Graph, layout: str = "spring", seed: int = 42) -> dict:
+def _get_layout_positions(G: nx.Graph, layout: str = "spring", seed: int = 42) -> dict:  # noqa: N803
     """Dispatch to the chosen ``networkx`` layout; raises on unknown names."""
     if G.number_of_nodes() == 0:
         return {}
@@ -75,7 +75,7 @@ def _safe_color_limits(values: Iterable[float]) -> tuple[float, float]:
 
 
 def plot_weight_distribution(
-    G: nx.Graph,
+    G: nx.Graph,  # noqa: N803
     bins: int = 20,
     figsize: tuple[float, float] = (7, 4),
     title: str = "Distribution of edge weights",
@@ -120,7 +120,7 @@ def plot_weight_distribution(
 
 
 def plot_network(
-    G: nx.Graph,
+    G: nx.Graph,  # noqa: N803
     layout: str = "spring",
     figsize: tuple[float, float] = (10, 10),
     title: str | None = None,
@@ -150,7 +150,7 @@ def plot_network(
 
 
 def plot_curvature_network(
-    G: nx.Graph,
+    G: nx.Graph,  # noqa: N803
     curvature_attr: str = "formanCurvature",
     layout: str = "spring",
     figsize: tuple[float, float] = (10, 10),
@@ -163,7 +163,7 @@ def plot_curvature_network(
     cmap=None,
 ) -> Figure:
     """
-    Draw a graph with edges coloured by a curvature attribute.
+    Draw a graph with edges colored by a curvature attribute.
 
     Parameters
     ----------
@@ -229,7 +229,7 @@ def plot_curvature_network(
 
 
 def plot_curvature_network_layouts(
-    G: nx.Graph,
+    G: nx.Graph,  # noqa: N803
     curvature_attr: str = "formanCurvature",
     layouts: tuple[str, ...] = ("spring", "kamada_kawai", "circular"),
     figsize: tuple[float, float] = (18, 6),
@@ -243,9 +243,9 @@ def plot_curvature_network_layouts(
     suptitle: str | None = "Curvature-coloured network in multiple layouts",
 ) -> Figure:
     """
-    Side-by-side curvature-coloured views of the same graph across multiple layouts.
+    Side-by-side curvature-colored views of the same graph across multiple layouts.
 
-    Useful for quickly checking whether high-curvature edges localise
+    Useful for quickly checking whether high-curvature edges localize
     structurally (i.e., the same edges stand out regardless of layout).
 
     """
@@ -261,7 +261,7 @@ def plot_curvature_network_layouts(
     if len(layouts) == 1:
         axes = [axes]
 
-    for ax, layout in zip(axes, layouts):
+    for ax, layout in zip(axes, layouts, strict=True):
         pos = _get_layout_positions(G, layout=layout, seed=seed)
         nx.draw_networkx_nodes(G, pos, node_size=node_size, alpha=node_alpha, ax=ax)
         nx.draw_networkx_edges(

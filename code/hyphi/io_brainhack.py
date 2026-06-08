@@ -24,7 +24,6 @@ from __future__ import annotations
 import io
 import pickle
 from pathlib import Path
-from typing import List, Union
 
 import numpy as np
 
@@ -40,7 +39,6 @@ def load_pickle_adjacency(
     return_nodes: bool = False,
 ):
     """
-    Minimal helper to load a graph pickle and return its adjacency matrix.
     Read a graph pickle and return its adjacency matrix as a NumPy array.
 
     Parameters
@@ -121,10 +119,7 @@ def load_pickle_adjacency(
             raise ValueError("Pickle contains an empty list/tuple.")
         obj = obj[0]
 
-    if isinstance(obj, dict) and "_adj" in obj:
-        adj = obj["_adj"]
-    else:
-        adj = getattr(obj, "_adj", None)
+    adj = obj["_adj"] if isinstance(obj, dict) and "_adj" in obj else getattr(obj, "_adj", None)
 
     if not isinstance(adj, dict):
         raise TypeError("Could not find dictionary-like '_adj' in the pickle object.")
@@ -225,8 +220,12 @@ def build_kuramoto_paths(
     suffix="connectome_kuramoto.pkl",
 ):
     """
-    Build paths like:
-    1_connectome_kuramoto.pkl, ..., 8_connectome_kuramoto.pkl
+    Build Kuramoto paths.
+
+    For example, build paths like:
+
+        1_connectome_kuramoto.pkl, ..., 8_connectome_kuramoto.pkl
+
     and check that they exist.
     """
     paths = {idx: Path(base_dir) / f"{idx}_{suffix}" for idx in indices}
@@ -248,9 +247,7 @@ def load_all_kuramoto_adjacencies(
     return_nodes=False,
     verbose=False,
 ):
-    """
-    Load all Kuramoto adjacency matrices only.
-    """
+    """Load all Kuramoto adjacency matrices only."""
     paths = build_kuramoto_paths(
         indices=indices,
         base_dir=base_dir,
@@ -313,9 +310,7 @@ def load_all_prebase_adjacencies(
     return_nodes=False,
     verbose=False,
 ):
-    """
-    Load all prebase adjacency matrices only.
-    """
+    """Load all prebase adjacency matrices only."""
     paths = build_prebase_paths(
         indices=indices,
         base_dir=base_dir,

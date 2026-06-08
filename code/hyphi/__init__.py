@@ -15,7 +15,6 @@ import hyphi.configs
 import hyphi.io_brainhack
 import hyphi.modeling
 import hyphi.null_models
-
 import hyphi.simulation
 import hyphi.spectral
 import hyphi.stats

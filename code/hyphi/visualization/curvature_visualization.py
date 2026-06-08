@@ -2,26 +2,27 @@
 Visualize the curvature of an input graph.
 
 Author: Nahid Torbati
-Years: 2024
+Years: 2024 & 2026
 """
 
 # %% Import
 import itertools
-import os
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 from matplotlib.cm import ScalarMappable
 
+# TODO: ideally avoid these conditional imports
 try:
     import seaborn as sns
-except Exception:
+except ModuleNotFoundError:
     sns = None
 
 try:
     import plotly.graph_objects as go
-except Exception:
+except ModuleNotFoundError:
     go = None
 
 # %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
@@ -31,9 +32,9 @@ pass
 # %% Functions >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
 
-def _get_rdbu_cmap():
+def _get_rdbu_cmap(use_plt: bool = False):
     """Return RdBu colormap, preferring seaborn when available."""
-    if sns is not None:
+    if sns is not None and not use_plt:
         return sns.color_palette("RdBu", as_cmap=True)
     return plt.get_cmap("RdBu")
 
@@ -46,8 +47,8 @@ def _require_plotly():
 
 
 def visualize_graph_with_curvature(
-    graph: nx.Graph, name: str, save_dir: str = None, dpi: int = 300, figsize: tuple = (8, 8)
-):
+    graph: nx.Graph, name: str, save_dir: str | Path | None = None, dpi: int = 300, figsize: tuple = (8, 8)
+) -> None:
     """
     Visualize a graph with curvature values on edges using Seaborn colormap.
 
@@ -57,7 +58,7 @@ def visualize_graph_with_curvature(
         The input graph with edge attribute "ricciCurvature".
     name : str
         Name of the graph (used in title and filename if saved).
-    save_dir : str, optional
+    save_dir : str, Path, optional
         Directory to save the visualization. If None, the plot is only displayed.
     dpi : int, default=300
         Resolution for saving the figure.
@@ -99,8 +100,9 @@ def visualize_graph_with_curvature(
 
     # Save or show
     if save_dir is not None:
-        os.makedirs(save_dir, exist_ok=True)
-        save_path = os.path.join(save_dir, f"graph_curvature_{name}.png")
+        save_dir = Path(save_dir)
+        save_dir.mkdir(parents=True, exist_ok=True)
+        save_path = save_dir / f"graph_curvature_{name}.png"
         plt.savefig(save_path, dpi=dpi, bbox_inches="tight")
         plt.close()
         print(f"[INFO] Graph visualization saved to {save_path}")
@@ -108,13 +110,13 @@ def visualize_graph_with_curvature(
         plt.show()
 
 
-def visualize_graph_on_dataset_plot(G, pos):
+def visualize_graph_on_dataset_plot(G: nx.Graph, pos):  # noqa: N803
     _require_plotly()
-    # Extract nodes positions
-    Xn, Yn, Zn = zip(*pos.values())
+    # Extract node positions
+    xn, yn, zn = zip(*pos.values(), strict=True)
 
     # Create the node scatter plot
-    node_trace = go.Scatter3d(x=Xn, y=Yn, z=Zn, mode="markers", marker=dict(size=3, color="gray"), hoverinfo="none")
+    node_trace = go.Scatter3d(x=xn, y=yn, z=zn, mode="markers", marker=dict(size=3, color="gray"), hoverinfo="none")
 
     # Get curvature values without normalization
     curvature_values = nx.get_edge_attributes(G, "ricciCurvature")
@@ -122,7 +124,7 @@ def visualize_graph_on_dataset_plot(G, pos):
 
     # Create the edges traces
     edge_traces = []
-    for i, (u, v) in enumerate(G.edges()):
+    for u, v in G.edges():
         x_values = [pos[u][0], pos[v][0], None]  # None for line breaks
         y_values = [pos[u][1], pos[v][1], None]
         z_values = [pos[u][2], pos[v][2], None]
@@ -139,7 +141,7 @@ def visualize_graph_on_dataset_plot(G, pos):
         edge_traces.append(edge_trace)
 
     # Set up the 3D figure with all traces
-    fig = go.Figure(data=[node_trace] + edge_traces)
+    fig = go.Figure(data=[node_trace, *edge_traces])
 
     # Update layout for better appearance
     fig.update_layout(
@@ -156,16 +158,24 @@ def visualize_graph_on_dataset_plot(G, pos):
     fig.show()
 
 
-def visualize_graph_on_dataset_3d(G, pos, colors=None, node_size=20, edge_size=1.5):
+# TODO: add typehints
+def visualize_graph_on_dataset_3d(
+    G: nx.Graph,
+    pos,
+    colors=None,
+    node_size: float = 20,
+    edge_size: float = 1.5,  # noqa: N803
+) -> None:
+    """Visualize a graph on a 3D dataset layout."""
     fig = plt.figure(figsize=(8, 6))
     ax = fig.add_subplot(111, projection="3d")
 
     # Plot nodes
-    X, Y, Z = zip(*pos)  # .values()
+    xs, ys, zs = zip(*pos, strict=True)  # .values()
     if colors is not None and len(colors) > 0:
-        ax.scatter(X, Y, Z, c=colors, cmap="Spectral", s=node_size)
+        ax.scatter(xs, ys, zs, c=colors, cmap="Spectral", s=node_size)
     else:
-        ax.scatter(X, Y, Z, c="gray", s=node_size)
+        ax.scatter(xs, ys, zs, c="gray", s=node_size)
 
     # Get curvature values for edges and normalize for color mapping
     curvature_values = nx.get_edge_attributes(G, "ricciCurvature")
@@ -186,7 +196,13 @@ def visualize_graph_on_dataset_3d(G, pos, colors=None, node_size=20, edge_size=1
     plt.show()
 
 
-def visualize_graph_on_dataset_2d(G, dataset, colors=None, node_size=20, edge_size=1.5):
+def visualize_graph_on_dataset_2d(
+    G: nx.Graph,  # noqa: N803
+    dataset: np.ndarray,
+    colors=None,
+    node_size: int | float = 20,
+    edge_size: float = 1.5,
+) -> None:
     """
     Visualize a graph on a 2D dataset layout.
 
@@ -196,20 +212,21 @@ def visualize_graph_on_dataset_2d(G, dataset, colors=None, node_size=20, edge_si
       The graph to visualize.
     - dataset: np.ndarray
       A 2D NumPy array where each row represents a point (x, y).
+    # TODO: add missing params
 
     """
     # Extract 2D positions for nodes from the dataset
     pos = {i: (point[0], point[1]) for i, point in enumerate(dataset)}
 
     # Create the plot
-    fig, ax = plt.subplots(figsize=(8, 6))
+    _, ax = plt.subplots(figsize=(8, 6))
 
     # Plot nodes
-    X, Y = zip(*pos.values())
+    xs, ys = zip(*pos.values(), strict=True)
     if colors is not None and len(colors) > 0:
-        ax.scatter(X, Y, c=colors, cmap="Spectral", s=node_size, label="Nodes")
+        ax.scatter(xs, ys, c=colors, cmap="Spectral", s=node_size, label="Nodes")
     else:
-        ax.scatter(X, Y, c="gray", s=node_size, label="Nodes")
+        ax.scatter(xs, ys, c="gray", s=node_size, label="Nodes")
 
     # Get curvature values for edges and normalize for color mapping
     curvature_values = nx.get_edge_attributes(G, "ricciCurvature")
@@ -217,7 +234,7 @@ def visualize_graph_on_dataset_2d(G, dataset, colors=None, node_size=20, edge_si
     palette = _get_rdbu_cmap()
 
     # Plot edges with curvature-based colors
-    for (i, j), edge_color in zip(G.edges(), edge_colors):
+    for (i, j), edge_color in zip(G.edges(), edge_colors, strict=True):
         x_values = [pos[i][0], pos[j][0]]
         y_values = [pos[i][1], pos[j][1]]
         color = palette(edge_color)
@@ -227,13 +244,18 @@ def visualize_graph_on_dataset_2d(G, dataset, colors=None, node_size=20, edge_si
     ax.set_ylabel("Y")
     ax.legend()
     plt.title("Graph Visualization on 2D Dataset")
-    # plt.grid(True)
     plt.show()
 
 
-def curvature_distribution(data_list, name_list, plot_name, save_path=None, save=True):
+def curvature_distribution(
+    data_list: list[np.ndarray],
+    name_list: list[str],
+    plot_name: str,
+    save_path: str | Path | None = None,
+    save: bool = True,
+) -> None:
     """
-    Visualizes histograms of curvature distributions for multiple datasets.
+    Visualize histograms of curvature distributions for multiple datasets.
 
     Parameters
     ----------
@@ -245,12 +267,12 @@ def curvature_distribution(data_list, name_list, plot_name, save_path=None, save
 
     """
     num_plots = len(data_list)
-    fig, axes = plt.subplots(nrows=1, ncols=num_plots, figsize=(5 * num_plots, 4), sharex=True, sharey=True)
+    _, axes = plt.subplots(nrows=1, ncols=num_plots, figsize=(5 * num_plots, 4), sharex=True, sharey=True)
 
     if num_plots == 1:
         axes = [axes]
 
-    for i, (data, name) in enumerate(zip(data_list, name_list)):
+    for i, (data, name) in enumerate(zip(data_list, name_list, strict=True)):
         if sns is not None:
             sns.histplot(data, bins=40, ax=axes[i])
         else:
@@ -260,21 +282,28 @@ def curvature_distribution(data_list, name_list, plot_name, save_path=None, save
         axes[i].set_xlabel("Ricci curvature")
         axes[i].set_ylabel("Frequency")
 
-    plt.tight_layout(rect=[0, 0, 1, 0.96])
+    plt.tight_layout(rect=[0.0, 0.0, 1.0, 0.96])
 
     if save:
-        if save_path:
-            os.makedirs(save_path, exist_ok=True)
-            save_file = os.path.join(save_path, f"{plot_name}.png")
+        if save_path is not None:
+            save_path = Path(save_path)
+            save_path.mkdir(parents=True, exist_ok=True)
+            save_file = save_path / f"{plot_name}.png"
         else:
             save_file = f"{plot_name}.png"
         plt.savefig(save_file)
     plt.show()
 
 
-def heatmap_layers(data_list, name_list, plot_name, save_path=None, save=True):
+def heatmap_layers(
+    data_list: list[np.ndarray],
+    name_list: list[str],
+    plot_name: str,
+    save_path: str | Path | None = None,
+    save: bool = True,
+) -> None:
     """
-    Visualizes histograms of curvature distributions for multiple datasets.
+    Visualize histograms of curvature distributions for multiple datasets.
 
     Parameters
     ----------
@@ -286,12 +315,12 @@ def heatmap_layers(data_list, name_list, plot_name, save_path=None, save=True):
 
     """
     num_plots = len(data_list)
-    fig, axes = plt.subplots(nrows=1, ncols=num_plots, figsize=(5 * num_plots, 4), sharex=True, sharey=True)
+    _, axes = plt.subplots(nrows=1, ncols=num_plots, figsize=(5 * num_plots, 4), sharex=True, sharey=True)
 
     if num_plots == 1:
         axes = [axes]
 
-    for i, (data, name) in enumerate(zip(data_list, name_list)):
+    for i, (data, name) in enumerate(zip(data_list, name_list, strict=True)):
         if sns is not None:
             sns.heatmap(data, ax=axes[i])
         else:
@@ -301,12 +330,13 @@ def heatmap_layers(data_list, name_list, plot_name, save_path=None, save=True):
         axes[i].set_title(name)
         axes[i].set_xlabel("Distance")
 
-    plt.tight_layout(rect=[0, 0, 1, 0.96])
+    plt.tight_layout(rect=[0.0, 0.0, 1.0, 0.96])
 
     if save:
-        if save_path:
-            os.makedirs(save_path, exist_ok=True)
-            save_file = os.path.join(save_path, f"{plot_name}.png")
+        if save_path is not None:
+            save_path = Path(save_path)
+            save_path.mkdir(parents=True, exist_ok=True)
+            save_file = save_path / f"{plot_name}.png"
         else:
             save_file = f"{plot_name}.png"
         plt.savefig(save_file)
@@ -324,6 +354,7 @@ def node_to_partition(communities):
 def visualize_graph_partitions_colors(graph: nx.Graph, partitions, name: str, save=True):
     """
     Visualize a graph with nodes colored by community partitions and edges color-coded by curvature.
+
     Includes a discrete legend for node partitions and a horizontal color bar for edge curvature.
     """
     node_to_community = node_to_partition(partitions)
@@ -383,7 +414,7 @@ def visualize_graph_partitions_markers(
     partitions,
     name: str,
     save: bool = True,
-    save_path: str | None = None,
+    save_path: str | Path | None = None,
     show: bool = False,
     title: str | None = None,
     dpi: int = 250,
@@ -457,8 +488,8 @@ def visualize_graph_partitions_markers(
         )
         legend_handles.append(
             plt.Line2D(
-                [0],
-                [0],
+                xdata=[0],
+                ydata=[0],
                 marker=marker,
                 color="w",
                 markerfacecolor=color,
@@ -481,12 +512,13 @@ def visualize_graph_partitions_markers(
     fig.tight_layout()
 
     if save:
-        if save_path:
-            os.makedirs(save_path, exist_ok=True)
-            save_file = os.path.join(save_path, f"{name}.png")
+        if save_path is not None:
+            save_path = Path(save_path)
+            save_path.mkdir(parents=True, exist_ok=True)
+            save_file = save_path / f"{name}.png"
         else:
             save_file = f"{name}.png"
-        fig.savefig(save_file, dpi=dpi, bbox_inches="tight")
+        fig.savefig(fname=save_file, dpi=dpi, bbox_inches="tight")
 
     if show:
         plt.show()
@@ -494,10 +526,11 @@ def visualize_graph_partitions_markers(
         plt.close(fig)
 
 
-def visualize_graph_on_dataset_with_colors(G, pos, partitions):
+def visualize_graph_on_dataset_with_colors(G: nx.Graph, pos, partitions) -> None:  # noqa: N803
     """
-    Visualize the graph with a given layout. Nodes are colored based on partitions,
-    and edges are color-coded based on curvature values.
+    Visualize the graph with a given layout.
+
+    Nodes are colored based on partitions, and edges are color-coded based on curvature values.
     """
     fig = plt.figure(figsize=(12, 8))
     ax = fig.add_subplot(111, projection="3d")
@@ -509,16 +542,16 @@ def visualize_graph_on_dataset_with_colors(G, pos, partitions):
     cmap = plt.cm.get_cmap("tab20", num_communities)
     community_to_color = {community: cmap(i) for i, community in enumerate(unique_communities)}
 
-    X, Y, Z = zip(*pos.values())
+    xs, ys, zs = zip(*pos.values(), strict=True)
     node_colors = [community_to_color[node_to_community[node]] for node in G.nodes()]
 
-    ax.scatter(X, Y, Z, c=node_colors, s=20, alpha=0.7)
+    ax.scatter(xs, ys, zs, c=node_colors, s=20, alpha=0.7)
 
     curvature_values = nx.get_edge_attributes(G, "ricciCurvature")
     edge_colors = [(curvature_values[edge] + 1) / 2 for edge in G.edges()]  # Normalize to [0, 1]
     palette = _get_rdbu_cmap()
 
-    for edge, normalized_value in zip(G.edges(), edge_colors):
+    for edge, normalized_value in zip(G.edges(), edge_colors, strict=True):
         i, j = edge
         x_values = [pos[i][0], pos[j][0]]
         y_values = [pos[i][1], pos[j][1]]
@@ -530,18 +563,19 @@ def visualize_graph_on_dataset_with_colors(G, pos, partitions):
     ax.set_ylabel("Y")
     ax.set_zlabel("Z")
 
-    legend_handles = [
-        plt.Line2D(
-            [0],
-            [0],
-            marker="o",
-            color="w",
-            label=f"Community {community}",
-            markerfacecolor=community_to_color[community],
-            markersize=10,
-        )
-        for community in unique_communities
-    ]
+    # TODO: remove?!
+    # legend_handles = [
+    #     plt.Line2D(
+    #         [0],
+    #         [0],
+    #         marker="o",
+    #         color="w",
+    #         label=f"Community {community}",
+    #         markerfacecolor=community_to_color[community],
+    #         markersize=10,
+    #     )
+    #     for community in unique_communities
+    # ]
     # ax.legend(handles=legend_handles, loc='upper right', title="Communities")
 
     plt.show()
