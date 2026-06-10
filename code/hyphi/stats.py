@@ -299,12 +299,17 @@ def _validate_hierarchical_input(
     if missing:
         raise ValueError(f"Missing columns: {sorted(missing)}")
 
-    # A missing condition label slips past the uniqueness guard below (nunique
-    # ignores NaN), makes the observed statistic NaN, and the test would then
-    # return the minimum possible p-value for ANY data. A missing value would be
-    # silently dropped by the statistic's mean (complete-case analysis the caller
-    # never asked for). Refuse both instead.
-    for col in (condition_col, value_col):
+    if len(data) == 0:
+        raise ValueError("Empty data: the hierarchical permutation test needs at least one row.")
+
+    # Missing values in ANY of the four columns silently corrupt the scheme:
+    #  - condition: slips past the uniqueness guard below (nunique ignores NaN)
+    #    and makes the observed statistic NaN -> minimum p-value for ANY data;
+    #  - value: dropped by the statistic's mean (an unrequested complete-case analysis);
+    #  - dyad / trial: dropped by groupby (NaN keys are excluded), so those rows
+    #    never enter the permutation index and their labels are frozen, biasing
+    #    the null. Refuse all of them.
+    for col in (condition_col, value_col, dyad_col, trial_col):
         if data[col].isna().any():
             raise ValueError(f"Column '{col}' contains missing values; drop or impute them first.")
 
@@ -320,6 +325,15 @@ def _validate_hierarchical_input(
             f"Use a trial id that does not restart per condition "
             f"(e.g. the trial_id produced by entropy_to_long_df)."
         )
+
+
+def _permutation_p_value(null_dist: np.ndarray, observed: float, n_perms: int, tail: str) -> float:
+    """Add-one permutation p-value (observed included) for the given tail."""
+    if tail == "right":
+        return float((np.sum(null_dist >= observed) + 1) / (n_perms + 1))
+    if tail == "two-sided":
+        return float((np.sum(np.abs(null_dist) >= abs(observed)) + 1) / (n_perms + 1))
+    raise ValueError(f"Unknown tail: {tail!r}")
 
 
 def hierarchical_permutation_test(
@@ -378,6 +392,9 @@ def hierarchical_permutation_test(
         2 conditions reports 8).
 
     """
+    if n_perms < 1:
+        raise ValueError(f"n_perms must be >= 1 (got {n_perms}); cannot estimate a p-value from zero permutations.")
+
     _validate_hierarchical_input(data, value_col, condition_col, dyad_col, trial_col)
 
     # Positional row indices are used below; a non-default index (e.g. after
@@ -421,12 +438,7 @@ def hierarchical_permutation_test(
         data_perm = data.assign(**{condition_col: perm_condition})
         null_dist[i] = float(test_stat_fn(data_perm, value_col, condition_col))
 
-    if tail == "right":
-        p_value = float((np.sum(null_dist >= observed) + 1) / (n_perms + 1))
-    elif tail == "two-sided":
-        p_value = float((np.sum(np.abs(null_dist) >= abs(observed)) + 1) / (n_perms + 1))
-    else:
-        raise ValueError(f"Unknown tail: {tail!r}")
+    p_value = _permutation_p_value(null_dist, observed, n_perms, tail)
 
     return {
         "observed_stat": observed,

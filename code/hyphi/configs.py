@@ -295,7 +295,13 @@ def _set_wd(new_dir: str | Path) -> None:
 
     :param new_dir: name of new working directory (must be in the project folder)
     """
-    if not str(Path.cwd().absolute()).startswith(str(Path(PROJECT_ROOT).absolute())):
+    # Compare resolved paths component-wise: a raw string startswith() both
+    # false-matches sibling dirs whose names share a prefix (/a/bc vs /a/b) and
+    # false-mismatches symlinked paths (.absolute() does not resolve symlinks,
+    # so a project under macOS /tmp -> /private/tmp would look "outside" itself).
+    cwd_resolved = Path.cwd().resolve()
+    root_resolved = Path(PROJECT_ROOT).resolve()
+    if cwd_resolved != root_resolved and root_resolved not in cwd_resolved.parents:
         msg = f"Current working dir '{Path.cwd()}' is outside of project root '{PROJECT_ROOT}'."
         raise OSError(msg)
 

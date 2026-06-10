@@ -27,8 +27,6 @@ from jax import random
 from ..io import load_config
 from ..simulation.kuramoto_simulations import get_plv_graphs, kuramoto_vector_field, rk4, simulate_kuramoto
 from ..simulation.simulations import load_connectome
-
-from ..visualization.curvature_visualization import visualize_graph_partitions_markers
 from .graph_curvatures import compute_frc
 from .windowing import compute_plv_matrix
 
@@ -544,7 +542,13 @@ def main() -> None:
         np.save(base.with_name(base.name + "_forman_values.npy"), frc_vals)
 
         # Visualization is off by default for performance (--enable-visualization).
+        # The import is local so the matplotlib stack is not pulled into every
+        # import of this module (only this CLI's --enable-visualization path needs it).
         if viz_dir is not None:
+            from ..visualization.curvature_visualization import (  # noqa: PLC0415 (lazy: keep matplotlib out of import)
+                visualize_graph_partitions_markers,
+            )
+
             partitions = [sorted(comp) for comp in nx.connected_components(graph_flow)]
             viz_name = f"window_{widx:02d}_clusters_{len(partitions)}"
             visualize_graph_partitions_markers(

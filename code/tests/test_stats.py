@@ -237,6 +237,37 @@ class TestHierarchicalPermutation:
                 data=df, value_col="entropy", condition_col="condition", n_perms=10, seed=0
             )
 
+    def test_nan_dyad_or_trial_raises(self):
+        """Refuse missing dyad/trial ids (groupby silently drops NaN keys, biasing the null)."""
+        # Regression: the validator guarded condition/value but not dyad/trial.
+        # A NaN there passed validation, then groupby dropped the row from the
+        # permutation index, freezing its label and biasing the null (measured:
+        # trial_id=NaN -> p=0.99, a row silently excluded).
+        for col in ("dyad", "trial_id"):
+            df = entropy_to_long_df(_synthetic_entropy_dict(n_dyads=2, n_trials=3, effect=0.0, seed=1))
+            df.loc[df.index[0], col] = np.nan
+            with pytest.raises(ValueError, match="missing values"):
+                hierarchical_permutation_test(
+                    data=df, value_col="entropy", condition_col="condition", n_perms=10, seed=0
+                )
+
+    def test_non_positive_n_perms_raises(self):
+        """Refuse n_perms < 1 (zero permutations once returned a meaningless p=1.0)."""
+        df = entropy_to_long_df(_synthetic_entropy_dict(n_dyads=2, n_trials=3, effect=0.0, seed=1))
+        for n in (0, -5):
+            with pytest.raises(ValueError, match="n_perms must be"):
+                hierarchical_permutation_test(
+                    data=df, value_col="entropy", condition_col="condition", n_perms=n, seed=0
+                )
+
+    def test_empty_data_raises(self):
+        """Refuse an empty frame (once reported p=1.0 on zero data)."""
+        df = pd.DataFrame({"entropy": [], "condition": [], "dyad": [], "trial_id": []})
+        with pytest.raises(ValueError, match="Empty data"):
+            hierarchical_permutation_test(
+                data=df, value_col="entropy", condition_col="condition", n_perms=10, seed=0
+            )
+
     def test_mixed_type_trial_ids_run(self):
         """Accept hand-built data with mixed-type trial ids."""
         # Hand-built data may mix int and str trial ids; sorting by string form

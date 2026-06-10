@@ -16,6 +16,10 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
+          # Pin the interpreter: without this, uv selects the newest stable
+          # CPython on the runner, which can outrun the locked dependency wheels
+          # (e.g. jaxlib has no cp314 wheel in this lock) and fail uv sync.
+          python-version: "3.12"
 
       - name: Install dependencies
         run: uv sync --extra develop
@@ -50,3 +54,9 @@ jobs:
         # being burned down separately. Flip to blocking once it reaches zero.
         continue-on-error: true
         run: uv run --extra develop ruff check code/hyphi
+
+      - name: Type check
+        # Non-gating like lint: surfaces type regressions on PRs (the Makefile's
+        # `make typecheck` runs the same checker). Flip to blocking once clean.
+        continue-on-error: true
+        run: uv run --extra develop ty check code/hyphi

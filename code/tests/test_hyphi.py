@@ -128,4 +128,19 @@ def test_foreign_config_rejected_even_after_prior_init(tmp_project, monkeypatch,
     assert not hasattr(config, "tool")  # foreign keys not leaked onto the singleton
 
 
+def test_set_wd_containment_rejects_sibling_prefix(tmp_path, monkeypatch):
+    """A sibling dir whose name shares a prefix with the root is OUTSIDE it."""
+    # Regression: the containment check used str.startswith, so cwd "/.../projx"
+    # falsely counted as inside root "/.../proj" (and symlinked paths falsely
+    # counted as outside). Path-aware, resolved containment fixes both.
+    root = tmp_path / "proj"
+    sibling = tmp_path / "projx"  # shares the "proj" string prefix, not a child
+    root.mkdir()
+    sibling.mkdir()
+    monkeypatch.setattr(configs_module, "PROJECT_ROOT", str(root))
+    monkeypatch.chdir(sibling)
+    with pytest.raises(OSError, match="outside of project root"):
+        configs_module._set_wd(root)
+
+
 # o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o END
