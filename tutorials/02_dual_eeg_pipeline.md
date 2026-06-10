@@ -36,18 +36,24 @@ with values in `[0, 1]` (PLV) or `[-1, 1]` (correlation-based).
 
 ## 2. Recommended on-disk layout
 
-Inside the project, create a `data/your-study/` folder with one phase file per dyad
-(participant pair):
+Inside the project, create a `data/your-study/` folder with one phase file per
+recording, i.e. per dyad (participant pair) AND condition:
 
 ```
 data/your-study/
-  dyad_01_phases.npy
-  dyad_02_phases.npy
+  dyad_01_sync_phases.npy
+  dyad_01_control_phases.npy
+  dyad_02_sync_phases.npy
   ...
-  metadata.csv          # one row per dyad: dyad_id, condition, sex, age, ...
+  metadata.csv          # one row per recording: dyad_id, condition, sex, age, ...
 ```
 
-`data/` is already in HyPhi's path config (`paths.DATA`).
+Each dyad should appear under **every** condition (a within-dyad design): the
+hierarchical permutation test in step 4 shuffles condition labels *within* each
+dyad, so a dyad recorded under only one condition contributes nothing to the test.
+
+`data/` is already in HyPhi's path config (`config.paths.DATA`, an absolute path
+after `config.init()`).
 
 ## 3. Convert raw EEG to phase time series
 
@@ -64,9 +70,9 @@ import numpy as np
 from scipy.signal import hilbert
 
 # --- EDIT THESE THREE PATHS ------------------------------------------------
-SUBJECT_A_RAW = Path("/path/to/dyad_01_subjectA.vhdr")
-SUBJECT_B_RAW = Path("/path/to/dyad_01_subjectB.vhdr")
-OUT_FILE      = Path("data/your-study/dyad_01_phases.npy")
+SUBJECT_A_RAW = Path("/path/to/dyad_01_sync_subjectA.vhdr")
+SUBJECT_B_RAW = Path("/path/to/dyad_01_sync_subjectB.vhdr")
+OUT_FILE      = Path("data/your-study/dyad_01_sync_phases.npy")
 # ---------------------------------------------------------------------------
 
 raw_a = mne.io.read_raw_brainvision(SUBJECT_A_RAW, preload=True)
@@ -125,7 +131,7 @@ out_dir   = Path(config.paths.RESULTS) / "your-study"
 out_dir.mkdir(parents=True, exist_ok=True)
 
 # Pipeline parameters
-SFREQ        = 500          # sampling rate of the saved phase files (Hz)
+SFREQ        = 500          # sampling rate of YOUR phase files (Hz) - check it, datasets differ (e.g. 250)
 WIN_SEC      = 2.0          # window length (s)
 STRIDE_SEC   = 0.5          # window stride (s)
 WIN_SAMPLES  = int(WIN_SEC    * SFREQ)
@@ -136,17 +142,18 @@ RNG          = np.random.default_rng(0)
 
 meta = pd.read_csv(study_dir / "metadata.csv")
 
-real_entropy: dict[str, np.ndarray] = {}
-null_entropy: dict[str, np.ndarray] = {}
+real_entropy: dict[tuple[str, str], np.ndarray] = {}
+null_entropy: dict[tuple[str, str], np.ndarray] = {}
 
 for _, row in meta.iterrows():
-    dyad_id = row["dyad_id"]
-    phases  = np.load(study_dir / f"{dyad_id}_phases.npy")
+    dyad_id   = row["dyad_id"]
+    condition = row["condition"]
+    phases    = np.load(study_dir / f"{dyad_id}_{condition}_phases.npy")
 
     graphs     = sliding_window_plv(phases, win_size=WIN_SAMPLES, win_stride=STRIDE)
     frc_graphs = compute_frc_vec(graphs)
     h          = vec_entropy(frc_graphs, entropy_kde_plugin)
-    real_entropy[dyad_id] = h
+    real_entropy[(dyad_id, condition)] = h
 
     null_h = np.empty((N_SURROGATES, len(graphs)))
     for s in range(N_SURROGATES):
@@ -154,16 +161,20 @@ for _, row in meta.iterrows():
         sgraphs   = sliding_window_plv(surrogate, win_size=WIN_SAMPLES, win_stride=STRIDE)
         sfrc      = compute_frc_vec(sgraphs)
         null_h[s] = vec_entropy(sfrc, entropy_kde_plugin)
-    null_entropy[dyad_id] = null_h.mean(axis=0)
+    null_entropy[(dyad_id, condition)] = null_h.mean(axis=0)
 
 np.savez(out_dir / "entropy_per_window.npz",
-         **{f"real_{k}": v for k, v in real_entropy.items()},
-         **{f"null_{k}": v for k, v in null_entropy.items()})
+         **{f"real_{d}_{c}": v for (d, c), v in real_entropy.items()},
+         **{f"null_{d}_{c}": v for (d, c), v in null_entropy.items()})
 
-# Hierarchical permutation test
-data = {(row["dyad_id"], row["condition"]): real_entropy[row["dyad_id"]]
-        for _, row in meta.iterrows()}
-df = entropy_to_long_df(data)
+# Hierarchical permutation test.
+# entropy_to_long_df expects {dyad: {condition: array of shape (n_freq, n_trials, n_windows)}};
+# here each recording is one trial of one frequency band, hence the [None, None, :].
+entropy_nested: dict[str, dict[str, np.ndarray]] = {}
+for (dyad_id, condition), h in real_entropy.items():
+    entropy_nested.setdefault(dyad_id, {})[condition] = h[None, None, :]
+
+df = entropy_to_long_df(entropy_nested)
 res = hierarchical_permutation_test(
     data=df, value_col="entropy", condition_col="condition",
     n_perms=N_PERMS, seed=0,
@@ -226,9 +237,8 @@ import matplotlib.pyplot as plt
 
 fig, ax = plt.subplots(2, 1, figsize=(10, 6), sharex=True)
 
-for _, row in meta.iterrows():
-    h = real_entropy[row["dyad_id"]]
-    color = {"sync": "tab:blue", "control": "tab:grey"}[row["condition"]]
+for (dyad_id, condition), h in real_entropy.items():
+    color = {"sync": "tab:blue", "control": "tab:grey"}[condition]
     ax[0].plot(h, color=color, alpha=0.6)
 ax[0].set_ylabel("Curvature entropy (nats)")
 
@@ -252,15 +262,16 @@ For a network plot at the peak window:
 ```python
 from hyphi.visualization.network_plots import plot_curvature_network
 
-peak_dyad = max(real_entropy, key=lambda d: real_entropy[d].max())
-peak_idx  = int(np.argmax(real_entropy[peak_dyad]))
+peak_key = max(real_entropy, key=lambda k: real_entropy[k].max())
+peak_idx = int(np.argmax(real_entropy[peak_key]))
+dyad_id, condition = peak_key
 
-phases = np.load(study_dir / f"{peak_dyad}_phases.npy")
+phases = np.load(study_dir / f"{dyad_id}_{condition}_phases.npy")
 graphs = sliding_window_plv(phases, win_size=WIN_SAMPLES, win_stride=STRIDE)
 G_frc  = compute_frc_vec([graphs[peak_idx]])[0]
 
 fig = plot_curvature_network(G_frc, curvature_attr="formanCurvature", layout="spring")
-fig.savefig(out_dir / f"network_dyad_{peak_dyad}_w{peak_idx}.png", dpi=200)
+fig.savefig(out_dir / f"network_{dyad_id}_{condition}_w{peak_idx}.png", dpi=200)
 ```
 
 ## 7. Benchmark against standard hyperscanning metrics

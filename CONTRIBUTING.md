@@ -311,15 +311,15 @@ uv run --extra notebook marimo edit code/notebooks/hyphi_explore.py
 
 ## Configuration
 
-> *UNDER CONSTRUCTION*: This might change soon (TODO)
-
 Two loaders, two scopes:
 
-- `hyphi.configs.config` / `paths` / `params` — project-wide singleton populated from
-  `code/configs/*config.toml`.  Library code can read it without side effects; entry
-  points (`hyphi.main`, tutorial notebooks, experiment scripts) call
-  [TODO: consider adding] `hyphi.configs.bootstrap()` once at startup to chdir, configure logging, and print the
-  banner.
+- `hyphi.configs.config` — project-wide singleton populated from
+  `configs/*config.toml`.  `config.init()` loads it, resolves every relative path to
+  an absolute path against the auto-detected project root, and configures logging;
+  it never changes the caller's working directory.  Entry-point scripts that *want*
+  to run from the project root can call `hyphi.configs.bootstrap()` once at startup
+  (equivalent to `config.init(chdir=True)`): it additionally changes the working
+  directory to the project root.  Library code must never call `bootstrap()`.
 - `hyphi.io.load_config(path)` — per-file TOML loader for arbitrary user configs (e.g.
   `experiments/configs/*.toml`).  Returns a plain dict.
 
