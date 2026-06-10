@@ -21,9 +21,12 @@ pass
 
 @pytest.fixture
 def conn_matrix():
-    """Connectivity array of shape (windows=3, nodes=5, nodes=5)."""
+    """Build a connectivity array of shape (windows=3, nodes=5, nodes=5) with zero diagonal."""
     rng = np.random.default_rng(0)
-    return rng.uniform(0.1, 1.0, size=(3, 5, 5))
+    mat = rng.uniform(0.1, 1.0, size=(3, 5, 5))
+    for window in mat:  # a nonzero diagonal would put self-loops in the graphs
+        np.fill_diagonal(window, 0.0)
+    return mat
 
 
 def test_entropy_zero_variance(complete_graph_k5):

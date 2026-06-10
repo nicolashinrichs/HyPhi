@@ -369,7 +369,6 @@ def _configure(config_obj: _CONFIG, *, project_name: str | None = None, chdir: b
     global PROJECT_NAME, PROJECT_ROOT  # noqa: PLW0603 (module-level config singletons)
 
     project_root = _find_project_root()
-    PROJECT_ROOT = str(project_root)
     config_dir = project_root / _CONFIG_SUBDIR
 
     config_files = _discover_config_files(config_dir)
@@ -382,13 +381,18 @@ def _configure(config_obj: _CONFIG, *, project_name: str | None = None, chdir: b
         )
         config_files = [_create_default_config(config_dir=config_dir, project_name=name)]
 
-    # Load config file(s) (public first, private last so private overrides public)
+    # Merge config file(s) into a plain dict first (public first, private last so
+    # private overrides public). Validation runs on this dict, NOT on the module
+    # singleton: the singleton accumulates attributes across init() calls, so a
+    # foreign config would otherwise pass validation on stale attributes from a
+    # previously initialised project.
+    merged: dict[str, Any] = {}
     for config_file in config_files:
         with config_file.open("rb") as f:
-            config_obj.update(new_configs=toml.load(f))
+            merged.update(toml.load(f))
 
     # Validate that this is actually a hyphi config and not some foreign config.toml
-    missing_keys = [k for k in _REQUIRED_KEYS if not hasattr(config_obj, k)]
+    missing_keys = [k for k in _REQUIRED_KEYS if k not in merged]
     if missing_keys:
         print(
             "\033[91m"
@@ -401,6 +405,12 @@ def _configure(config_obj: _CONFIG, *, project_name: str | None = None, chdir: b
             "\033[0m"
         )
         return
+
+    # Validation passed: only now touch the singleton and the module globals, so a
+    # rejected init() leaves any previously loaded configuration fully intact.
+    config_obj.__dict__.clear()
+    config_obj.update(new_configs=merged)
+    PROJECT_ROOT = str(project_root)
 
     # Resolve the project root path: an explicit PROJECT_ROOT in the config file takes precedence
     PROJECT_NAME = config_obj.PROJECT_NAME  # ty:ignore[unresolved-attribute]

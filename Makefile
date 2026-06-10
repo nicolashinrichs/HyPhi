@@ -16,7 +16,7 @@ install: ## Install all dependencies
 	uv sync --extra develop --extra notebook
 
 test: ## Run tests with coverage
-	uv run --extra develop pytest . --cov-report=html -v
+	uv run --extra develop pytest --cov=hyphi --cov-report=html -v
 
 check: format typecheck lint ## Run format, typecheck, and lint checks
 

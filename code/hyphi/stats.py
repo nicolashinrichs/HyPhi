@@ -290,6 +290,38 @@ def _default_test_stat(df: pd.DataFrame, value_col: str, condition_col: str) -> 
     return float(total)
 
 
+def _validate_hierarchical_input(
+    data: pd.DataFrame, value_col: str, condition_col: str, dyad_col: str, trial_col: str
+) -> None:
+    """Reject inputs that would silently corrupt the hierarchical permutation scheme."""
+    required = {value_col, condition_col, dyad_col, trial_col}
+    missing = required - set(data.columns)
+    if missing:
+        raise ValueError(f"Missing columns: {sorted(missing)}")
+
+    # A missing condition label slips past the uniqueness guard below (nunique
+    # ignores NaN), makes the observed statistic NaN, and the test would then
+    # return the minimum possible p-value for ANY data. A missing value would be
+    # silently dropped by the statistic's mean (complete-case analysis the caller
+    # never asked for). Refuse both instead.
+    for col in (condition_col, value_col):
+        if data[col].isna().any():
+            raise ValueError(f"Column '{col}' contains missing values; drop or impute them first.")
+
+    # Each (dyad, trial) block must carry exactly one condition, otherwise the
+    # per-trial condition table silently drops labels and the null distribution
+    # degenerates.
+    conds_per_trial = data.groupby([dyad_col, trial_col])[condition_col].nunique()
+    if (conds_per_trial > 1).any():
+        offending = conds_per_trial[conds_per_trial > 1].index.tolist()[:5]
+        raise ValueError(
+            f"trial ids must uniquely identify a trial within each dyad, but these "
+            f"(dyad, trial) blocks carry more than one condition: {offending}. "
+            f"Use a trial id that does not restart per condition "
+            f"(e.g. the trial_id produced by entropy_to_long_df)."
+        )
+
+
 def hierarchical_permutation_test(
     data: pd.DataFrame,
     value_col: str,
@@ -341,42 +373,33 @@ def hierarchical_permutation_test(
     dict
         Keys: ``observed_stat``, ``null_distribution``, ``p_value``,
         ``n_perms``, ``n_dyads``, ``n_trials_per_dyad``, ``tail``.
+        ``n_trials_per_dyad`` counts the permutable trial blocks per dyad,
+        i.e. trials summed ACROSS conditions (a dyad with 4 trials in each of
+        2 conditions reports 8).
 
     """
-    required = {value_col, condition_col, dyad_col, trial_col}
-    missing = required - set(data.columns)
-    if missing:
-        raise ValueError(f"Missing columns: {sorted(missing)}")
+    _validate_hierarchical_input(data, value_col, condition_col, dyad_col, trial_col)
 
     # Positional row indices are used below; a non-default index (e.g. after
     # filtering or concatenation) would silently shuffle the wrong rows.
     data = data.reset_index(drop=True)
-
-    # Each (dyad, trial) block must carry exactly one condition, otherwise the
-    # per-trial condition table built below silently drops labels and the
-    # null distribution degenerates.
-    conds_per_trial = data.groupby([dyad_col, trial_col])[condition_col].nunique()
-    if (conds_per_trial > 1).any():
-        offending = conds_per_trial[conds_per_trial > 1].index.tolist()[:5]
-        raise ValueError(
-            f"trial ids must uniquely identify a trial within each dyad, but these "
-            f"(dyad, trial) blocks carry more than one condition: {offending}. "
-            f"Use a trial id that does not restart per condition "
-            f"(e.g. the trial_id produced by entropy_to_long_df)."
-        )
 
     if test_stat_fn is None:
         test_stat_fn = _default_test_stat
 
     rng = np.random.default_rng(seed)
     observed = float(test_stat_fn(data, value_col, condition_col))
+    if not np.isfinite(observed):
+        msg = f"Observed test statistic is not finite ({observed}); check '{value_col}' for missing values."
+        raise ValueError(msg)
 
     # Per-dyad: trial ids and the single condition each carries.
     dyad_trial_info: dict[Any, tuple[np.ndarray, np.ndarray]] = {}
     n_trials_per_dyad: dict[Any, int] = {}
     for d, d_df in data.groupby(dyad_col):
-        # Sorted so the drawn permutations do not depend on row order.
-        trial_ids = np.sort(d_df[trial_col].drop_duplicates().to_numpy())
+        # Sorted (by string form, so mixed-type ids cannot crash the comparison)
+        # so the drawn permutations do not depend on row order.
+        trial_ids = np.asarray(sorted(d_df[trial_col].drop_duplicates(), key=str), dtype=object)
         trial_conds = (
             d_df.drop_duplicates(subset=[trial_col]).set_index(trial_col).loc[trial_ids, condition_col].to_numpy()
         )

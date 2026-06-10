@@ -232,6 +232,9 @@ In `hyphi.null_models`:
 
 ## 6. Visualise
 
+Append these blocks to the end of `run_pipeline.py` (they reuse its variables:
+`real_entropy`, `null_entropy`, `out_dir`, `study_dir`, `WIN_SAMPLES`, `STRIDE`).
+
 ```python
 import matplotlib.pyplot as plt
 

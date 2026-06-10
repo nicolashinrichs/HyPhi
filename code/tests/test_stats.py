@@ -82,7 +82,8 @@ class TestEntropyToLongDf:
         ids = df[["dyad", "trial_id"]].drop_duplicates()
         assert (ids.groupby("dyad")["trial_id"].nunique() == 6).all()
         # Every (dyad, trial_id) block carries exactly one condition.
-        assert (df.groupby(["dyad", "trial_id"])["condition"].nunique() == 1).all()
+        blocks = df.drop_duplicates(["dyad", "trial_id", "condition"]).groupby(["dyad", "trial_id"]).size()
+        assert (blocks == 1).all()
 
     def test_freq_bands_fallback_to_integers(self):
         data = _synthetic_entropy_dict(n_freq=3)
@@ -212,6 +213,46 @@ class TestHierarchicalPermutation:
         res_a = hierarchical_permutation_test(data=df, **kwargs)
         res_b = hierarchical_permutation_test(data=df.sample(frac=1.0, random_state=0), **kwargs)
         assert res_a["p_value"] == res_b["p_value"]
+
+    def test_nan_condition_raises(self):
+        """Refuse data with missing condition labels."""
+        # Regression: a NaN condition label slipped past the uniqueness guard
+        # (nunique ignores NaN), made the observed statistic NaN, and the test
+        # silently returned the minimum possible p-value for any data.
+        df = entropy_to_long_df(_synthetic_entropy_dict(n_dyads=3, effect=0.0, seed=1))
+        df.loc[5, "condition"] = np.nan
+        with pytest.raises(ValueError, match="missing values"):
+            hierarchical_permutation_test(
+                data=df, value_col="entropy", condition_col="condition", n_perms=10, seed=0
+            )
+
+    def test_nan_value_raises(self):
+        """Refuse data with missing values."""
+        # pandas mean() silently skips NaN values (a complete-case analysis the
+        # caller never asked for); the function must refuse instead.
+        df = entropy_to_long_df(_synthetic_entropy_dict(n_dyads=3, effect=0.0, seed=1))
+        df.loc[5, "entropy"] = np.nan
+        with pytest.raises(ValueError, match="missing values"):
+            hierarchical_permutation_test(
+                data=df, value_col="entropy", condition_col="condition", n_perms=10, seed=0
+            )
+
+    def test_mixed_type_trial_ids_run(self):
+        """Accept hand-built data with mixed-type trial ids."""
+        # Hand-built data may mix int and str trial ids; sorting by string form
+        # must not crash, and the result must stay valid.
+        df = pd.DataFrame(
+            {
+                "dyad": [0] * 8,
+                "condition": ["A", "A", "B", "B"] * 2,
+                "trial_id": [0, 1, "t2", "t3"] * 2,
+                "entropy": np.arange(8, dtype=float),
+            }
+        )
+        res = hierarchical_permutation_test(
+            data=df, value_col="entropy", condition_col="condition", n_perms=20, seed=0
+        )
+        assert 0.0 < res["p_value"] <= 1.0
 
     def test_colliding_trial_ids_raise(self):
         # A trial id that restarts per condition merges blocks across

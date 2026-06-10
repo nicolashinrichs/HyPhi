@@ -5,6 +5,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+from hyphi import configs as configs_module
 from hyphi.configs import bootstrap, config
 from hyphi.modeling.density_estimation import fit_kde
 from hyphi.modeling.entropies import entropy_kde_plugin, vec_entropy
@@ -103,6 +104,28 @@ def test_bootstrap_chdirs_to_project_root(tmp_project, monkeypatch):
     cfg = bootstrap()
     assert Path.cwd() == tmp_project
     assert cfg is config
+
+
+def test_foreign_config_rejected_even_after_prior_init(tmp_project, monkeypatch, tmp_path_factory):
+    """A foreign config must be rejected on validation, not pass on stale singleton state."""
+    # Regression: validation used hasattr() on the accumulating module singleton,
+    # so after one valid init() a later init() against a foreign config falsely
+    # passed and resolved the wrong project's paths.
+    config.init()  # valid init in tmp_project (auto-creates a default config)
+    good_root = configs_module.PROJECT_ROOT
+    good_data = config.paths.DATA
+    assert good_root == str(tmp_project)
+
+    foreign = tmp_path_factory.mktemp("foreign_project")
+    (foreign / "pyproject.toml").write_text('[project]\nname = "foreign"\n')
+    (foreign / "configs").mkdir()
+    (foreign / "configs" / "config.toml").write_text("[tool.black]\nline-length = 88\n")
+    monkeypatch.chdir(foreign)
+
+    config.init()  # must be rejected: required keys missing
+    assert good_root == configs_module.PROJECT_ROOT  # globals untouched
+    assert good_data == config.paths.DATA  # prior configuration intact
+    assert not hasattr(config, "tool")  # foreign keys not leaked onto the singleton
 
 
 # o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o END

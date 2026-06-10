@@ -20,9 +20,12 @@ jobs:
       - name: Install dependencies
         run: uv sync --extra develop
 
+      # Every `uv run` keeps --extra develop: a bare `uv run` re-syncs the
+      # environment to the default dependency set, REMOVING the dev extras
+      # installed above (pytest, ruff) and failing the step.
       - name: Import every module
         run: |
-          uv run python - <<'EOF'
+          uv run --extra develop python - <<'EOF'
           import importlib
           import pkgutil
 
@@ -40,10 +43,10 @@ jobs:
           EOF
 
       - name: Run tests
-        run: uv run pytest -q
+        run: uv run --extra develop pytest -q
 
       - name: Lint
         # Reports but does not gate: the pre-existing violation backlog is
         # being burned down separately. Flip to blocking once it reaches zero.
         continue-on-error: true
-        run: uv run ruff check code/hyphi
+        run: uv run --extra develop ruff check code/hyphi
