@@ -71,7 +71,7 @@ More in the corresponding [`data/README.md`](data/README.md).
 
 This directory contains worked, end-to-end examples illustrating the canonical HyPhi workflow on synthetic networks.
 
-``More in the corresponding [`experiments/README.md`](experiments/README.md).``
+More in the corresponding [`experiments/README.md`](experiments/README.md).
 
 ### `tutorials`
 
