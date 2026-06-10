@@ -317,9 +317,9 @@ Two loaders, two scopes:
   `configs/*config.toml`.  `config.init()` loads it, resolves every relative path to
   an absolute path against the auto-detected project root, and configures logging;
   it never changes the caller's working directory.  Entry-point scripts that *want*
-  to run from the project root can call `hyphi.configs.bootstrap()` once at startup
-  (equivalent to `config.init(chdir=True)`): it additionally changes the working
-  directory to the project root.  Library code must never call `bootstrap()`.
+  to run from the project root can call `hyphi.configs.bootstrap()` once at startup:
+  same as `config.init()` plus a change of working directory to the project root.
+  `bootstrap()` is the only API that changes the cwd; library code must never call it.
 - `hyphi.io.load_config(path)` — per-file TOML loader for arbitrary user configs (e.g.
   `experiments/configs/*.toml`).  Returns a plain dict.
 

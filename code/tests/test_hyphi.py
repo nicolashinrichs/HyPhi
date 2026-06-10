@@ -58,6 +58,20 @@ def test_sw_frc_entropy_pipeline():
     assert np.all(np.isfinite(entropies))
 
 
+@pytest.mark.xfail(
+    reason="ISJ bandwidth selection fails on near-constant curvature distributions; "
+    "degenerate-entropy safeguard tracked in issue #28",
+    raises=ValueError,
+    strict=True,
+)
+def test_near_lattice_entropy_degenerate():
+    """Pin issue #28: near-lattice graphs have ~constant FRC, where the KDE entropy chain fails."""
+    # When the safeguard lands, this xfail turns into an unexpected pass
+    # (strict=True makes that a test failure), prompting removal of the marker.
+    _, graphs = gen_tv_sw(100, 10, 3, -4, -4)  # rewiring p = 1e-4 for every graph
+    vec_entropy(compute_frc_vec(graphs), entropy_kde_plugin)
+
+
 @pytest.fixture
 def tmp_project(tmp_path, monkeypatch):
     """Create a minimal project root (pyproject.toml marker) with the cwd inside it."""

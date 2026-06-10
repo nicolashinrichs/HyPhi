@@ -218,21 +218,20 @@ class _CONFIG:
             str_out += ", " if ctn < len(list_attr) else ""
         return str_out + ")"
 
-    def init(self, project_name: str | None = None, chdir: bool = False) -> None:
+    def init(self, project_name: str | None = None) -> None:
         """
         Create the config infrastructure (if missing) and load it.
 
         Searches for `<project_root>/configs/*config.toml`. If none exist, a default
         `configs/config.toml` is created. All relative config paths are resolved to
         absolute paths against the project root, so the working directory does not
-        matter afterwards.
+        matter afterwards. Never changes the caller's working directory; entry-point
+        scripts that want to run from the project root call :func:`bootstrap` instead.
 
         :param project_name: value for `PROJECT_NAME` when creating a new config (default: root folder name)
-        :param chdir: also change the working directory to the project root
-            (default False: importing or initialising hyphi must not move the caller's cwd)
         :return: None (configured config object (self) is update)
         """
-        _configure(self, project_name=project_name, chdir=chdir)
+        _configure(self, project_name=project_name)
 
     def update(self, new_configs: dict[str, Any]):
         """Update the config object with new entries."""
@@ -437,14 +436,14 @@ def bootstrap(project_name: str | None = None) -> _CONFIG:
     Initialize hyphi once at the start of an entry-point script.
 
     Loads the config, sets up logging, prints the banner, AND changes the working
-    directory to the project root. Equivalent to ``config.init(chdir=True)``.
-    Library code should never call this; use ``config.init()`` (which leaves the
-    caller's working directory alone) or read the absolute ``config.paths.*``.
+    directory to the project root. This is the only entry point that changes the
+    working directory: ``config.init()`` is always cwd-neutral. Library code should
+    never call this; use ``config.init()`` or read the absolute ``config.paths.*``.
 
     :param project_name: `PROJECT_NAME` for a newly created config (default: project root folder name)
     :return: the module-level config object
     """
-    config.init(project_name=project_name, chdir=True)
+    _configure(config, project_name=project_name, chdir=True)
     return config
 
 
