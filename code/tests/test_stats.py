@@ -251,6 +251,33 @@ class TestHierarchicalPermutation:
                     data=df, value_col="entropy", condition_col="condition", n_perms=10, seed=0
                 )
 
+    def test_single_condition_per_dyad_raises(self):
+        """Refuse a between-subjects design: within-dyad permutation cannot move any label."""
+        # Regression: each dyad in only one condition silently returned p=1.0 for
+        # ANY effect (measured: A=0 vs B=100 across 6 dyads -> p=1.0).
+        rows = [
+            {"dyad": d, "condition": "A" if d < 3 else "B", "trial_id": f"{d}__x__{t}",
+             "entropy": 0.0 if d < 3 else 100.0}
+            for d in range(6)
+            for t in range(4)
+        ]
+        with pytest.raises(ValueError, match="within-dyad permutation cannot alter"):
+            hierarchical_permutation_test(
+                data=pd.DataFrame(rows), value_col="entropy", condition_col="condition", n_perms=50, seed=0
+            )
+
+    def test_tiny_permutation_space_warns(self):
+        """Warn when one trial per condition makes significance structurally unreachable."""
+        rows = [
+            {"dyad": d, "condition": c, "trial_id": f"{d}__{c}__0", "entropy": v}
+            for d in range(3)
+            for c, v in [("A", 0.0), ("B", 1.0)]
+        ]
+        with pytest.warns(UserWarning, match="structurally impossible"):
+            hierarchical_permutation_test(
+                data=pd.DataFrame(rows), value_col="entropy", condition_col="condition", n_perms=50, seed=0
+            )
+
     def test_non_positive_n_perms_raises(self):
         """Refuse n_perms < 1 (zero permutations once returned a meaningless p=1.0)."""
         df = entropy_to_long_df(_synthetic_entropy_dict(n_dyads=2, n_trials=3, effect=0.0, seed=1))

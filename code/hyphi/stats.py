@@ -27,6 +27,8 @@ Years: 2026
 from __future__ import annotations
 
 import logging
+import math
+import warnings
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -290,6 +292,11 @@ def _default_test_stat(df: pd.DataFrame, value_col: str, condition_col: str) -> 
     return float(total)
 
 
+# Below this many distinct within-dyad label arrangements, the smallest reachable
+# p-value (~1/space) exceeds 0.05, so significance is structurally impossible.
+_MIN_PERMUTATION_SPACE = 20
+
+
 def _validate_hierarchical_input(
     data: pd.DataFrame, value_col: str, condition_col: str, dyad_col: str, trial_col: str
 ) -> None:
@@ -325,6 +332,51 @@ def _validate_hierarchical_input(
             f"Use a trial id that does not restart per condition "
             f"(e.g. the trial_id produced by entropy_to_long_df)."
         )
+
+    _check_permutation_design(data, condition_col, dyad_col, trial_col)
+
+
+def _check_permutation_design(data: pd.DataFrame, condition_col: str, dyad_col: str, trial_col: str) -> None:
+    """Refuse a degenerate within-dyad design; warn when it is too small for significance."""
+    # The null permutes condition labels WITHIN each dyad. If no dyad carries more
+    # than one condition (a between-subjects design), every permutation is the
+    # identity and the test returns p=1.0 for ANY effect: the wrong tool, not a
+    # non-significant result. Refuse it explicitly.
+    conds_per_dyad = data.groupby(dyad_col)[condition_col].nunique()
+    if not (conds_per_dyad > 1).any():
+        raise ValueError(
+            "No dyad carries more than one condition, so within-dyad permutation cannot alter "
+            "any label and the test is vacuous (p is always 1.0). This within-dyad test needs "
+            "each dyad measured under multiple conditions; for a between-subjects design use a "
+            "test that permutes across dyads."
+        )
+
+    # Warn (do not refuse) when the within-dyad permutation space is so small that
+    # significance is structurally unreachable: with one trial per condition per
+    # dyad the only labelling is identity-or-swap, and a sign-symmetric statistic
+    # (the squared-mean-difference default) makes the swap reproduce the observed
+    # value, flooring p near 0.5 regardless of effect size.
+    n_arrangements = 1
+    for _, d_df in data.groupby(dyad_col):
+        counts = d_df.drop_duplicates(subset=[trial_col])[condition_col].value_counts().to_numpy()
+        n_arrangements *= _multinomial(counts)
+        if n_arrangements >= _MIN_PERMUTATION_SPACE:
+            return
+    warnings.warn(
+        f"The within-dyad permutation has only ~{n_arrangements} distinct arrangements, so the "
+        f"smallest reachable p-value is ~1/{n_arrangements}; p < 0.05 may be structurally impossible "
+        f"regardless of effect size. Increase trials per condition per dyad, or the number of dyads.",
+        stacklevel=4,
+    )
+
+
+def _multinomial(counts: np.ndarray) -> int:
+    """Count the distinct label arrangements for the given per-condition counts."""
+    total = int(counts.sum())
+    result = math.factorial(total)
+    for c in counts:
+        result //= math.factorial(int(c))
+    return result
 
 
 def _permutation_p_value(null_dist: np.ndarray, observed: float, n_perms: int, tail: str) -> float:

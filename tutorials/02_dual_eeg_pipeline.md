@@ -50,7 +50,26 @@ data/your-study/
 
 Each dyad should appear under **every** condition (a within-dyad design): the
 hierarchical permutation test in step 4 shuffles condition labels *within* each
-dyad, so a dyad recorded under only one condition contributes nothing to the test.
+dyad, so a dyad recorded under only one condition contributes nothing to the test
+(the test will refuse a design where no dyad spans more than one condition).
+
+> **Power, read before you interpret a p-value.** The within-dyad permutation
+> draws from a finite set of label arrangements: roughly `prod over dyads of
+> C(trials_in_dyad, trials_in_condition_A)`. With a *single* recording per
+> (dyad, condition) the only within-dyad move is identity-or-swap, and the
+> squared-difference default statistic is unchanged by the swap, so the smallest
+> reachable p-value is about `2 / 2^n_dyads`: roughly 0.5 for 2 dyads and still
+> above 0.05 below ~6 dyads, **no matter how large the true effect**. To detect
+> an effect you need either many dyads (>= ~6-8) or multiple trials per condition
+> per dyad (so each contributes more than one entropy value). HyPhi emits a
+> warning when the permutation space is too small for significance to be
+> reachable; do not read a non-significant p as evidence of no effect until you
+> have checked the design is powered.
+
+For a design with several recordings of the same (dyad, condition), key the
+per-recording entropy by `(dyad_id, condition, recording)` and append each as a
+separate trial under that condition, rather than overwriting a single slot, so
+the permutation has real trials to shuffle.
 
 `data/` is already in HyPhi's path config (`config.paths.DATA`, an absolute path
 after `config.init()`).
