@@ -21,7 +21,7 @@ test: ## Run tests with coverage
 check: format typecheck lint ## Run format, typecheck, and lint checks
 
 lint: ## Lint code with ruff
-	uv run --extra develop ruff check code/hyphi --fix
+	uv run --extra develop ruff check code/hyphi
 
 typecheck: ## Type-check code with ty
 	uv run --extra develop ty check code/hyphi
