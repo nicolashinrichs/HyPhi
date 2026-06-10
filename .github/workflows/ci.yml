@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --extra develop
+
+      - name: Import every module
+        run: |
+          uv run python - <<'EOF'
+          import importlib
+          import pkgutil
+
+          import hyphi
+
+          failures = []
+          for mod in pkgutil.walk_packages(hyphi.__path__, prefix="hyphi."):
+              try:
+                  importlib.import_module(mod.name)
+              except Exception as exc:  # noqa: BLE001
+                  failures.append(f"{mod.name}: {exc}")
+          if failures:
+              raise SystemExit("unimportable modules:\n" + "\n".join(failures))
+          print("all hyphi modules import")
+          EOF
+
+      - name: Run tests
+        run: uv run pytest -q
+
+      - name: Lint
+        # Reports but does not gate: the pre-existing violation backlog is
+        # being burned down separately. Flip to blocking once it reaches zero.
+        continue-on-error: true
+        run: uv run ruff check code/hyphi
