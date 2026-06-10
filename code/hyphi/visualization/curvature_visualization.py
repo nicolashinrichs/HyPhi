@@ -409,6 +409,22 @@ def visualize_graph_partitions_colors(graph: nx.Graph, partitions, name: str, sa
     plt.show()
 
 
+def _edge_curvature_for_plot(graph: nx.Graph) -> tuple[dict, str, float, float]:
+    """Return edge curvature values, a label, and a color range for either Ricci variant."""
+    # Ollivier-Ricci ("ricciCurvature") is bounded to [-1, 1]; Forman-Ricci
+    # ("formanCurvature") is unbounded, so its range is taken from the data.
+    # graph_flow from the Forman flow carries formanCurvature; without this
+    # fallback its edges rendered plain gray (a curvature-blind "curvature" plot).
+    values = nx.get_edge_attributes(graph, "ricciCurvature")
+    if values:
+        return values, "Ollivier-Ricci Curvature", -1.0, 1.0
+    values = nx.get_edge_attributes(graph, "formanCurvature")
+    if values:
+        vals = list(values.values())
+        return values, "Forman-Ricci Curvature", float(min(vals)), float(max(vals))
+    return {}, "", -1.0, 1.0
+
+
 def visualize_graph_partitions_markers(
     graph: nx.Graph,
     partitions,
@@ -445,8 +461,8 @@ def visualize_graph_partitions_markers(
     pos = nx.spring_layout(graph, seed=42)
     fig, ax = plt.subplots(figsize=(12, 8))
 
-    # Draw edges (Ricci curvature if available; otherwise edge weights).
-    curvature_values = nx.get_edge_attributes(graph, "ricciCurvature")
+    # Draw edges colored by curvature if present (either Ricci variant).
+    curvature_values, curv_label, vmin, vmax = _edge_curvature_for_plot(graph)
     if curvature_values:
         edge_colors = [curvature_values[e] for e in graph.edges()]
         edge_palette = _get_rdbu_cmap()
@@ -458,13 +474,13 @@ def visualize_graph_partitions_markers(
             alpha=0.8,
             edge_color=edge_colors,
             edge_cmap=edge_palette,
-            edge_vmin=-1,
-            edge_vmax=1,
+            edge_vmin=vmin,
+            edge_vmax=vmax,
         )
-        sm_edges = ScalarMappable(cmap=edge_palette, norm=plt.Normalize(vmin=-1, vmax=1))
+        sm_edges = ScalarMappable(cmap=edge_palette, norm=plt.Normalize(vmin=vmin, vmax=vmax))
         sm_edges.set_array([])
         cbar_edges = fig.colorbar(sm_edges, ax=ax, orientation="horizontal", shrink=0.5, pad=0.03)
-        cbar_edges.set_label("Ricci Curvature")
+        cbar_edges.set_label(curv_label)
     else:
         nx.draw_networkx_edges(graph, pos, ax=ax, width=0.6, alpha=0.4, edge_color="lightgray")
 

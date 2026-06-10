@@ -9,6 +9,8 @@ Forman-Ricci (unweighted, 1d method):
 """
 
 # %% Import
+import matplotlib
+import networkx as nx
 import numpy as np
 import pytest
 from hyphi.modeling.graph_curvatures import (
@@ -19,6 +21,9 @@ from hyphi.modeling.graph_curvatures import (
     extract_curvatures,
     extract_curvatures_vec,
 )
+
+matplotlib.use("Agg")  # headless: no display needed for the viz smoke test
+from hyphi.visualization.curvature_visualization import visualize_graph_partitions_markers
 
 # %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 pass
@@ -42,6 +47,25 @@ class TestFormanRicci:
         curvatures = extract_curvatures(G, curvature="formanCurvature")
         assert len(curvatures) == 10  # 10 edges in a 10-cycle
         np.testing.assert_array_almost_equal(curvatures, 0.0)
+
+
+class TestPartitionVisualization:
+    """Smoke-cover the partition plot wired into the ricci-flow CLI."""
+
+    def test_forman_graph_renders_via_curvature_branch(self, tmp_path, complete_graph_k5):
+        """A Forman graph (formanCurvature, no ricciCurvature) must still color edges by curvature."""
+        # Regression: the plot read only ricciCurvature, so a Forman flow graph
+        # fell back to plain gray edges (a curvature-blind "curvature" plot).
+        graph = compute_frc(complete_graph_k5)
+        assert not nx.get_edge_attributes(graph, "ricciCurvature")
+        assert nx.get_edge_attributes(graph, "formanCurvature")
+        partitions = [sorted(c) for c in nx.connected_components(graph)]
+        visualize_graph_partitions_markers(
+            graph=graph, partitions=partitions, name="frc_smoke", save=True, save_path=tmp_path, show=False
+        )
+        out = tmp_path / "frc_smoke.png"
+        assert out.exists()
+        assert out.stat().st_size > 0
 
     def test_frc_star_graph(self, star_graph_s6):
         """On S_6 (centre deg=5, leaf deg=1), each edge FRC = 4 - 5 - 1 = -2."""

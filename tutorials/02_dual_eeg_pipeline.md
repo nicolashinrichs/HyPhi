@@ -219,9 +219,18 @@ phase-randomisation surrogate.  Swap any of these out:
 
 | Function                                          | Notes                                            |
 |---------------------------------------------------|--------------------------------------------------|
-| `hyphi.modeling.graph_curvatures.compute_frc_vec` | Forman-Ricci.  Default; fastest.                 |
-| `hyphi.modeling.graph_curvatures.compute_afrc_vec`| Augmented Forman-Ricci (triangles + quads).      |
-| `hyphi.modeling.graph_curvatures.compute_orc_vec` | Ollivier-Ricci.  Slowest (~10× FRC).             |
+| `hyphi.modeling.graph_curvatures.compute_frc_vec` | Forman-Ricci.  Default; fastest. Edge attr `formanCurvature`. |
+| `hyphi.modeling.graph_curvatures.compute_afrc_vec`| Augmented Forman-Ricci (triangles + quads). Edge attr `formanCurvature`. |
+| `hyphi.modeling.graph_curvatures.compute_orc_vec` | Ollivier-Ricci.  Slowest (~10x FRC). Edge attr `ricciCurvature`. |
+
+> **Not a silent drop-in for Ollivier-Ricci.** The entropy estimators and the
+> network plot read the `formanCurvature` edge attribute by default, but
+> `compute_orc_vec` writes `ricciCurvature`. If you swap it in, pass the
+> attribute name explicitly downstream, e.g.
+> `vec_entropy(orc_graphs, lambda g: entropy_kde_plugin(g, curvature="ricciCurvature"))`
+> and `plot_curvature_network(G, curvature_attr="ricciCurvature")`; otherwise the
+> estimators raise `KeyError`. `compute_afrc_vec` keeps `formanCurvature`, so it
+> is a true drop-in.
 
 ### 5.2 Entropy estimators
 
@@ -238,16 +247,29 @@ All live in `hyphi.modeling.entropies`:
 
 ### 5.3 Null-model surrogates
 
-In `hyphi.null_models`:
+In `hyphi.null_models`. These come in two families and are **not** mutually
+interchangeable.
 
-| Function                              | Destroys                                  |
-|---------------------------------------|-------------------------------------------|
-| `phase_randomize`                     | Channel-by-channel phase relationships    |
-| `circular_time_shift`                 | Cross-channel timing                      |
-| `dyad_subject_swap`                   | Within-dyad pairing                       |
-| `dyad_label_shuffle`                  | Dyad-level condition labels               |
-| `condition_label_shuffle_within_dyad` | Trial-level condition labels per dyad     |
-| `generate_surrogate_stack`            | Convenience wrapper for N surrogates      |
+**Signal-domain** surrogates take a phase/signal array `(n_oscillators, T)` and
+return a surrogate array, so they are drop-in replacements for `phase_randomize`
+in the section-4 surrogate loop (`surrogate = fn(phases, rng=RNG)`):
+
+| Function              | Signature                  | Destroys                              |
+|-----------------------|----------------------------|---------------------------------------|
+| `phase_randomize`     | `(signal, rng)`            | Channel-by-channel phase relationships |
+| `circular_time_shift` | `(signal, min_shift, rng)` | Cross-channel timing                  |
+| `dyad_subject_swap`   | `(data_matrix, rng)`       | Within-dyad pairing                   |
+| `generate_surrogate_stack` | `(data, method, n_surrogates)` | Convenience wrapper that builds N of the above |
+
+**Design-domain** nulls operate on the long-form label arrays (the dyad /
+condition / trial columns), **not** on a phase array. They belong at the stats
+stage (permuting labels), not in the per-recording surrogate loop, and cannot be
+substituted for `phase_randomize`:
+
+| Function                              | Signature                                       | Destroys                          |
+|---------------------------------------|-------------------------------------------------|-----------------------------------|
+| `dyad_label_shuffle`                  | `(dyad_labels, rng)`                            | Dyad-level condition labels       |
+| `condition_label_shuffle_within_dyad` | `(condition_labels, dyad_labels, trial_labels)` | Trial-level condition labels per dyad |
 
 ## 6. Visualise
 
