@@ -38,6 +38,7 @@ dependencies = [
     "tqdm>=4.60,<5.0",
     "GraphRicciCurvature==0.5.3.1", # Graph curvature (critical — pin to avoid API breaks)
     "KDEpy>=1.1,<2.0",  # Density estimation
+    "pynndescent>=0.5,<1.0", # Approximate nearest neighbours (embedding curvatures)
     "infomeasure>=0.2,<1.0", # Entropy / information measures
     "ray>=2.0,<3.0", # Parallel computation
     "jax>=0.4,<1.0", # Kuramoto simulations (JAX-based mean-field)
@@ -67,9 +68,18 @@ notebook = [
     "jupyterlab>=4.5.7,<5",
 ]
 
-experiments = []  # TODO: move depdencies here, that are only relevant for running scripts in `./experiments/`
+experiments = [
+    "tqdm-joblib>=0.0.4,<1", # progress bars for joblib parallel runs (hyper_ccor_ragg_frc.py)
+]
 
-tutorial = []  # TODO: move depdencies here, that are only relevant for running scripts in `./tutorials/`
+tutorial = []  # the tutorial needs only the notebook extra (marimo)
+
+docs = [
+    "mkdocs>=1.6,<2",
+    "mkdocs-material>=9.5,<10",
+    "mkdocstrings[python]>=0.27,<1",
+    "mkdocs-jupyter>=0.25,<1",
+]
 
 [project.urls]
 # homepage = "https://www.hyphi.org" # TODO: change to actual homepage and uncomment
@@ -111,20 +121,6 @@ build-backend = "setuptools.build_meta"
 [tool.pytest.ini_options]
 #addopts = "--cov=hyphi"
 testpaths = ["code/tests"]
-
-[tool.mypy]
-mypy_path = "code"
-check_untyped_defs = true
-disallow_any_generics = true
-ignore_missing_imports = true
-no_implicit_optional = true
-show_error_codes = true
-strict_equality = true
-warn_redundant_casts = true
-warn_return_any = true
-warn_unreachable = true
-warn_unused_configs = true
-no_implicit_reexport = true
 
 [tool.coverage.run] # https://coverage.readthedocs.io/en/latest/config.html
 data_file = "code/tests/.coverage"
@@ -296,3 +292,4 @@ push = false
 [tool.bumpver.file_patterns]
 "pyproject.toml" = ['current_version = "{version}"', '^version = "{version}"']
 "README.md" = ['version-v.{version}']
+"CITATION.cff" = ['^version: "{version}"']

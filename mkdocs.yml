@@ -19,7 +19,7 @@ nav:
       - hyphi.analyses: api/analyses.md
       - hyphi.benchmarks: api/benchmarks.md
       - hyphi.io: api/io.md
-      - hyphi.io_adjacency: api/io_adjacency.md
+      - hyphi.io_brainhack: api/io_brainhack.md
       - hyphi.modeling: api/modeling.md
       - hyphi.null_models: api/null_models.md
       - hyphi.simulation: api/simulation.md
