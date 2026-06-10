@@ -77,9 +77,12 @@ class TestEntropyToLongDf:
     def test_trial_id_globally_unique_within_dyad(self):
         data = _synthetic_entropy_dict(n_dyads=2, n_trials=3)
         df = entropy_to_long_df(data)
-        # trial_id encodes dyad, so trial 0 of dyad 0 != trial 0 of dyad 1
+        # trial_id encodes dyad and condition: 2 conditions x 3 trials = 6
+        # distinct trials per dyad, and trial 0 of dyad 0 != trial 0 of dyad 1.
         ids = df[["dyad", "trial_id"]].drop_duplicates()
-        assert (ids.groupby("dyad")["trial_id"].nunique() == 3).all()
+        assert (ids.groupby("dyad")["trial_id"].nunique() == 6).all()
+        # Every (dyad, trial_id) block carries exactly one condition.
+        assert (df.groupby(["dyad", "trial_id"])["condition"].nunique() == 1).all()
 
     def test_freq_bands_fallback_to_integers(self):
         data = _synthetic_entropy_dict(n_freq=3)
