@@ -202,8 +202,12 @@ class TestHierarchicalPermutation:
             )
             ps.append(res["p_value"])
         ps = np.asarray(ps)
+        # Under a true null, p is ~uniform on (0, 1]: the mean sits mid-range and
+        # only a small fraction fall below 0.05. The degenerate bug made EVERY
+        # seed return the minimum p, so this catches it without asserting the
+        # statistically false "no seed is ever below 0.05".
         assert 0.3 < ps.mean() < 0.7
-        assert ps.min() > 0.05
+        assert np.mean(ps < 0.05) <= 0.2
 
     def test_row_order_invariance(self):
         # Regression: groupby index labels were once used as positional
@@ -327,6 +331,23 @@ class TestHierarchicalPermutation:
             hierarchical_permutation_test(
                 data=df, value_col="entropy", condition_col="condition", n_perms=10, seed=0
             )
+
+    def test_two_sided_tail_uses_absolute_values(self):
+        """Cover the two-sided branch: a signed statistic counts |null| >= |observed|."""
+        df = entropy_to_long_df(_synthetic_entropy_dict(n_dyads=4, n_trials=4, effect=0.0, seed=3))
+
+        def signed_mean_diff(d, value_col, condition_col):
+            conds = sorted(d[condition_col].unique())
+            a = d.loc[d[condition_col] == conds[0], value_col].mean()
+            b = d.loc[d[condition_col] == conds[1], value_col].mean()
+            return float(a - b)  # can be negative, unlike the squared default
+
+        res = hierarchical_permutation_test(
+            data=df, value_col="entropy", condition_col="condition",
+            n_perms=200, seed=3, test_stat_fn=signed_mean_diff, tail="two-sided",
+        )
+        assert 0.0 < res["p_value"] <= 1.0
+        assert res["tail"] == "two-sided"
 
     def test_unknown_tail_raises(self):
         data = _synthetic_entropy_dict(n_dyads=2, n_trials=3)

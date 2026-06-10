@@ -319,6 +319,10 @@ def _validate_hierarchical_input(
     for col in (condition_col, value_col, dyad_col, trial_col):
         if data[col].isna().any():
             raise ValueError(f"Column '{col}' contains missing values; drop or impute them first.")
+    # isna() is False for +/-inf, but an inf value still makes the statistic
+    # non-finite and the p-value meaningless; reject it here for a clear error.
+    if not np.isfinite(data[value_col].to_numpy(dtype=float)).all():
+        raise ValueError(f"Column '{value_col}' contains non-finite values (inf); clean them first.")
 
     # Each (dyad, trial) block must carry exactly one condition, otherwise the
     # per-trial condition table silently drops labels and the null distribution

@@ -281,17 +281,25 @@ import matplotlib.pyplot as plt
 
 fig, ax = plt.subplots(2, 1, figsize=(10, 6), sharex=True)
 
+# Build a colour per condition from the data, so any condition names work
+# (not just the hard-coded "sync"/"control").
+conditions = sorted({c for _, c in real_entropy})
+cmap = dict(zip(conditions, plt.cm.tab10.colors))
 for (dyad_id, condition), h in real_entropy.items():
-    color = {"sync": "tab:blue", "control": "tab:grey"}[condition]
-    ax[0].plot(h, color=color, alpha=0.6)
+    ax[0].plot(h, color=cmap[condition], alpha=0.6)
 ax[0].set_ylabel("Curvature entropy (nats)")
 
-all_null = np.stack(list(null_entropy.values()))
+# Recordings can have different window counts; truncate to the shortest before
+# stacking (a bare np.stack would raise on ragged lengths). This band is the
+# 5-95% spread ACROSS recordings of each recording's mean null, not a
+# within-recording surrogate envelope.
+min_len = min(v.shape[0] for v in null_entropy.values())
+all_null = np.stack([v[:min_len] for v in null_entropy.values()])
 ax[1].fill_between(
-    np.arange(all_null.shape[1]),
+    np.arange(min_len),
     np.percentile(all_null, 5,  axis=0),
     np.percentile(all_null, 95, axis=0),
-    alpha=0.3, color="tab:orange", label="null 5–95%",
+    alpha=0.3, color="tab:orange", label="across-recording 5-95%",
 )
 ax[1].set_xlabel("Sliding window index")
 ax[1].set_ylabel("Null entropy")

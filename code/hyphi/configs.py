@@ -49,6 +49,9 @@ _CONFIG_SUBDIR = "configs"
 # Top-level keys a valid hyphi config must provide (used to detect "foreign" config files)
 _REQUIRED_KEYS = ("PROJECT_NAME", "paths", "params", "logging")
 
+# Of the required keys, these must be TOML tables (dicts), not scalars.
+_REQUIRED_TABLE_KEYS = ("paths", "params", "logging")
+
 # Template for an auto-generated config.toml. The '__PROJECT_NAME__' and '__LOG_NAME__'
 # placeholders are substituted at creation time (str.format is avoided because of the '{...}'
 # logging-format strings below).
@@ -397,13 +400,18 @@ def _configure(config_obj: _CONFIG, *, project_name: str | None = None, chdir: b
         with config_file.open("rb") as f:
             merged.update(toml.load(f))
 
-    # Validate that this is actually a hyphi config and not some foreign config.toml
+    # Validate that this is actually a hyphi config and not some foreign config.toml.
+    # Require key presence AND that the table-valued keys are tables: a foreign file
+    # could supply e.g. a scalar `paths = 5`, which passes a presence-only check and
+    # then crashes later in update_paths()/dictConfig() with the globals already set.
     missing_keys = [k for k in _REQUIRED_KEYS if k not in merged]
-    if missing_keys:
+    non_table_keys = [k for k in _REQUIRED_TABLE_KEYS if k in merged and not isinstance(merged[k], dict)]
+    if missing_keys or non_table_keys:
+        problem = f"missing: {missing_keys}" if missing_keys else f"not a table: {non_table_keys}"
         print(
             "\033[91m"
             f"Found *config.toml file(s) in '{config_dir}',\n"
-            f"but they do not define the keys hyphi expects (missing: {missing_keys}).\n"
+            f"but they do not match the structure hyphi expects ({problem}).\n"
             "hyphi was NOT configured and your files were left untouched.\n"
             f"If a file in '{config_dir}' belongs to another tool either:\n"
             f"\trename/remove the conflicting file, or ...\n"

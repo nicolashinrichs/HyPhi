@@ -75,10 +75,16 @@ def test_near_lattice_entropy_degenerate():
 
 @pytest.fixture
 def tmp_project(tmp_path, monkeypatch):
-    """Create a minimal project root (pyproject.toml marker) with the cwd inside it."""
+    """Create a minimal project root (pyproject.toml marker), cwd inside it; restore config state."""
     (tmp_path / "pyproject.toml").write_text('[project]\nname = "tmpproj"\n')
     monkeypatch.chdir(tmp_path)
-    return tmp_path
+    # config.init()/bootstrap() mutate the module-level singleton and globals;
+    # snapshot and restore them so these tests cannot pollute others by order.
+    saved = dict(config.__dict__), configs_module.PROJECT_ROOT, configs_module.PROJECT_NAME
+    yield tmp_path
+    config.__dict__.clear()
+    config.__dict__.update(saved[0])
+    configs_module.PROJECT_ROOT, configs_module.PROJECT_NAME = saved[1], saved[2]
 
 
 def test_config_init_does_not_change_cwd(tmp_project, monkeypatch):
@@ -126,6 +132,23 @@ def test_foreign_config_rejected_even_after_prior_init(tmp_project, monkeypatch,
     assert good_root == configs_module.PROJECT_ROOT  # globals untouched
     assert good_data == config.paths.DATA  # prior configuration intact
     assert not hasattr(config, "tool")  # foreign keys not leaked onto the singleton
+
+
+def test_config_with_scalar_table_key_rejected(tmp_project, monkeypatch, capsys, tmp_path_factory):
+    """Reject a config whose table-valued keys are scalars, instead of crashing later."""
+    # Regression: validation checked key PRESENCE only, so `paths = 5` passed and
+    # then crashed in update_paths()/dictConfig() with the globals already set.
+    config.init()  # valid baseline in tmp_project
+    assert Path(config.paths.DATA) == tmp_project / "data"
+
+    foreign = tmp_path_factory.mktemp("foreign_scalar")
+    (foreign / "pyproject.toml").write_text('[project]\nname = "foreign"\n')
+    (foreign / "configs").mkdir()
+    (foreign / "configs" / "config.toml").write_text('PROJECT_NAME="x"\npaths=5\nparams=1\nlogging=2\n')
+    monkeypatch.chdir(foreign)
+    config.init()
+    assert "not a table" in capsys.readouterr().out
+    assert not isinstance(config.paths, int)  # baseline table intact, not the scalar 5
 
 
 def test_set_wd_containment_rejects_sibling_prefix(tmp_path, monkeypatch):

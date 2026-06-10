@@ -13,6 +13,7 @@ import matplotlib
 import networkx as nx
 import numpy as np
 import pytest
+from hyphi.modeling.curvatures import sim_graph
 from hyphi.modeling.graph_curvatures import (
     compute_afrc,
     compute_frc,
@@ -47,6 +48,23 @@ class TestFormanRicci:
         curvatures = extract_curvatures(G, curvature="formanCurvature")
         assert len(curvatures) == 10  # 10 edges in a 10-cycle
         np.testing.assert_array_almost_equal(curvatures, 0.0)
+
+
+class TestSimGraph:
+    """The knn graph builder must not emit self-loops."""
+
+    def test_sim_graph_has_no_self_loops(self):
+        """A KNN similarity graph must contain zero self-loops."""
+        # Regression: an unguarded branch re-added each edge unconditionally,
+        # so self-loops survived despite the i != neighbor check.
+        n_nodes = 12
+        rng = np.random.default_rng(0)
+        d = rng.uniform(0.1, 1.0, size=(n_nodes, n_nodes))
+        d = (d + d.T) / 2
+        np.fill_diagonal(d, 0.0)
+        graph, _ = sim_graph(d, k=4)
+        assert nx.number_of_selfloops(graph) == 0
+        assert graph.number_of_nodes() == n_nodes
 
 
 class TestPartitionVisualization:
