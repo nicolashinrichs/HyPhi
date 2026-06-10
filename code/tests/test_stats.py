@@ -187,6 +187,45 @@ class TestHierarchicalPermutation:
         with pytest.raises(ValueError, match="Missing columns"):
             hierarchical_permutation_test(data=df, value_col="entropy", condition_col="condition", n_perms=10, seed=0)
 
+    def test_null_p_calibrated_across_seeds(self):
+        # Regression: a degenerate null distribution once made every seed
+        # return the minimum possible p (a 100% false-positive rate).
+        ps = []
+        for seed in range(15):
+            df = entropy_to_long_df(_synthetic_entropy_dict(n_dyads=3, effect=0.0, seed=seed))
+            res = hierarchical_permutation_test(
+                data=df, value_col="entropy", condition_col="condition", n_perms=200, seed=seed
+            )
+            ps.append(res["p_value"])
+        ps = np.asarray(ps)
+        assert 0.3 < ps.mean() < 0.7
+        assert ps.min() > 0.05
+
+    def test_row_order_invariance(self):
+        # Regression: groupby index labels were once used as positional
+        # indices, so the result depended on the dataframe's row order.
+        df = entropy_to_long_df(_synthetic_entropy_dict(n_dyads=3, effect=0.0, seed=1))
+        kwargs = {"value_col": "entropy", "condition_col": "condition", "n_perms": 200, "seed": 7}
+        res_a = hierarchical_permutation_test(data=df, **kwargs)
+        res_b = hierarchical_permutation_test(data=df.sample(frac=1.0, random_state=0), **kwargs)
+        assert res_a["p_value"] == res_b["p_value"]
+
+    def test_colliding_trial_ids_raise(self):
+        # A trial id that restarts per condition merges blocks across
+        # conditions; the function must refuse rather than degenerate.
+        df = pd.DataFrame(
+            {
+                "dyad": [0] * 8,
+                "condition": ["A"] * 4 + ["B"] * 4,
+                "trial_id": [0, 0, 1, 1, 0, 0, 1, 1],
+                "entropy": np.arange(8, dtype=float),
+            }
+        )
+        with pytest.raises(ValueError, match="more than one condition"):
+            hierarchical_permutation_test(
+                data=df, value_col="entropy", condition_col="condition", n_perms=10, seed=0
+            )
+
     def test_unknown_tail_raises(self):
         data = _synthetic_entropy_dict(n_dyads=2, n_trials=3)
         df = entropy_to_long_df(data)

@@ -85,9 +85,10 @@ def entropy_to_long_df(
 
     Notes
     -----
-    The ``trial_id`` column is ``f"{dyad}__{trial}"``, a concatenation of dyad
-    and trial index so trials within a dyad keep a globally unique identifier.
-    This is the block used by the hierarchical permutation scheme.
+    The ``trial_id`` column is ``f"{dyad}__{condition}__{trial}"`` so every
+    trial keeps a globally unique identifier: the per-condition trial index
+    restarts at 0, so omitting the condition would merge trial blocks across
+    conditions. This is the block used by the hierarchical permutation scheme.
 
     """
     rows = []
@@ -107,7 +108,7 @@ def entropy_to_long_df(
                                 "condition": cond,
                                 "freq": band,
                                 "trial": t,
-                                "trial_id": f"{dyad}__{t}",
+                                "trial_id": f"{dyad}__{cond}__{t}",
                                 "window": w,
                                 value_col: float(arr[f, t, w]),
                             }
@@ -347,6 +348,23 @@ def hierarchical_permutation_test(
     if missing:
         raise ValueError(f"Missing columns: {sorted(missing)}")
 
+    # Positional row indices are used below; a non-default index (e.g. after
+    # filtering or concatenation) would silently shuffle the wrong rows.
+    data = data.reset_index(drop=True)
+
+    # Each (dyad, trial) block must carry exactly one condition, otherwise the
+    # per-trial condition table built below silently drops labels and the
+    # null distribution degenerates.
+    conds_per_trial = data.groupby([dyad_col, trial_col])[condition_col].nunique()
+    if (conds_per_trial > 1).any():
+        offending = conds_per_trial[conds_per_trial > 1].index.tolist()[:5]
+        raise ValueError(
+            f"trial ids must uniquely identify a trial within each dyad, but these "
+            f"(dyad, trial) blocks carry more than one condition: {offending}. "
+            f"Use a trial id that does not restart per condition "
+            f"(e.g. the trial_id produced by entropy_to_long_df)."
+        )
+
     if test_stat_fn is None:
         test_stat_fn = _default_test_stat
 
@@ -357,7 +375,8 @@ def hierarchical_permutation_test(
     dyad_trial_info: dict[Any, tuple[np.ndarray, np.ndarray]] = {}
     n_trials_per_dyad: dict[Any, int] = {}
     for d, d_df in data.groupby(dyad_col):
-        trial_ids = d_df[trial_col].drop_duplicates().to_numpy()
+        # Sorted so the drawn permutations do not depend on row order.
+        trial_ids = np.sort(d_df[trial_col].drop_duplicates().to_numpy())
         trial_conds = (
             d_df.drop_duplicates(subset=[trial_col]).set_index(trial_col).loc[trial_ids, condition_col].to_numpy()
         )
@@ -365,7 +384,8 @@ def hierarchical_permutation_test(
         n_trials_per_dyad[d] = len(trial_ids)
 
     trial_to_row_idx: dict[tuple[Any, Any], np.ndarray] = {}
-    for (d, t), rows in data.groupby(by=[dyad_col, trial_col]).groups.items():  # TODO: test for issues.
+    # Index labels equal positions here thanks to the reset_index above.
+    for (d, t), rows in data.groupby(by=[dyad_col, trial_col]).groups.items():
         trial_to_row_idx[(d, t)] = np.asarray(rows)
 
     null_dist = np.empty(n_perms, dtype=float)
