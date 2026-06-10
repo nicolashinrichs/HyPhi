@@ -218,17 +218,21 @@ class _CONFIG:
             str_out += ", " if ctn < len(list_attr) else ""
         return str_out + ")"
 
-    def init(self, project_name: str | None = None) -> None:
+    def init(self, project_name: str | None = None, chdir: bool = False) -> None:
         """
         Create the config infrastructure (if missing) and load it.
 
         Searches for `<project_root>/configs/*config.toml`. If none exist, a default
-        `configs/config.toml` is created.
+        `configs/config.toml` is created. All relative config paths are resolved to
+        absolute paths against the project root, so the working directory does not
+        matter afterwards.
 
         :param project_name: value for `PROJECT_NAME` when creating a new config (default: root folder name)
+        :param chdir: also change the working directory to the project root
+            (default False: importing or initialising hyphi must not move the caller's cwd)
         :return: None (configured config object (self) is update)
         """
-        _configure(self, project_name=project_name)
+        _configure(self, project_name=project_name, chdir=chdir)
 
     def update(self, new_configs: dict[str, Any]):
         """Update the config object with new entries."""
@@ -316,8 +320,16 @@ def _set_wd(new_dir: str | Path) -> None:
 
         # First look down the tree
         if not found:
-            # Note: This works only for unique folder names
-            paths_found = sorted(Path(PROJECT_ROOT).parent.glob(f"**/{new_dir}"), key=lambda x: len(x.parents))
+            # Note: This works only for unique folder names. The search is contained to the
+            # project root: matching folders OUTSIDE the project (e.g. a same-named sibling
+            # checkout) must never be chdir targets.
+            root = Path(PROJECT_ROOT)
+            if new_dir == root.name:
+                paths_found = [root]
+            else:
+                paths_found = sorted(
+                    (p for p in root.glob(f"**/{new_dir}") if p.is_dir()), key=lambda x: len(x.parents)
+                )
             if len(paths_found) > 1:
                 msg = (
                     f"Found multiple folders with name '{new_dir}' in project '{PROJECT_NAME}'!\n\n"
@@ -346,12 +358,13 @@ PROJECT_ROOT: str = str(_find_project_root())
 PROJECT_NAME: str | None = None
 
 
-def _configure(config_obj: _CONFIG, *, project_name: str | None = None) -> None:
+def _configure(config_obj: _CONFIG, *, project_name: str | None = None, chdir: bool = False) -> None:
     """
     Discover, create (if missing), load and apply the hyphi configuration.
 
     :param config_obj: the config object to populate (the module-level `config`)
     :param project_name: `PROJECT_NAME` for a newly created config (default: project root folder name)
+    :param chdir: also change the working directory to the project root (default False)
     :return: None
     """
     global PROJECT_NAME, PROJECT_ROOT  # noqa: PLW0603 (module-level config singletons)
@@ -411,10 +424,28 @@ def _configure(config_obj: _CONFIG, *, project_name: str | None = None) -> None:
     _w = 95
     print("\n" + ("*" * _w + "\n") * 2 + "\n" + f"{PROJECT_NAME:^{_w}}" + "\n" * 2 + ("*" * _w + "\n") * 2)
 
-    # Set the project working directory
-    _set_wd(PROJECT_ROOT)
+    # Optionally set the project working directory. Never done implicitly: config paths are
+    # already absolute, and silently moving the caller's cwd breaks their relative paths.
+    if chdir:
+        _set_wd(PROJECT_ROOT)
 
     return
+
+
+def bootstrap(project_name: str | None = None) -> _CONFIG:
+    """
+    Initialize hyphi once at the start of an entry-point script.
+
+    Loads the config, sets up logging, prints the banner, AND changes the working
+    directory to the project root. Equivalent to ``config.init(chdir=True)``.
+    Library code should never call this; use ``config.init()`` (which leaves the
+    caller's working directory alone) or read the absolute ``config.paths.*``.
+
+    :param project_name: `PROJECT_NAME` for a newly created config (default: project root folder name)
+    :return: the module-level config object
+    """
+    config.init(project_name=project_name, chdir=True)
+    return config
 
 
 # o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o END

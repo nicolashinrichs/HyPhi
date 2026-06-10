@@ -8,11 +8,11 @@
 # e.g. "_config.toml" or "_secret_config.toml" (they are git-ignored)
 # Private configs are loaded last (so they override these public settings).
 
-PROJECT_NAME = "HyPhi" # used for paths, logging, etc. Must be capitalized as the name of the project root folder
+PROJECT_NAME = "HyPhi" # used for logging and the banner; does not need to match any folder name
 
 # Set paths
 [paths]
-# all paths are relative to the PROJECT_ROOT folder named 'hyphi' (PROJECT_NAME)
+# all paths are relative to the PROJECT_ROOT (auto-detected; resolved to absolute paths on config.init())
 DATA = "./data"
 RESULTS = "./results"
 CACHE = "./data/cache"
