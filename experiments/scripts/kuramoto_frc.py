@@ -43,7 +43,7 @@ if __name__ == "__main__":
         FRCvals = np.zeros((len(Gt), config["kuramoto_size"], config["kuramoto_size"]))
 
         # Compute Forman-Ricci curvatures across windows for this trial and frequency band
-        FRCt = compute_frc_vec(list_of_graphs=Gt, method_val=c_method)
+        FRCt = compute_frc_vec(list_of_graphs=Gt, method=c_method)
 
         # Convert IBCs (networkx graphs) with window curvatures to window curvature matrices
         for window in tqdm(range(len(Gt)), desc="Timepoints"):

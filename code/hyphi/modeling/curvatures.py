@@ -460,14 +460,13 @@ def sim_graph(data: np.ndarray, k: int = 5, weight: bool = True):
     distance_matrix = np.zeros((n, n))
     for i, neighbors in enumerate(nn_indices):
         for neighbor, distance in zip(neighbors, nn_distances[i], strict=True):
-            if i != neighbor:
-                graph.add_edge(i, neighbor, weight=distance)
+            if i == neighbor:
+                continue  # skip self-loops
             if weight:
                 graph.add_edge(i, neighbor, weight=distance)
-                distance_matrix[i, neighbor] = distance
             else:
                 graph.add_edge(i, neighbor, weight=1)
-                distance_matrix[i, neighbor] = distance
+            distance_matrix[i, neighbor] = distance
     distance_matrix = np.round(distance_matrix, decimals=3)
     return graph, distance_matrix
 
