@@ -3,7 +3,7 @@
 # ================================================
 # Provides standard entry points for reproducibility.
 
-.PHONY: help install test check lint typecheck format clean pipeline tutorial docs
+.PHONY: help install test check lint typecheck format clean tutorial docs
 .DEFAULT_GOAL := help
 
 help: ## Show available commands
@@ -18,7 +18,8 @@ install: ## Install all dependencies
 test: ## Run tests with coverage
 	uv run --extra develop pytest --cov=hyphi --cov-report=html -v
 
-check: format typecheck lint ## Run format, typecheck, and lint checks
+check: typecheck lint ## Run read-only typecheck, lint, and format checks (matches CI; does not mutate)
+	uv run --extra develop ruff format --check code/tests code/hyphi experiments/scripts
 
 lint: ## Lint code with ruff
 	uv run --extra develop ruff check code/hyphi
@@ -38,5 +39,5 @@ clean: ## Remove build artifacts and caches
 tutorial: ## Open the quickstart notebook (marimo) for new HyPhi users
 	uv run --extra notebook --extra tutorial marimo edit tutorials/01_quickstart.py
 
-docs: ## Build the mkdocs site
-	uv run --extra docs mkdocs build
+docs: ## Build the mkdocs site (strict: warnings, e.g. a nav page with no file, fail the build)
+	uv run --extra docs mkdocs build --strict

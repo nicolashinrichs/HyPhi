@@ -95,6 +95,12 @@ class TestEntropyToLongDf:
         with pytest.raises(ValueError, match="Expected"):
             entropy_to_long_df(bad)
 
+    def test_freq_bands_length_mismatch_raises(self):
+        # 3 frequency rows but only 2 band names would silently index out of range.
+        data = _synthetic_entropy_dict(n_freq=3)
+        with pytest.raises(ValueError, match="freq_bands has 2 names"):
+            entropy_to_long_df(data, freq_bands=["delta", "theta"])
+
 
 # %% Tests for Cohen's d >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 

@@ -246,7 +246,7 @@ make test
 Or run pytest directly:
 
 ```shell
-uv run --extra develop pytest code/tests --cov-report=html -v
+uv run --extra develop pytest code/tests --cov=hyphi --cov-report=html -v
 ```
 
 To run only a specific test file:

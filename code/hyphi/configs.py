@@ -359,8 +359,8 @@ def _set_wd(new_dir: str | Path) -> None:
 
 # %% Setup configuration object < o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
-# Module-level objects ready for import in other scripts. They remain "empty"/None until either an
-# existing config is auto-loaded on import or the user calls `config.init()`.
+# Module-level objects ready for import in other scripts. They remain "empty"/None until the user
+# calls `config.init()` (or `bootstrap()`); nothing is loaded implicitly on import.
 config = _CONFIG()
 PROJECT_ROOT: str = str(_find_project_root())
 PROJECT_NAME: str | None = None

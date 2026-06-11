@@ -110,12 +110,12 @@ data_b = raw_b.get_data()[:, :n_samples]
 phases_a = np.angle(hilbert(data_a, axis=1))
 phases_b = np.angle(hilbert(data_b, axis=1))
 
-# Stack into (n_oscillators, T) — subject A on top of subject B
+# Stack into (n_oscillators, T): subject A on top of subject B
 phases = np.vstack([phases_a, phases_b])
 
 OUT_FILE.parent.mkdir(parents=True, exist_ok=True)
 np.save(OUT_FILE, phases)
-print(f"Saved {phases.shape} → {OUT_FILE}")
+print(f"Saved {phases.shape} -> {OUT_FILE}")
 ```
 
 Run it for each dyad:

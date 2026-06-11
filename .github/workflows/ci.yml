@@ -9,6 +9,12 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Cover the supported range (requires-python >= 3.11). 3.14 is excluded:
+        # this lock's jaxlib has no cp314 wheel, so uv sync would fail there.
+        python-version: ["3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
 
@@ -16,13 +22,13 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
-          # Pin the interpreter: without this, uv selects the newest stable
-          # CPython on the runner, which can outrun the locked dependency wheels
-          # (e.g. jaxlib has no cp314 wheel in this lock) and fail uv sync.
-          python-version: "3.12"
+          python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
-        run: uv sync --extra develop
+        # --frozen: fail if uv.lock is out of sync with pyproject (e.g. a PR
+        # edits dependencies without regenerating the lock) instead of silently
+        # re-resolving.
+        run: uv sync --extra develop --frozen
 
       # Every `uv run` keeps --extra develop: a bare `uv run` re-syncs the
       # environment to the default dependency set, REMOVING the dev extras

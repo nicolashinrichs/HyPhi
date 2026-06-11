@@ -87,10 +87,12 @@ def entropy_to_long_df(
 
     Notes
     -----
-    The ``trial_id`` column is ``f"{dyad}__{condition}__{trial}"`` so every
-    trial keeps a globally unique identifier: the per-condition trial index
+    The ``trial_id`` column is ``f"{dyad}__{condition}__{trial}"`` so trials
+    within a dyad stay distinct across conditions: the per-condition trial index
     restarts at 0, so omitting the condition would merge trial blocks across
-    conditions. This is the block used by the hierarchical permutation scheme.
+    conditions. (A single recording per (dyad, condition) is assumed; repeated
+    recordings would reuse a trial index and must be enumerated distinctly.)
+    This is the block used by the hierarchical permutation scheme.
 
     """
     rows = []
@@ -100,6 +102,9 @@ def entropy_to_long_df(
                 msg = f"Expected (n_freq, n_trials, n_windows) for dyad={dyad} cond={cond}, got shape {arr.shape}."
                 raise ValueError(msg)
             n_freq, n_trials, n_windows = arr.shape
+            if freq_bands is not None and len(freq_bands) != n_freq:
+                msg = f"freq_bands has {len(freq_bands)} names but arrays have {n_freq} frequency rows."
+                raise ValueError(msg)
             for f in range(n_freq):
                 band = freq_bands[f] if freq_bands is not None else f
                 for t in range(n_trials):

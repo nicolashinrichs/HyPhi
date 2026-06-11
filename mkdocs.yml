@@ -18,6 +18,7 @@ nav:
   - API:
       - hyphi.analyses: api/analyses.md
       - hyphi.benchmarks: api/benchmarks.md
+      - hyphi.configs: api/configs.md
       - hyphi.io: api/io.md
       - hyphi.io_brainhack: api/io_brainhack.md
       - hyphi.modeling: api/modeling.md

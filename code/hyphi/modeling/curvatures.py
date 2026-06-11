@@ -17,7 +17,7 @@ except ModuleNotFoundError:
     go = None
 from GraphRicciCurvature.FormanRicci import FormanRicci  # noqa: F401
 from GraphRicciCurvature.OllivierRicci import OllivierRicci
-from pynndescent import NNDescent  # TODO: pynndescent needs to be added to the main dependencies
+from pynndescent import NNDescent
 from scipy import linalg
 
 # from scipy.spatial.distance import pdist  # noqa: ERA001
@@ -444,7 +444,7 @@ def sim_graph(data: np.ndarray, k: int = 5, weight: bool = True):
     Create a graph embedding with k nearest neighbors from dissimilarity or distance matrix.
 
     :param data: data (dissimilarity, distance measures)
-    :param k: shows the number of neighbors [default: k=10].
+    :param k: number of nearest neighbors [default: k=5].
     :param weight: selective option for weighted or unweighted graph
     :return: generated graph for nearest neighbors, distance matrix
 
