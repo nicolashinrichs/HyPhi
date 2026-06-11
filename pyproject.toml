@@ -272,9 +272,6 @@ max-nested-blocks = 5 # default: 5
 
 [tool.ty.src]
 include = ["code/hyphi", "code/notebooks", "code/tests"]
-exclude = [
-    "code/hyphi/configs.py",
-]
 
 [tool.ty.terminal]
 output-format = "concise" # or "full"
