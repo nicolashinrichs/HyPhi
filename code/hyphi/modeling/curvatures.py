@@ -6,6 +6,7 @@ Years: 2024
 """
 
 # %% Import
+import warnings
 from functools import wraps
 
 import networkx as nx
@@ -73,7 +74,15 @@ def adj_matrix(data, method: int = 1):
 
 
 def compute_ricci_curvature(adj_mat: np.ndarray, threshold: float = 0.5, alpha: float = 0.5):
-    """Compute the curvature on the distance matrix based on the adjacency matrix and threshold."""
+    """
+    Compute Ollivier-Ricci curvature from a thresholded adjacency matrix.
+
+    Weight convention: this sets every edge weight to 1 before computing curvature, so ORC
+    runs on the UNWEIGHTED graph. ``compute_forman_curvature`` instead keeps the raw
+    adjacency values as edge weights. The two notions are therefore NOT computed on the same
+    weighted graph; do not compare their magnitudes without accounting for this. Unifying the
+    convention is a deliberate scientific choice and is left open.
+    """
     adjacency_matrix = np.copy(adj_mat)
     adjacency_matrix[adj_mat > threshold] = 0
     # in this setting we don't have weight attribute for edges, we need to manually attribute the values to edges
@@ -88,7 +97,13 @@ def compute_ricci_curvature(adj_mat: np.ndarray, threshold: float = 0.5, alpha: 
 
 
 def compute_forman_curvature(adj_mat: np.ndarray, threshold: float = 0.5):
-    """Compute Forman curvature."""
+    """
+    Compute Forman-Ricci curvature from a thresholded adjacency matrix.
+
+    Weight convention: this keeps the raw (post-threshold) adjacency values as edge weights,
+    so FRC runs on the WEIGHTED graph, unlike ``compute_ricci_curvature`` which sets every
+    weight to 1. See the note in that function before comparing FRC and ORC magnitudes.
+    """
     adjacency_matrix = np.copy(adj_mat)
     adjacency_matrix[adj_mat > threshold] = 0
     G_generated: nx.Graph = nx.from_numpy_array(adjacency_matrix)  # noqa: N806
@@ -242,7 +257,7 @@ def visualize_dist_distribution(dist_matrix: np.ndarray) -> None:
     It shows the histogram of the distance distribution
     and within illustrates the mean, mode, and standard deviation of the distribution.
     """
-    upper_triangle_indices = np.triu_indices(100)
+    upper_triangle_indices = np.triu_indices(dist_matrix.shape[0])
     distances = dist_matrix[upper_triangle_indices]
 
     fig = go.Figure(data=[go.Histogram(x=distances)])
@@ -461,14 +476,12 @@ def sim_graph(data: np.ndarray, k: int = 5, weight: bool = True):
     distance_matrix = np.zeros((n, n))
     for i, neighbors in enumerate(nn_indices):
         for neighbor, distance in zip(neighbors, nn_distances[i], strict=True):
-            if i != neighbor:
-                graph.add_edge(i, neighbor, weight=distance)
-            if weight:
-                graph.add_edge(i, neighbor, weight=distance)
-                distance_matrix[i, neighbor] = distance
-            else:
-                graph.add_edge(i, neighbor, weight=1)
-                distance_matrix[i, neighbor] = distance
+            if i == neighbor:
+                continue  # skip self-loops (a node listing itself among its neighbours)
+            # Add each edge once: weighted by the distance, or unweighted (weight 1) when
+            # weight is False. The distance is always recorded in distance_matrix.
+            graph.add_edge(i, neighbor, weight=distance if weight else 1)
+            distance_matrix[i, neighbor] = distance
     distance_matrix = np.round(distance_matrix, decimals=3)
     return graph, distance_matrix
 
@@ -514,12 +527,36 @@ def adaptive_neighborhood_graph(X, k_min=5, k_max=50, density_method="knn"):
 
 
 def compute_laplacian_matrix(graph, g_weight="ricciCurvature"):
-    """Compute the Laplacian matrix of a given weighted graph."""
+    """
+    Compute the Laplacian matrix of a graph, weighted by an explicit edge attribute.
+
+    Parameters
+    ----------
+    graph : nx.Graph
+        Input graph.
+    g_weight : str
+        Edge attribute used as the weight. The special value ``"non"`` computes the
+        unweighted Laplacian. Note that ``"ricciCurvature"`` and ``"formanCurvature"`` are
+        curvature OUTPUTS, not connectivity weights, so weighting by one of them is only
+        meaningful on a curvature-annotated graph. If no edge carries the requested
+        attribute, NetworkX silently treats every edge weight as 1; this function warns in
+        that case so the silent fallback to an unweighted Laplacian is visible.
+
+    Returns
+    -------
+    np.ndarray
+        The Laplacian matrix.
+
+    """
     if g_weight == "non":
-        laplacian_matrix = nx.laplacian_matrix(graph).toarray()
-    else:
-        laplacian_matrix = nx.laplacian_matrix(graph, weight=g_weight).toarray()
-    return laplacian_matrix
+        return nx.laplacian_matrix(graph).toarray()
+    if graph.number_of_edges() > 0 and not any(g_weight in data for _, _, data in graph.edges(data=True)):
+        warnings.warn(
+            f"compute_laplacian_matrix: no edge carries the attribute {g_weight!r}; "
+            "NetworkX will treat every edge weight as 1 (an unweighted Laplacian).",
+            stacklevel=2,
+        )
+    return nx.laplacian_matrix(graph, weight=g_weight).toarray()
 
 
 def heat_kernel_distance(L1, L2):

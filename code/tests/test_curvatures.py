@@ -9,8 +9,12 @@ Forman-Ricci (unweighted, 1d method):
 """
 
 # %% Import
+import warnings
+
+import networkx as nx
 import numpy as np
 import pytest
+from hyphi.modeling.curvatures import compute_laplacian_matrix, sim_graph
 from hyphi.modeling.graph_curvatures import (
     compute_afrc,
     compute_frc,
@@ -98,6 +102,63 @@ class TestCurvatureExtraction:
         graphs = compute_frc_vec([ring_lattice_c10])
         mats = extract_curvature_matrices(graphs)
         assert mats.shape == (1, 10, 10)
+
+
+class TestSimGraph:
+    """sim_graph builds a kNN graph with no self-loops and a working weight toggle."""
+
+    def _distance_matrix(self):
+        # Symmetric distances with a zero diagonal, so each node's nearest neighbour is itself.
+        return np.array(
+            [
+                [0.0, 0.7, 2.0, 3.0],
+                [0.7, 0.0, 1.5, 2.5],
+                [2.0, 1.5, 0.0, 0.9],
+                [3.0, 2.5, 0.9, 0.0],
+            ]
+        )
+
+    def test_no_self_loops(self):
+        """A node listing itself as its nearest neighbour must not create a self-loop."""
+        d = self._distance_matrix()
+        g_weighted, _ = sim_graph(d, k=2, weight=True)
+        g_unweighted, _ = sim_graph(d, k=2, weight=False)
+        assert nx.number_of_selfloops(g_weighted) == 0
+        assert nx.number_of_selfloops(g_unweighted) == 0
+
+    def test_weight_toggle(self):
+        """weight=True keeps the distances; weight=False sets every edge weight to 1."""
+        d = self._distance_matrix()
+        g_weighted, _ = sim_graph(d, k=2, weight=True)
+        g_unweighted, _ = sim_graph(d, k=2, weight=False)
+        # Same edge set either way.
+        assert set(g_weighted.edges()) == set(g_unweighted.edges())
+        # Weighted graph carries real distances (not all 1); unweighted is all 1.
+        w_weighted = [data["weight"] for _, _, data in g_weighted.edges(data=True)]
+        w_unweighted = [data["weight"] for _, _, data in g_unweighted.edges(data=True)]
+        assert any(w != 1 for w in w_weighted)
+        assert all(w == 1 for w in w_unweighted)
+
+
+class TestLaplacianWeightAttribute:
+    """compute_laplacian_matrix warns when the requested weight attribute is absent."""
+
+    def test_warns_on_missing_attribute(self):
+        """A plain graph has no ricciCurvature, so weighting by it warns about the fallback."""
+        graph = nx.path_graph(4)
+        with pytest.warns(UserWarning, match="no edge carries the attribute"):
+            laplacian = compute_laplacian_matrix(graph, g_weight="ricciCurvature")
+        assert laplacian.shape == (4, 4)
+
+    def test_no_warning_when_attribute_present(self):
+        """When every edge carries the attribute, there is no fallback and no warning."""
+        graph = nx.path_graph(4)
+        for u, v in graph.edges():
+            graph[u][v]["ricciCurvature"] = 0.5
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            laplacian = compute_laplacian_matrix(graph, g_weight="ricciCurvature")
+        assert laplacian.shape == (4, 4)
 
 
 # o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o END
