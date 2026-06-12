@@ -7,8 +7,9 @@ __author__ = """Hinrichs et al."""
 __version__ = version(distribution_name="hyphi")
 
 # Submodules imported here are accessible directly via ``import hyphi``
-# (e.g., ``hyphi.simulation``).
-# TODO: Add or remove imports below as your project evolves — only expose what a package user should use.
+# (e.g., ``hyphi.simulation``). Each subpackage curates its own public surface through its
+# ``__all__``; ``analyses`` is the high-level pipeline facade.
+import hyphi.analyses
 import hyphi.benchmarks
 import hyphi.communities_centrality
 import hyphi.configs
@@ -19,3 +20,17 @@ import hyphi.simulation
 import hyphi.spectral
 import hyphi.stats
 import hyphi.visualization
+
+__all__ = [
+    "analyses",
+    "benchmarks",
+    "communities_centrality",
+    "configs",
+    "io_brainhack",
+    "modeling",
+    "null_models",
+    "simulation",
+    "spectral",
+    "stats",
+    "visualization",
+]
