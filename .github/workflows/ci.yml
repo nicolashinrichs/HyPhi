@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Test (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+
+      - name: Sync development dependencies
+        run: uv sync --extra develop
+
+      # Hard gate: formatting must be clean.
+      - name: Check formatting
+        run: uv run ruff format --check code/hyphi code/tests
+
+      # Advisory: the package carries pre-existing lint debt (naming, docstrings); these
+      # are tracked under the docstring and naming issues and are not yet a blocking gate.
+      - name: Lint (advisory)
+        continue-on-error: true
+        run: uv run ruff check code/hyphi
+
+      # Advisory: type-checking debt is tracked under the typing work; not yet blocking.
+      - name: Type check (advisory)
+        continue-on-error: true
+        run: uv run ty check code/hyphi
+
+      # Hard gate: the test suite must pass, with coverage reported.
+      - name: Run tests with coverage
+        run: uv run pytest code/tests --cov=hyphi --cov-report=term-missing --cov-report=xml
