@@ -33,6 +33,7 @@ from .graph_curvatures import (
     extract_curvatures,
     extract_curvatures_vec,
 )
+from .ricci_flow_analysis import forman_ricci_flow
 from .transform_curvature import (
     apply_linear_transform,
     attach_edge_weights_to_graph,
@@ -73,6 +74,8 @@ __all__ = [
     "fit_global_positive_linear_transform",
     # Density estimation
     "fit_kde",
+    # Ricci flow (canonical Forman flow)
+    "forman_ricci_flow",
     "get_quantiles",
     "select_kde",
     "sliding_window_plv",
