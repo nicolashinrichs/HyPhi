@@ -10,14 +10,21 @@ import numpy as np
 
 def laplace(matrix: np.ndarray):
     """
-    Function calculating eigenvalues of a Laplacian of a given matrix
+    Compute the eigendecomposition of the graph Laplacian of an adjacency matrix.
 
-    input
-    Adjacency matrix
+    Parameters
+    ----------
+    matrix : np.ndarray
+        Square adjacency matrix of the graph.
 
     Returns
     -------
-    eigenvalues, eigenvectors, and Laplacian matrix
+    eigenvalues : np.ndarray
+        Eigenvalues of the Laplacian ``L = D - A``, in ascending order.
+    eigenvectors : np.ndarray
+        The corresponding eigenvectors as columns.
+    L : np.ndarray
+        The Laplacian matrix itself.
 
     """
     # Calculating degrees of nodes
@@ -36,13 +43,25 @@ def laplace(matrix: np.ndarray):
 
 def eigen_in_time(matrices: np.ndarray, plot=False, Fs=1):
     """
-    This function takes multiple matrices as input and finds second to smallest eigenvalue of each.
-    Fs - sampling frequency
+    Track the algebraic connectivity of a sequence of matrices over time.
+
+    Parameters
+    ----------
+    matrices : np.ndarray
+        A sequence of square adjacency matrices, one per time point.
+    plot : bool, default=False
+        If True, plot the tracked values against a time axis built from ``Fs``.
+    Fs : float, default=1
+        Sampling frequency, used only to build the time axis when plotting.
 
     Returns
     -------
-    lambdas - second to smallest eigenvalue of each matrix
-    gaps - moduli of two largest eigenvalues
+    lambdas : np.ndarray
+        The second-smallest Laplacian eigenvalue (the algebraic connectivity, or
+        Fiedler value) of each matrix.
+    gaps : np.ndarray
+        The difference ``eigenvalues[0] - eigenvalues[1]`` for each matrix, that is
+        the smallest (near-zero null) eigenvalue minus the algebraic connectivity.
 
     """
     lambdas = np.zeros(len(matrices))
