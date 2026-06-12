@@ -17,7 +17,6 @@ except ModuleNotFoundError:
     go = None
 from GraphRicciCurvature.FormanRicci import FormanRicci  # noqa: F401
 from GraphRicciCurvature.OllivierRicci import OllivierRicci
-from pynndescent import NNDescent  # TODO: pynndescent needs to be added to the main dependencies
 from scipy import linalg
 
 # from scipy.spatial.distance import pdist  # noqa: ERA001
@@ -419,6 +418,8 @@ def nearest_neighbor_graph(data: np.ndarray, k: int = 5, weight: bool = False):
     :param k: number of neighbors [default: k=10].
     :return: generated graph for nearest neighbors, distance matrix
     """
+    from pynndescent import NNDescent  # lazy import: keep curvatures importable without pynndescent
+
     index = NNDescent(data)  # metric="euclidean" [default], n_neighbors=30 [default]
     n_neighbor, dist_neighbor = index.query(query_data=data, k=k)
     graph = nx.Graph()
