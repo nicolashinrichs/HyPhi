@@ -28,6 +28,7 @@ from __future__ import annotations
 # %% Import
 import logging
 
+import networkx as nx
 import numpy as np
 
 # %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
@@ -36,6 +37,8 @@ logger = logging.getLogger(__name__)
 __all__ = [
     "circular_time_shift",
     "condition_label_shuffle_within_dyad",
+    "configuration_model_null",
+    "degree_preserving_rewire",
     "dyad_label_shuffle",
     "dyad_subject_swap",
     "generate_surrogate_stack",
@@ -334,6 +337,93 @@ def generate_surrogate_stack(
     }
     fn = dispatch[method]
     return np.stack([fn(data, rng=rng, **kwargs) for _ in range(n_surrogates)], axis=0)
+
+
+# ---------------------
+# Intra-brain (single-graph) surrogates
+# ---------------------
+# The dyad-level surrogates above break a real dyadic pairing, so they need at least two brains.
+# For a single-brain (intra-brain) network there is no pairing to break; the appropriate null
+# keeps each node's degree (the connection budget) while randomising which nodes are connected.
+# These two generators provide that degree-matched null, so a curvature effect on one brain can
+# be tested against a null that controls for the degree sequence.
+
+# A double-edge swap needs at least two edges to swap and four nodes to keep it simple.
+_MIN_SWAP_EDGES = 2
+_MIN_SWAP_NODES = 4
+
+
+def degree_preserving_rewire(
+    graph: nx.Graph,
+    n_swaps: int | None = None,
+    rng: np.random.Generator | None = None,
+) -> nx.Graph:
+    """
+    Degree-preserving edge-rewiring surrogate of a single graph.
+
+    Randomises the topology by repeated double-edge swaps, which keep every node's degree
+    fixed. Operates on the connection structure (degree sequence); edge weights are not
+    preserved. Returns a copy; the input graph is untouched.
+
+    Parameters
+    ----------
+    graph : nx.Graph
+        The single-brain connectivity graph.
+    n_swaps : int, optional
+        Number of double-edge swaps to attempt. Defaults to ``10 * n_edges``.
+    rng : np.random.Generator, optional
+        RNG; pass a seeded generator for reproducibility.
+
+    Returns
+    -------
+    nx.Graph
+        A degree-matched rewired copy.
+
+    """
+    rng = _as_rng(rng)
+    rewired = graph.copy()
+    n_edges = rewired.number_of_edges()
+    if n_edges < _MIN_SWAP_EDGES or rewired.number_of_nodes() < _MIN_SWAP_NODES:
+        # Too few edges or nodes for a valid double-edge swap; nothing to randomise.
+        return rewired
+    n_swaps = n_swaps if n_swaps is not None else 10 * n_edges
+    seed = int(rng.integers(0, 2**32 - 1))
+    nx.double_edge_swap(rewired, nswap=n_swaps, max_tries=n_swaps * 10, seed=seed)
+    return rewired
+
+
+def configuration_model_null(
+    graph: nx.Graph,
+    rng: np.random.Generator | None = None,
+) -> nx.Graph:
+    """
+    Configuration-model surrogate of a single graph.
+
+    Builds a new simple graph with the same degree sequence as the input, randomising the
+    edges. Self-loops and parallel edges from the multigraph construction are removed, so the
+    realised degree sequence can be slightly below the target for dense graphs. Operates on
+    the degree sequence; edge weights are not preserved.
+
+    Parameters
+    ----------
+    graph : nx.Graph
+        The single-brain connectivity graph.
+    rng : np.random.Generator, optional
+        RNG; pass a seeded generator for reproducibility.
+
+    Returns
+    -------
+    nx.Graph
+        A simple graph drawn from the configuration model of the degree sequence.
+
+    """
+    rng = _as_rng(rng)
+    degree_sequence = [d for _, d in graph.degree()]
+    seed = int(rng.integers(0, 2**32 - 1))
+    multigraph = nx.configuration_model(degree_sequence, seed=seed)
+    simple = nx.Graph(multigraph)  # collapse parallel edges
+    simple.remove_edges_from(nx.selfloop_edges(simple))
+    return simple
 
 
 # o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o END

@@ -365,7 +365,7 @@ def hierarchical_permutation_test(
         n_trials_per_dyad[d] = len(trial_ids)
 
     trial_to_row_idx: dict[tuple[Any, Any], np.ndarray] = {}
-    for (d, t), rows in data.groupby(by=[dyad_col, trial_col]).groups.items():  # TODO: test for issues.
+    for (d, t), rows in data.groupby(by=[dyad_col, trial_col]).groups.items():
         trial_to_row_idx[(d, t)] = np.asarray(rows)
 
     null_dist = np.empty(n_perms, dtype=float)
@@ -374,7 +374,11 @@ def hierarchical_permutation_test(
         for d, (trial_ids, trial_conds) in dyad_trial_info.items():
             shuffled = rng.permutation(trial_conds)
             for t, new_cond in zip(trial_ids, shuffled, strict=True):
-                perm_condition[trial_to_row_idx[(d, t)]] = new_cond
+                # Guard against a (group, trial) pair with no rows (drop_duplicates above can
+                # name a trial that the groupby did not, for example with all-NaN values).
+                rows = trial_to_row_idx.get((d, t))
+                if rows is not None:
+                    perm_condition[rows] = new_cond
         data_perm = data.assign(**{condition_col: perm_condition})
         null_dist[i] = float(test_stat_fn(data_perm, value_col, condition_col))
 

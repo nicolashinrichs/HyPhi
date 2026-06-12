@@ -16,10 +16,13 @@ Years: 2026
 # %% Import
 import numpy as np
 import pytest
+import networkx as nx
 from hyphi.null_models import (
     _random_derangement,
     circular_time_shift,
     condition_label_shuffle_within_dyad,
+    configuration_model_null,
+    degree_preserving_rewire,
     dyad_label_shuffle,
     dyad_subject_swap,
     generate_surrogate_stack,
@@ -251,6 +254,62 @@ class TestPhaseRandomizeDegenerate:
         assert out.shape == signal.shape
         assert np.all(np.isfinite(out))
         np.testing.assert_allclose(np.abs(np.fft.rfft(out[1])), np.abs(np.fft.rfft(varying)), atol=1e-8)
+
+
+# %% Tests for intra-brain (single-graph) nulls >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
+
+
+class TestDegreePreservingRewire:
+    """The degree-preserving rewire keeps every node's degree and is reproducible."""
+
+    def test_preserves_degree_sequence(self):
+        """Double-edge swaps keep the degree of every node fixed."""
+        graph = nx.watts_strogatz_graph(20, 4, 0.3, seed=0)
+        rewired = degree_preserving_rewire(graph, rng=np.random.default_rng(0))
+        before = sorted(d for _, d in graph.degree())
+        after = sorted(d for _, d in rewired.degree())
+        assert before == after
+
+    def test_does_not_mutate_input(self):
+        """The input graph is left untouched."""
+        graph = nx.watts_strogatz_graph(20, 4, 0.3, seed=0)
+        edges_before = set(graph.edges())
+        degree_preserving_rewire(graph, rng=np.random.default_rng(1))
+        assert set(graph.edges()) == edges_before
+
+    def test_reproducible(self):
+        """Same seed gives the same rewired graph."""
+        graph = nx.watts_strogatz_graph(20, 4, 0.3, seed=0)
+        a = degree_preserving_rewire(graph, rng=np.random.default_rng(7))
+        b = degree_preserving_rewire(graph, rng=np.random.default_rng(7))
+        assert set(a.edges()) == set(b.edges())
+
+    def test_tiny_graph_is_noop(self):
+        """A graph too small to swap is returned unchanged (a copy)."""
+        graph = nx.Graph()
+        graph.add_edge(0, 1)
+        out = degree_preserving_rewire(graph, rng=np.random.default_rng(0))
+        assert set(out.edges()) == {(0, 1)}
+
+
+class TestConfigurationModelNull:
+    """The configuration-model null matches the node set and is degree-bounded and reproducible."""
+
+    def test_same_node_count_and_degree_bounded(self):
+        """The null has the same nodes and no more total degree than the original."""
+        graph = nx.watts_strogatz_graph(30, 6, 0.2, seed=0)
+        null = configuration_model_null(graph, rng=np.random.default_rng(0))
+        assert null.number_of_nodes() == graph.number_of_nodes()
+        # Self-loops and parallel edges are removed, so total degree cannot exceed the target.
+        assert sum(d for _, d in null.degree()) <= sum(d for _, d in graph.degree())
+        assert nx.number_of_selfloops(null) == 0
+
+    def test_reproducible(self):
+        """Same seed gives the same configuration-model graph."""
+        graph = nx.watts_strogatz_graph(30, 6, 0.2, seed=0)
+        a = configuration_model_null(graph, rng=np.random.default_rng(3))
+        b = configuration_model_null(graph, rng=np.random.default_rng(3))
+        assert set(a.edges()) == set(b.edges())
 
 
 # o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o END
