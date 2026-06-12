@@ -17,6 +17,7 @@ Years: 2026
 import numpy as np
 import pytest
 from hyphi.null_models import (
+    _random_derangement,
     circular_time_shift,
     condition_label_shuffle_within_dyad,
     dyad_label_shuffle,
@@ -195,6 +196,61 @@ class TestGenerateSurrogateStack:
     def test_unknown_method_raises(self):
         with pytest.raises(ValueError, match="method must be one of"):
             generate_surrogate_stack(np.zeros((2, 8)), method="bogus", n_surrogates=1)
+
+
+# %% Tests for _random_derangement >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
+
+
+class TestRandomDerangement:
+    """The derangement helper has no fixed points, handles tiny n, and warns on fallback."""
+
+    def test_is_a_derangement(self):
+        """A derangement of [0, n) leaves no index in place."""
+        rng = np.random.default_rng(0)
+        perm = _random_derangement(8, rng)
+        assert not np.any(perm == np.arange(8))
+        assert sorted(perm) == list(range(8))  # still a permutation
+
+    def test_small_n_returns_identity(self):
+        """For n < 2 there is no derangement, so the helper returns the identity."""
+        rng = np.random.default_rng(0)
+        assert list(_random_derangement(0, rng)) == []
+        assert list(_random_derangement(1, rng)) == [0]
+
+    def test_fallback_warns_and_still_deranges(self, caplog):
+        """Exhausting rejection sampling (max_tries=0) warns and falls back to a rotation."""
+        rng = np.random.default_rng(0)
+        with caplog.at_level("WARNING"):
+            perm = _random_derangement(4, rng, max_tries=0)
+        assert "falling back to a deterministic rotation" in caplog.text
+        # The rotation is still a valid derangement (no fixed points).
+        assert not np.any(perm == np.arange(4))
+
+
+# %% Tests for degenerate phase_randomize input >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
+
+
+class TestPhaseRandomizeDegenerate:
+    """phase_randomize stays finite and shape-preserving on degenerate channels."""
+
+    def test_constant_channel_preserves_power_spectrum(self):
+        """A constant channel has all power in DC; the surrogate preserves that and is finite."""
+        signal = np.full((1, 64), 5.0)
+        out = phase_randomize(signal, rng=np.random.default_rng(0))
+        assert out.shape == signal.shape
+        assert np.all(np.isfinite(out))
+        # Power spectrum (|rfft|) is the phase-randomization invariant, even for a constant.
+        np.testing.assert_allclose(np.abs(np.fft.rfft(out[0])), np.abs(np.fft.rfft(signal[0])), atol=1e-8)
+
+    def test_constant_channel_alongside_varying_channel(self):
+        """A degenerate channel does not corrupt a normal channel processed in the same call."""
+        rng = np.random.default_rng(1)
+        varying = rng.standard_normal(128)
+        signal = np.stack([np.full(128, 2.0), varying])
+        out = phase_randomize(signal, rng=np.random.default_rng(2))
+        assert out.shape == signal.shape
+        assert np.all(np.isfinite(out))
+        np.testing.assert_allclose(np.abs(np.fft.rfft(out[1])), np.abs(np.fft.rfft(varying)), atol=1e-8)
 
 
 # o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o END

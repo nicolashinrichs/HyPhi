@@ -61,7 +61,15 @@ def _random_derangement(n: int, rng: np.random.Generator, max_tries: int = 100) 
         perm = rng.permutation(n)
         if not np.any(perm == base):
             return perm
-    # Rejection sampling exhausted — fall back to a deterministic rotation.
+    # Rejection sampling exhausted. Fall back to a deterministic rotation and warn: the
+    # rotation is a valid derangement but not a uniformly random one, so the resulting null
+    # is slightly biased. In practice this only triggers for pathologically small n.
+    logger.warning(
+        "_random_derangement: no random derangement found in %d tries for n=%d; "
+        "falling back to a deterministic rotation (surrogate not uniformly random).",
+        max_tries,
+        n,
+    )
     return np.roll(base, 1)
 
 
