@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Test (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Supported range (requires-python >= 3.11). 3.14 is excluded: this
+        # lock's jaxlib has no cp314 wheel, so uv sync would fail there.
+        python-version: ["3.11", "3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        # --frozen: fail if uv.lock is out of sync with pyproject (e.g. a PR
+        # edits dependencies without regenerating the lock) instead of silently
+        # re-resolving.
+        run: uv sync --extra develop --frozen
+
+      # Hard gate: formatting must be clean.
+      - name: Check formatting
+        run: uv run --extra develop ruff format --check code/hyphi code/tests
+
+      # Hard gate: every module must import (catches missing deps / broken
+      # top-level code that the test suite might not exercise).
+      - name: Import every module
+        run: |
+          uv run --extra develop python - <<'EOF'
+          import importlib
+          import pkgutil
+
+          import hyphi
+
+          failures = []
+          for mod in pkgutil.walk_packages(hyphi.__path__, prefix="hyphi."):
+              try:
+                  importlib.import_module(mod.name)
+              except Exception as exc:  # noqa: BLE001
+                  failures.append(f"{mod.name}: {exc}")
+          if failures:
+              raise SystemExit("unimportable modules:\n" + "\n".join(failures))
+          print("all hyphi modules import")
+          EOF
+
+      # Hard gate: the test suite must pass, with coverage reported.
+      - name: Run tests with coverage
+        run: uv run --extra develop pytest code/tests --cov=hyphi --cov-report=term-missing --cov-report=xml
+
+      # Advisory: code/hyphi still carries pre-existing lint debt (naming,
+      # docstrings) tracked under the docstring and naming issues; not yet a
+      # blocking gate. Flips to a hard gate once the cleanup lands.
+      - name: Lint (advisory)
+        continue-on-error: true
+        run: uv run --extra develop ruff check code/hyphi
+
+      # Advisory: the only remaining ty diagnostics are the optional-import
+      # (plotly/seaborn) None-union pattern that static analysis cannot follow.
+      - name: Type check (advisory)
+        continue-on-error: true
+        run: uv run --extra develop ty check code/hyphi
