@@ -3,6 +3,7 @@
 # %% Import
 from __future__ import annotations
 
+import zlib
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
@@ -17,36 +18,86 @@ if TYPE_CHECKING:
 
 import numpy as np
 
-# %% Degenerate-input contract >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
+# %% Degenerate-input contract and tie dithering >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
-# Sentinel returned for an EXACTLY-degenerate curvature distribution (empty, a single value, or
-# all identical). Such a distribution has no meaningful differential entropy, and an unguarded
-# estimator either raises or returns NaN/inf (the KDE bandwidth selection divides by zero).
-# Returning 0.0 keeps the entropy-over-time trace finite and matches the prior guarded behaviour
-# in analyses.py.
+# Forman-Ricci curvature is DISCRETE (integer-valued for unweighted graphs), but the continuous
+# entropy estimators below assume continuous data. Ties collapse order-statistic spacings (the
+# spacing estimators -> log(0) -> -inf), collapse kNN distances (the kNN estimators -> artefacts),
+# and a near-constant distribution breaks the KDE bandwidth selection. We resolve this by DITHERING:
+# add uniform jitter of half the smallest nonzero gap between distinct curvature values. For
+# unit-spaced integer curvature this is the standard quantization dither U(-1/2, 1/2), under which
+# the SHANNON-type differential-entropy estimate recovers the discrete Shannon entropy of the
+# curvature histogram (a constant distribution -> ~0, more disorder -> larger). So an ordered/lattice
+# window reads as MINIMUM entropy and the transition peak is preserved, while the estimators no longer
+# raise or return -inf/NaN. For genuinely continuous data the gap is tiny, so the jitter is negligible
+# and estimates are essentially unchanged. The jitter is seeded from the data, so results are reproducible.
 #
-# KNOWN LIMITATIONS (tracked for the entropy-suite follow-up, issues #11 / #28):
-#  1. This guard keys on EXACT distinctness (np.unique < 2), so a NEAR-constant or
-#     few-distinct-with-ties distribution slips past it. Forman-Ricci curvature is
-#     integer-valued, so near-lattice graphs across the small-world transition still reach the
-#     estimators, where the spacing estimators (vasicek/van_es/ebrahimi/correa) return -inf/NaN
-#     on tied order statistics and kde_plugin can still raise. A variance/tolerance test (or a
-#     nonzero-spacing count) is the proper fix.
-#  2. 0.0 reads as "no disorder" only for the bounded estimators (renyi/tsallis/kde_plugin). For
-#     the unbounded kNN/spacing estimators (including the default kozachenko) real values are
-#     strongly negative, so 0.0 is the HIGH-entropy extreme, not a low reading. Whether the
-#     sentinel should be NaN, an explicit error, or estimator-aware is an open scientific choice.
-_DEGENERATE_ENTROPY = 0.0
+# Two limits on the Shannon-recovery reading: (1) the kNN Renyi/Tsallis estimators recover their own
+# order-2 analogue (Renyi-2 / Tsallis-2), not Shannon; (2) recovery is specific to UNIT label spacing.
+# Non-unit integer gaps shift the dither width with the gap and bias the differential-entropy estimate
+# by ~log(gap) (unreachable on unweighted FRC, whose spacing is 1). In all cases the orientation
+# (ordered < disordered) and the transition detection hold.
+#
+# NOTE: this changes the numeric entropy values versus the pre-dithering implementation, which
+# returned -inf / NaN / artefacts on tied integer curvature. The downstream impact of the estimator
+# suite on previously-recorded [MEASURED] results is tracked in issue #11.
 
-# Minimum number of distinct curvature values required to estimate entropy. Fewer than this
-# (an empty array, a single value, or an all-constant distribution) is degenerate. See the
-# KNOWN LIMITATIONS above: this exact-distinctness test does not catch near-constant input.
-_MIN_DISTINCT_VALUES = 2
+# Returned for CONTENTLESS input: too few curvature samples (or non-finite curvature) to estimate a
+# distribution. There is no meaningful entropy, so it is defined as 0.0 (the low end, consistent with
+# a dithered constant ~ 0).
+_CONTENTLESS_ENTROPY = 0.0
+
+# Default neighbour count of the kNN estimators (kozachenko/renyi/tsallis); they need at least k + 1
+# samples. Fewer than this many curvature samples cannot be scored by every estimator, so it is
+# treated as contentless. (Assumes the default k; a larger custom k on a tiny graph is the caller's
+# responsibility.)
+_DEFAULT_KNN_K = 4
+_MIN_SAMPLES = _DEFAULT_KNN_K + 1
+
+# At least this many DISTINCT values are needed to measure a nonzero gap for the dither.
+_MIN_DISTINCT = 2
+
+# Fallback spacing for the dither when the distribution is constant (no nonzero gap between distinct
+# values); 1.0 matches the unit spacing of integer Forman-Ricci curvature.
+_DEFAULT_GAP = 1.0
+
+
+def _dither(curvatures: npt.ArrayLike) -> np.ndarray:
+    """
+    Break ties in a discrete curvature distribution with uniform half-gap jitter.
+
+    Adds ``U(-gap/2, +gap/2)`` noise, where ``gap`` is the smallest nonzero spacing between distinct
+    curvature values (``_DEFAULT_GAP`` when the distribution is constant). The jitter is seeded from
+    the data so the result is reproducible. For unit-spaced integer curvature this is the standard
+    quantization dither (recovering the discrete Shannon entropy); for continuous data the jitter is
+    negligible.
+
+    Parameters
+    ----------
+    curvatures : array-like
+        Curvature values extracted from a graph (assumed to have at least two samples).
+
+    Returns
+    -------
+    np.ndarray
+        The dithered curvature values.
+
+    """
+    arr = np.asarray(curvatures, dtype=float)
+    uniq = np.unique(arr)
+    gap = float(np.min(np.diff(uniq))) if uniq.size >= _MIN_DISTINCT else _DEFAULT_GAP
+    rng = np.random.default_rng(zlib.crc32(np.ascontiguousarray(arr).tobytes()))
+    return arr + rng.uniform(-0.5 * gap, 0.5 * gap, size=arr.shape)
 
 
 def _entropy_guard(curvatures: npt.ArrayLike) -> float | None:
     """
-    Return the degenerate-input sentinel, or None when the input is well-formed.
+    Return the contentless-input sentinel (0.0), or None when there is a distribution to estimate.
+
+    Input is contentless when it has fewer than ``_MIN_SAMPLES`` samples (too few for the kNN
+    estimators, which need k + 1) or contains non-finite values. An all-constant but sufficiently
+    large distribution is NOT special-cased here: :func:`_dither` gives the estimators a unit-width
+    uniform to score (~0 entropy), so the ordered case reads as minimum entropy rather than raising.
 
     Parameters
     ----------
@@ -56,14 +107,26 @@ def _entropy_guard(curvatures: npt.ArrayLike) -> float | None:
     Returns
     -------
     float or None
-        ``_DEGENERATE_ENTROPY`` when the input has fewer than two distinct values (empty,
-        a single value, or constant); otherwise None, meaning estimate normally.
+        ``_CONTENTLESS_ENTROPY`` for too-few-sample or non-finite input; otherwise None.
 
     """
     arr = np.asarray(curvatures, dtype=float)
-    if np.unique(arr).size < _MIN_DISTINCT_VALUES:
-        return _DEGENERATE_ENTROPY
+    if arr.size < _MIN_SAMPLES or not np.isfinite(arr).all():
+        return _CONTENTLESS_ENTROPY
     return None
+
+
+def _prepare_curvatures(curvatures: npt.ArrayLike) -> tuple[float | None, np.ndarray | None]:
+    """
+    Guard contentless input and dither ties.
+
+    Returns ``(sentinel, None)`` for contentless input (estimate is the sentinel), or
+    ``(None, dithered_array)`` when there is a distribution to estimate.
+    """
+    sentinel = _entropy_guard(curvatures)
+    if sentinel is not None:
+        return sentinel, None
+    return None, _dither(curvatures)
 
 
 # %% Functions >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
@@ -95,8 +158,7 @@ def entropy_vasicek(
         Vasicek entropy estimate, or the degenerate-input sentinel.
 
     """
-    curvatures = extract_curvatures(G, curvature=curvature)
-    sentinel = _entropy_guard(curvatures)
+    sentinel, curvatures = _prepare_curvatures(extract_curvatures(G, curvature=curvature))
     if sentinel is not None:
         return sentinel
     kwargs: dict = {"method": "vasicek", "nan_policy": "omit"}
@@ -107,8 +169,7 @@ def entropy_vasicek(
 
 def entropy_van_es(G: nx.classes.graph.Graph, curvature: str = "formanCurvature") -> npt.number | npt.ndarray:
     """Van Es entropy estimator on graph curvatures."""
-    curvatures = extract_curvatures(G, curvature=curvature)
-    sentinel = _entropy_guard(curvatures)
+    sentinel, curvatures = _prepare_curvatures(extract_curvatures(G, curvature=curvature))
     if sentinel is not None:
         return sentinel
     return differential_entropy(curvatures, method="van es", nan_policy="omit")
@@ -116,8 +177,7 @@ def entropy_van_es(G: nx.classes.graph.Graph, curvature: str = "formanCurvature"
 
 def entropy_ebrahimi(G: nx.classes.graph.Graph, curvature: str = "formanCurvature") -> npt.number | npt.ndarray:
     """Ebrahimi entropy estimator on graph curvatures."""
-    curvatures = extract_curvatures(G, curvature=curvature)
-    sentinel = _entropy_guard(curvatures)
+    sentinel, curvatures = _prepare_curvatures(extract_curvatures(G, curvature=curvature))
     if sentinel is not None:
         return sentinel
     return differential_entropy(curvatures, method="ebrahimi", nan_policy="omit")
@@ -125,8 +185,7 @@ def entropy_ebrahimi(G: nx.classes.graph.Graph, curvature: str = "formanCurvatur
 
 def entropy_correa(G: nx.classes.graph.Graph, curvature: str = "formanCurvature") -> npt.number | npt.ndarray:
     """Correa entropy estimator on graph curvatures."""
-    curvatures = extract_curvatures(G, curvature=curvature)
-    sentinel = _entropy_guard(curvatures)
+    sentinel, curvatures = _prepare_curvatures(extract_curvatures(G, curvature=curvature))
     if sentinel is not None:
         return sentinel
     return differential_entropy(curvatures, method="correa", nan_policy="omit")
@@ -166,12 +225,16 @@ def entropy_kde_plugin(
         Plugin entropy estimate ``-E[log f(X)]``, or the degenerate-input sentinel.
 
     """
-    curvatures = extract_curvatures(G, curvature=curvature)
-    sentinel = _entropy_guard(curvatures)
+    sentinel, curvatures = _prepare_curvatures(extract_curvatures(G, curvature=curvature))
     if sentinel is not None:
         return sentinel
-    f = TreeKDE(kernel=kernel_type, bw=bw, norm=norm).fit(curvatures)
-    fvals = f.evaluate(curvatures)
+    try:
+        fvals = TreeKDE(kernel=kernel_type, bw=bw, norm=norm).fit(curvatures).evaluate(curvatures)
+    except ValueError:
+        # Data-driven bandwidth selection (e.g. ISJ) can fail to converge, and the numeric support
+        # solver can fail at evaluate(), on a low-spread distribution even after dithering; fall back
+        # to a closed-form rule that never root-finds (re-running both fit and evaluate).
+        fvals = TreeKDE(kernel=kernel_type, bw="silverman", norm=norm).fit(curvatures).evaluate(curvatures)
     epsilon = 1e-10
     log_fvals = np.log(fvals + epsilon)
     return -np.mean(log_fvals)
@@ -186,8 +249,7 @@ def entropy_kozachenko(G: nx.classes.graph.Graph, curvature: str = "formanCurvat
     """Kozachenko-Leonenko kNN entropy estimator."""
     import infomeasure as im
 
-    curvatures = extract_curvatures(G, curvature=curvature)
-    sentinel = _entropy_guard(curvatures)
+    sentinel, curvatures = _prepare_curvatures(extract_curvatures(G, curvature=curvature))
     if sentinel is not None:
         return sentinel
     return im.entropy(curvatures, approach="metric", k=k)
@@ -199,8 +261,7 @@ def entropy_renyi(
     """Rényi entropy estimator via kNN."""
     import infomeasure as im
 
-    curvatures = extract_curvatures(G, curvature=curvature)
-    sentinel = _entropy_guard(curvatures)
+    sentinel, curvatures = _prepare_curvatures(extract_curvatures(G, curvature=curvature))
     if sentinel is not None:
         return sentinel
     return im.entropy(curvatures, approach="renyi", alpha=order, k=k)
@@ -212,8 +273,7 @@ def entropy_tsallis(
     """Tsallis entropy estimator via kNN."""
     import infomeasure as im
 
-    curvatures = extract_curvatures(G, curvature=curvature)
-    sentinel = _entropy_guard(curvatures)
+    sentinel, curvatures = _prepare_curvatures(extract_curvatures(G, curvature=curvature))
     if sentinel is not None:
         return sentinel
     return im.entropy(curvatures, approach="tsallis", q=order, k=k)

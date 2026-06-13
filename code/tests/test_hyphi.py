@@ -55,20 +55,16 @@ def test_sw_frc_entropy_pipeline():
     assert np.all(np.isfinite(entropies))
 
 
-def test_exactly_constant_curvature_entropy_sentinel():
-    """Issue #28 safeguard (exactly-constant case): at p = 1e-4 the graphs are pure ring lattices,
-    so every edge shares ONE FRC value and the shared guard returns the sentinel (0.0) instead of
-    raising on the KDE bandwidth selection.
-
-    This covers only the EXACTLY-degenerate path (np.unique == 1). The near-constant path (a few
-    distinct integer FRC values with negligible variance), which the guard does not yet catch, is
-    tracked for the entropy-suite follow-up (issues #11 / #28).
-    """
+def test_ordered_lattice_entropy_reads_minimum():
+    """Issue #28: at p = 1e-4 the graphs are pure ring lattices (one FRC value). The dither turns
+    that constant distribution into a unit-width uniform, so the entropy reads ~0 (minimum, the
+    ordered end) instead of raising on the KDE bandwidth selection or returning -inf."""
     _, graphs = gen_tv_sw(100, 10, 3, -4, -4)
     curvature_graphs = compute_frc_vec(graphs)
     assert all(np.unique(extract_curvatures(g)).size == 1 for g in curvature_graphs)
     entropies = np.asarray(vec_entropy(curvature_graphs, entropy_kde_plugin), dtype=float)
-    assert np.all(entropies == 0.0)
+    assert np.all(np.isfinite(entropies))
+    assert np.all(np.abs(entropies) < 0.5)
 
 
 # o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o END

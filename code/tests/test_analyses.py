@@ -2,6 +2,7 @@
 
 # %% Import
 import networkx as nx
+import numpy as np
 import pytest
 from hyphi.analyses import (
     build_sliding_window_graphs,
@@ -19,10 +20,13 @@ pass
 
 
 def test_entropy_zero_variance(complete_graph_k5):
-    # For K_n, all curvatures map to same value. Entropy should return 0.0
+    # For K_n every edge has the same curvature. The dither turns that constant distribution into a
+    # unit-width uniform, whose differential entropy is ~0, so the estimate reads as minimum (near
+    # zero) rather than the old exact 0.0 sentinel.
     G_curv = compute_frc(complete_graph_k5, method="1d")
     entropy = entropy_kde_plugin(G_curv)
-    assert entropy == 0.0
+    assert np.isfinite(entropy)
+    assert abs(entropy) < 1.2
 
 
 def test_sliding_window_graphs(conn_matrix):
