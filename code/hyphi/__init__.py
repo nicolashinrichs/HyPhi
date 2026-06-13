@@ -11,6 +11,7 @@ from importlib.metadata import version
 # are kept off the default star-import surface.
 from . import (
     analyses,
+    backends,
     benchmarks,
     communities_centrality,
     configs,
@@ -30,6 +31,7 @@ __version__ = version(distribution_name="hyphi")
 __all__ = [
     "__version__",
     "analyses",
+    "backends",
     "benchmarks",
     "configs",
     "io",

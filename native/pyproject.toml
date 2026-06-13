@@ -1,0 +1,25 @@
+[build-system]
+requires = ["scikit-build-core>=0.10", "nanobind>=2.0"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "hyphi-native"
+version = "0.1.0"
+description = "Native C++ (CPU float64; optional CUDA float64 and Metal float32) compute core for HyPhi 1d Forman-Ricci curvature"
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT"
+authors = [{ name = "Felipe Engelberger" }]
+dependencies = ["numpy"]
+
+[tool.scikit-build]
+minimum-version = "0.10"
+build-dir = "build/{wheel_tag}"
+
+[tool.scikit-build.cmake.define]
+# Default CPU-only build (always works, no nvcc / Metal toolchain needed). Turn an
+# accelerator path on at install time on a machine with the matching toolchain:
+#   pip install ./native -C cmake.define.HYPHI_NATIVE_CUDA=ON     # needs nvcc
+#   pip install ./native -C cmake.define.HYPHI_NATIVE_METAL=ON    # needs Apple + metal-cpp
+HYPHI_NATIVE_CUDA = "OFF"
+HYPHI_NATIVE_METAL = "OFF"
