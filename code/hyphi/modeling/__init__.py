@@ -2,9 +2,10 @@
 Public API for the modeling subpackage: curvature, entropy, windowing, and density.
 
 This surfaces the canonical pipeline pieces so they can be imported directly, for example
-``from hyphi.modeling import compute_frc, vec_entropy``. The lower-level embedding and
-Ricci-flow helpers in ``curvatures.py`` are intentionally left out of this curated surface
-while the canonical flow API is still being decided; import them by their full path if needed.
+``from hyphi.modeling import compute_frc, vec_entropy``. The Forman-Ricci flow
+(``forman_ricci_flow``) is exposed here as the canonical flow. The lower-level embedding and the
+Ollivier-Ricci flow helpers in ``curvatures.py`` are intentionally left out of this curated
+surface pending the flow-consolidation decision; import them by their full path if needed.
 """
 
 # %% Imports
@@ -40,6 +41,7 @@ from .graph_curvatures import (
     extract_curvatures,
     extract_curvatures_vec,
 )
+from .ricci_flow_analysis import forman_ricci_flow
 from .transform_curvature import (
     apply_linear_transform,
     attach_edge_weights_to_graph,
@@ -84,6 +86,8 @@ __all__ = [
     "fit_global_positive_linear_transform",
     # Density estimation
     "fit_kde",
+    # Ricci flow (canonical Forman flow)
+    "forman_ricci_flow",
     "get_estimator",
     "get_quantiles",
     # Trace-complexity markers
