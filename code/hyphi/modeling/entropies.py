@@ -1,4 +1,38 @@
-"""Compute entropy estimates of curvature distributions, with a name-keyed registry."""
+"""
+Compute entropy estimates of curvature distributions, with a name-keyed registry.
+
+Estimator suite (issue #11), selectable by name through ``ESTIMATORS`` / ``get_estimator``:
+
+Curvature-distribution estimators (score the edge-curvature histogram of one graph):
+  - ``vasicek``, ``van_es``, ``ebrahimi``, ``correa`` -- spacing-based differential entropy (scipy)
+  - ``kde_plugin`` (alias ``kde``) -- KDE-plugin Shannon, ``-E[log f]`` (KDEpy)
+  - ``kde_renyi``, ``kde_tsallis`` -- KDE-plugin Renyi / Tsallis of a given order (KDEpy)
+  - ``kozachenko`` -- Kozachenko-Leonenko kNN differential entropy (infomeasure)
+  - ``renyi``, ``tsallis`` -- kNN Renyi / Tsallis of a given order (infomeasure)
+  - ``histogram`` -- binned Shannon with Miller-Madow bias correction (numpy)
+Spectral estimator (scores the graph itself, not its curvatures):
+  - ``von_neumann`` -- entropy of the normalized Laplacian spectrum
+Trace-complexity markers (score the windowed entropy series ``H(t)``, NOT registry estimators):
+  - ``permutation_entropy``, ``sample_entropy``
+
+All curvature estimators DITHER discrete (integer) curvature to break ties (see the contract below).
+
+DOWNSTREAM IMPACT of the estimator choice (tracked in issue #11): the estimators are NOT
+interchangeable, so the choice is a load-bearing methodological parameter, not a free knob.
+  - Reproducibility: a ``[MEASURED]`` entropy-over-time result is comparable only to another computed
+    with the SAME estimator (and order / k). Record the estimator name with every result.
+  - The default (``DEFAULT_ENTROPY_METHOD``) is what ``compute_entropy`` / ``vec_entropy`` use when
+    unspecified; changing it silently changes every default-path number.
+  - The curvature-vs-paradigm comparison matrix (issue #16) should hold the estimator fixed per row,
+    or report it per cell.
+  - Orders differ: ``renyi`` / ``tsallis`` (order 2) emphasize the bulk and saturate as a magnitude
+    proxy; the Shannon-type estimators are the calibrated entropy. ``von_neumann`` measures a
+    DIFFERENT quantity (network structure) and is not magnitude-comparable to the curvature estimators.
+  - Sample size: the KDE estimators (``kde_plugin`` / ``kde_renyi`` / ``kde_tsallis``) carry a small
+    downward bias at small N, and their dithered-constant floor is a small NEGATIVE N-dependent value
+    (a differential-entropy boundary effect), not exactly 0. Record N alongside the estimator name so
+    the bias can be bounded.
+"""
 
 # %% Import
 from __future__ import annotations
@@ -11,6 +45,7 @@ from KDEpy import TreeKDE
 from scipy.stats import differential_entropy
 
 from hyphi.modeling.graph_curvatures import extract_curvatures
+from hyphi.spectral.laplace import laplace
 
 if TYPE_CHECKING:
     import networkx as nx
@@ -60,6 +95,9 @@ _MIN_DISTINCT = 2
 # Fallback spacing for the dither when the distribution is constant (no nonzero gap between distinct
 # values); 1.0 matches the unit spacing of integer Forman-Ricci curvature.
 _DEFAULT_GAP = 1.0
+
+# Tolerance for treating a Renyi/Tsallis order as the Shannon limit (order == 1).
+_ORDER_TOL = 1e-9
 
 
 def _dither(curvatures: npt.ArrayLike) -> np.ndarray:
@@ -280,6 +318,186 @@ def entropy_tsallis(
 
 
 # ---------------------
+# Spectral (graph) Entropy
+# ---------------------
+
+
+def entropy_von_neumann(G: nx.classes.graph.Graph) -> float:
+    """
+    Von Neumann (spectral) graph entropy of the normalized Laplacian.
+
+    Unlike the curvature-distribution estimators, this measures the entropy of the NETWORK itself:
+    the eigenvalue distribution of the density matrix ``rho = L / tr(L)``, where ``L`` is the
+    combinatorial Laplacian (edge weights used if present). It complements the curvature estimators
+    and, being spectral, is unaffected by the integer-tie problem. For the complete graph ``K_n`` it
+    equals ``log(n - 1)``.
+
+    NOTE: across the Watts-Strogatz rewiring sweep this is NON-MONOTONE (it peaks at the small-world
+    regime, so a fully-random graph can read LOWER than the lattice). It is not a monotone disorder
+    indicator: pair it with a curvature estimator for transition orientation. Self-loops cancel out of
+    ``L`` and are ignored; the measure is defined only for non-negative edge weights.
+
+    Parameters
+    ----------
+    G : nx.Graph
+        Graph; edge weights are used if present.
+
+    Returns
+    -------
+    float
+        ``-sum_i lambda_i log lambda_i`` over the normalized Laplacian spectrum, or the contentless
+        sentinel for an edgeless graph.
+
+    """
+    import networkx as nx
+
+    if G.number_of_edges() == 0:
+        return _CONTENTLESS_ENTROPY
+    adjacency = nx.to_numpy_array(G, weight="weight")
+    eigenvalues, _, _ = laplace(adjacency)
+    total = float(eigenvalues.sum())
+    if total <= 0:
+        return _CONTENTLESS_ENTROPY
+    probs = np.clip(eigenvalues / total, 0.0, None)
+    probs = probs[probs > 0]
+    return float(-np.sum(probs * np.log(probs)))
+
+
+# ---------------------
+# Histogram Entropy
+# ---------------------
+
+
+def entropy_histogram(
+    G: nx.classes.graph.Graph, curvature: str = "formanCurvature", bins: str | int = "auto"
+) -> float:
+    """
+    Binned Shannon entropy of the curvature distribution with Miller-Madow bias correction.
+
+    A fast, transparent discretized baseline that handles integer ties natively (no dithering needed).
+    The Miller-Madow term ``(K - 1) / (2 N)`` corrects the downward bias of the plugin Shannon entropy
+    (``K`` = occupied bins, ``N`` = sample count). For a distribution uniform over ``k`` values this
+    returns ``~log k``.
+
+    With the default ``bins="auto"`` and INTEGER-valued curvature (the unweighted Forman-Ricci case),
+    each distinct integer is given its own bin, so a uniform over ``k`` integers recovers ``log k``.
+    (Numpy's "auto" rule otherwise caps the bin count via the Sturges floor and would merge distinct
+    integers, under-reading the entropy on a wide integer range.) For non-integer data, or an explicit
+    ``bins``, the specification is passed straight to ``numpy.histogram``. Miller-Madow is calibrated
+    for the undersampled regime and slightly over-estimates a fully-sampled uniform.
+
+    Parameters
+    ----------
+    G : nx.Graph
+        Graph with curvature edge attributes.
+    curvature : str
+        Name of the curvature edge attribute.
+    bins : str or int
+        Bin specification (default ``"auto"``); see above for the integer-curvature handling.
+
+    Returns
+    -------
+    float
+        Bias-corrected discrete Shannon entropy in nats, or the contentless sentinel.
+
+    """
+    curvatures = extract_curvatures(G, curvature=curvature)
+    sentinel = _entropy_guard(curvatures)
+    if sentinel is not None:
+        return sentinel
+    arr = np.asarray(curvatures, dtype=float)
+    if bins == "auto" and np.allclose(arr, np.round(arr)):
+        # Integer-valued curvature: one bin per integer so each distinct value is resolved.
+        bins = np.arange(np.floor(arr.min()) - 0.5, np.ceil(arr.max()) + 1.5, 1.0)
+    counts, _ = np.histogram(arr, bins=bins)
+    counts = counts[counts > 0]
+    n_samples = int(counts.sum())
+    probs = counts / n_samples
+    shannon = float(-np.sum(probs * np.log(probs)))
+    miller_madow = (counts.size - 1) / (2 * n_samples)
+    return shannon + miller_madow
+
+
+# ---------------------
+# KDE-plugin Renyi / Tsallis
+# ---------------------
+
+
+def _kde_density_at_samples(curvatures: np.ndarray, kernel_type: str, bw: str | float | int, norm: int) -> np.ndarray:
+    """
+    Fit a TreeKDE to the (dithered) curvatures and evaluate it at the sample points.
+
+    Falls back from the data-driven bandwidth (e.g. ISJ) to silverman when either the fit or the
+    evaluate fails to converge on a low-spread distribution.
+    """
+    try:
+        return TreeKDE(kernel=kernel_type, bw=bw, norm=norm).fit(curvatures).evaluate(curvatures)
+    except ValueError:
+        return TreeKDE(kernel=kernel_type, bw="silverman", norm=norm).fit(curvatures).evaluate(curvatures)
+
+
+def entropy_kde_renyi(
+    G: nx.classes.graph.Graph,
+    curvature: str = "formanCurvature",
+    order: float | int = 2,
+    kernel_type: str = "gaussian",
+    bw: str | float | int = "ISJ",
+    norm: int = 2,
+) -> float:
+    """
+    KDE-plugin Renyi entropy of order ``order`` on graph curvatures.
+
+    The continuous-density companion of the kNN ``entropy_renyi``:
+    ``H_a = 1/(1 - a) * log E_f[f^(a - 1)]``, estimated from a kernel density. At ``order == 1`` it
+    reduces to the Shannon plugin (``entropy_kde_plugin``).
+
+    Returns
+    -------
+    float
+        Renyi-``order`` entropy estimate, or the contentless sentinel.
+
+    """
+    sentinel, curvatures = _prepare_curvatures(extract_curvatures(G, curvature=curvature))
+    if sentinel is not None:
+        return sentinel
+    fvals = _kde_density_at_samples(curvatures, kernel_type, bw, norm) + 1e-10
+    if abs(order - 1.0) < _ORDER_TOL:
+        return float(-np.mean(np.log(fvals)))
+    integral = float(np.mean(fvals ** (order - 1)))  # E_f[f^(a-1)] = int f^a dx
+    return float(np.log(integral) / (1.0 - order))
+
+
+def entropy_kde_tsallis(
+    G: nx.classes.graph.Graph,
+    curvature: str = "formanCurvature",
+    order: float | int = 2,
+    kernel_type: str = "gaussian",
+    bw: str | float | int = "ISJ",
+    norm: int = 2,
+) -> float:
+    """
+    KDE-plugin Tsallis entropy of order ``order`` on graph curvatures.
+
+    The continuous-density companion of the kNN ``entropy_tsallis``:
+    ``H_q = (1 - E_f[f^(q - 1)]) / (q - 1)``. At ``order == 1`` it reduces to the Shannon plugin.
+
+    Returns
+    -------
+    float
+        Tsallis-``order`` entropy estimate, or the contentless sentinel.
+
+    """
+    sentinel, curvatures = _prepare_curvatures(extract_curvatures(G, curvature=curvature))
+    if sentinel is not None:
+        return sentinel
+    fvals = _kde_density_at_samples(curvatures, kernel_type, bw, norm) + 1e-10
+    if abs(order - 1.0) < _ORDER_TOL:
+        return float(-np.mean(np.log(fvals)))
+    integral = float(np.mean(fvals ** (order - 1)))
+    return float((1.0 - integral) / (order - 1.0))
+
+
+# ---------------------
 # Estimator registry
 # ---------------------
 
@@ -296,6 +514,10 @@ ESTIMATORS: dict[str, Callable] = {
     "kozachenko": entropy_kozachenko,
     "renyi": entropy_renyi,
     "tsallis": entropy_tsallis,
+    "von_neumann": entropy_von_neumann,
+    "histogram": entropy_histogram,
+    "kde_renyi": entropy_kde_renyi,
+    "kde_tsallis": entropy_kde_tsallis,
 }
 
 # The single default estimator shared by compute_entropy and vec_entropy. This is the estimator
@@ -393,6 +615,94 @@ def vec_quantiles(
 ) -> npt.NDArray[float]:
     """Get quantiles for a list of graphs."""
     return np.array([get_quantiles(G, qs=qs, curvature=curvature) for G in graphs])
+
+
+# ---------------------
+# Trace-complexity markers (second-order, on the entropy-over-time series H(t))
+# ---------------------
+#
+# These operate on the 1-D entropy-over-time TRACE produced by vec_entropy, not on a single graph, so
+# they are NOT registry estimators. They mark a phase transition by the complexity of H(t) rather than
+# its level.
+
+
+def permutation_entropy(series: npt.ArrayLike, order: int = 3) -> float:
+    """
+    Permutation entropy of a 1-D series: the Shannon entropy of its ordinal-pattern distribution.
+
+    A monotone series has a single ordinal pattern (entropy 0); an i.i.d. series approaches
+    ``log(order!)``. Use on the windowed entropy trace ``H(t)`` as a second-order transition marker.
+
+    Parameters
+    ----------
+    series : array-like
+        1-D time series (e.g. the windowed entropy trace).
+    order : int
+        Embedding dimension (ordinal-pattern length), ``>= 2``.
+
+    Returns
+    -------
+    float
+        Permutation entropy in nats, or 0.0 if the series is too short.
+
+    """
+    arr = np.asarray(series, dtype=float).ravel()
+    n_patterns = arr.size - order + 1
+    if order < _MIN_DISTINCT or n_patterns < 1:
+        return 0.0
+    pattern_counts: dict[tuple[int, ...], int] = {}
+    for i in range(n_patterns):
+        key = tuple(int(j) for j in np.argsort(arr[i : i + order], kind="stable"))
+        pattern_counts[key] = pattern_counts.get(key, 0) + 1
+    counts = np.array(list(pattern_counts.values()), dtype=float)
+    probs = counts / counts.sum()
+    return float(-np.sum(probs * np.log(probs)))
+
+
+def sample_entropy(series: npt.ArrayLike, m: int = 2, r: float | None = None) -> float:
+    """
+    Sample entropy of a 1-D series: the negative log conditional probability of staying alike.
+
+    ``-log(A / B)``: two subsequences alike for ``m`` points stay alike at the next point
+    (self-matches excluded). Low for regular/periodic series, higher for irregular ones. Use on the
+    windowed entropy trace.
+
+    Parameters
+    ----------
+    series : array-like
+        1-D time series.
+    m : int
+        Embedding length.
+    r : float, optional
+        Chebyshev-distance tolerance; defaults to ``0.2 * std(series)``.
+
+    Returns
+    -------
+    float
+        Sample entropy in nats, or 0.0 if undefined (series too short, or no matches).
+
+    """
+    arr = np.asarray(series, dtype=float).ravel()
+    n = arr.size
+    if n < m + 2:
+        return 0.0
+    tol = 0.2 * float(np.std(arr)) if r is None else float(r)
+    if tol <= 0:
+        return 0.0
+
+    def _count_matches(length: int) -> int:
+        templates = np.array([arr[i : i + length] for i in range(n - length + 1)])
+        total = 0
+        for i in range(len(templates)):
+            dist = np.max(np.abs(templates - templates[i]), axis=1)
+            total += int(np.sum(dist <= tol) - 1)  # exclude the self-match
+        return total
+
+    b = _count_matches(m)
+    a = _count_matches(m + 1)
+    if b == 0 or a == 0:
+        return 0.0
+    return float(-np.log(a / b))
 
 
 # o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o END

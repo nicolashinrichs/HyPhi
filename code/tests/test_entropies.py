@@ -20,6 +20,8 @@ from hyphi.modeling.entropies import (
     vec_quantiles,
 )
 
+# Curvature-distribution estimators that follow the shared degenerate-input contract (von_neumann is
+# excluded: it scores the graph's Laplacian spectrum, not the curvature samples).
 ALL_ESTIMATOR_NAMES = [
     "vasicek",
     "van_es",
@@ -29,6 +31,9 @@ ALL_ESTIMATOR_NAMES = [
     "kozachenko",
     "renyi",
     "tsallis",
+    "histogram",
+    "kde_renyi",
+    "kde_tsallis",
 ]
 
 
@@ -207,7 +212,10 @@ class TestDegenerateInput:
         G = _graph_with_curvatures([2.0] * 30)
         value = float(get_estimator(name)(G))
         assert np.isfinite(value)
-        assert abs(value) < 1.2
+        # bound covers all estimators' constant value (kde_tsallis runs to ~ -1.44 since a
+        # concentrated density has a large integral term); the strict "minimum" property (ordered <=
+        # disordered) is asserted in test_constant_below_disordered.
+        assert abs(value) < 2.0
 
     @pytest.mark.parametrize("name", ALL_ESTIMATOR_NAMES)
     def test_few_distinct_integer_curvatures_are_finite(self, name):
@@ -228,6 +236,99 @@ class TestDegenerateInput:
         ordered = _graph_with_curvatures([3.0] * 60)
         disordered = _graph_with_curvatures(rng.integers(-12, 5, size=60).astype(float).tolist())
         assert float(get_estimator(name)(ordered)) <= float(get_estimator(name)(disordered)) + 1e-9
+
+
+class TestNewEntropyNotions:
+    """Known-answer tests for the entropy notions added for the suite (issue #11)."""
+
+    @pytest.mark.parametrize("n", [4, 5, 10, 20])
+    def test_von_neumann_complete_graph(self, n):
+        """The complete graph K_n has von Neumann entropy exactly log(n - 1)."""
+        from hyphi.modeling.entropies import entropy_von_neumann
+
+        assert entropy_von_neumann(nx.complete_graph(n)) == pytest.approx(np.log(n - 1), abs=1e-9)
+
+    def test_von_neumann_edgeless_is_contentless(self):
+        """An edgeless graph has no spectrum to score: the contentless sentinel."""
+        from hyphi.modeling.entropies import entropy_von_neumann
+
+        assert entropy_von_neumann(nx.empty_graph(5)) == _CONTENTLESS_ENTROPY
+
+    @pytest.mark.parametrize("k", [4, 8, 16])
+    def test_histogram_uniform_recovers_log_k(self, k):
+        """A near-uniform distribution over k integer values has histogram entropy ~ log k."""
+        from hyphi.modeling.entropies import entropy_histogram
+
+        rng = np.random.default_rng(0)
+        G = _graph_with_curvatures(rng.integers(0, k, size=4000).astype(float))
+        assert entropy_histogram(G) == pytest.approx(np.log(k), abs=0.1)
+
+    @pytest.mark.parametrize("k", [16, 32, 64])
+    def test_histogram_wide_integer_range_small_n(self, k):
+        """Regression: integer-edge binning recovers log k even on a WIDE integer range at moderate N,
+        where numpy 'auto' (Sturges floor) would merge integers and saturate the entropy."""
+        from hyphi.modeling.entropies import entropy_histogram
+
+        rng = np.random.default_rng(0)
+        # 50 samples per value over k distinct integers: a wide range that 'auto' under-resolves.
+        values = np.repeat(np.arange(k, dtype=float), 50)
+        rng.shuffle(values)
+        assert entropy_histogram(_graph_with_curvatures(values)) == pytest.approx(np.log(k), abs=0.1)
+
+    def test_kde_renyi_gaussian_matches_analytic(self):
+        """KDE Renyi-2 of a standard Gaussian equals -log(1/(2*sqrt(pi)))."""
+        from hyphi.modeling.entropies import entropy_kde_renyi
+
+        rng = np.random.default_rng(1)
+        G = _graph_with_curvatures(rng.normal(0.0, 1.0, 4000))
+        analytic = -np.log(1.0 / (2.0 * np.sqrt(np.pi)))
+        assert entropy_kde_renyi(G, order=2) == pytest.approx(analytic, abs=0.1)
+
+    def test_kde_tsallis_gaussian_matches_analytic(self):
+        """KDE Tsallis-2 of a standard Gaussian equals 1 - 1/(2*sqrt(pi))."""
+        from hyphi.modeling.entropies import entropy_kde_tsallis
+
+        rng = np.random.default_rng(2)
+        G = _graph_with_curvatures(rng.normal(0.0, 1.0, 4000))
+        analytic = 1.0 - 1.0 / (2.0 * np.sqrt(np.pi))
+        assert entropy_kde_tsallis(G, order=2) == pytest.approx(analytic, abs=0.1)
+
+    def test_kde_renyi_order_one_is_shannon(self):
+        """At order 1 the KDE Renyi estimator reduces to the Shannon plugin."""
+        from hyphi.modeling.entropies import entropy_kde_plugin, entropy_kde_renyi
+
+        rng = np.random.default_rng(3)
+        G = _graph_with_curvatures(rng.normal(0.0, 1.0, 1000))
+        assert entropy_kde_renyi(G, order=1) == pytest.approx(entropy_kde_plugin(G), abs=1e-9)
+
+    def test_permutation_entropy_bounds(self):
+        """Monotone series -> 0; i.i.d. series -> ~log(order!)."""
+        from hyphi.modeling.entropies import permutation_entropy
+
+        rng = np.random.default_rng(4)
+        assert permutation_entropy(np.arange(50.0), order=3) == pytest.approx(0.0, abs=1e-9)
+        assert permutation_entropy(rng.normal(size=4000), order=3) == pytest.approx(np.log(6), abs=0.05)
+
+    def test_sample_entropy_regular_vs_irregular(self):
+        """Constant series -> 0; an irregular series scores higher than a regular one."""
+        from hyphi.modeling.entropies import sample_entropy
+
+        rng = np.random.default_rng(5)
+        assert sample_entropy(np.ones(100)) == 0.0
+        regular = sample_entropy(np.tile([0.0, 1.0], 100))
+        irregular = sample_entropy(rng.normal(size=300))
+        assert irregular > regular
+
+    def test_new_estimators_finite_across_transition(self):
+        """All four new estimators are finite across a real small-world rewiring sweep."""
+        from hyphi.modeling.graph_curvatures import compute_frc_vec
+        from hyphi.simulation.graph_simulations import gen_tv_sw
+
+        _, graphs = gen_tv_sw(80, 8, 8, -4, 0)
+        curvature_graphs = compute_frc_vec(graphs)
+        for name in ("von_neumann", "histogram", "kde_renyi", "kde_tsallis"):
+            values = np.array([float(get_estimator(name)(g)) for g in curvature_graphs])
+            assert np.all(np.isfinite(values))
 
 
 # o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o END
