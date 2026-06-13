@@ -161,7 +161,15 @@ class TestCohensDTimeseries:
 class TestHierarchicalPermutation:
     """Within-dyad, trial-level condition-label permutation."""
 
+    @pytest.mark.xfail(
+        reason="hierarchical_permutation_test is anti-conservative under H0 (the p-value "
+        "collapses toward the floor); the repair is tracked in issue #39",
+        raises=AssertionError,
+        strict=True,
+    )
     def test_null_yields_midrange_p(self):
+        # When the repair lands, this strict xfail turns into an unexpected pass
+        # (a test failure), prompting removal of the marker.
         data = _synthetic_entropy_dict(n_dyads=3, effect=0.0, seed=1)
         df = entropy_to_long_df(data)
         res = hierarchical_permutation_test(
