@@ -53,7 +53,11 @@ def _as_rng(rng: np.random.Generator | None) -> np.random.Generator:
 
 
 def _random_derangement(n: int, rng: np.random.Generator, max_tries: int = 100) -> np.ndarray:
-    """Random derangement of ``[0, n)`` — a permutation with no fixed points."""
+    """
+    Random derangement of ``[0, n)`` — a permutation with no fixed points.
+
+    For ``n < 2`` no derangement exists, so the identity ``arange(n)`` is returned (``[]`` or ``[0]``).
+    """
     if n < 2:
         return np.arange(n)
     base = np.arange(n)
@@ -61,7 +65,15 @@ def _random_derangement(n: int, rng: np.random.Generator, max_tries: int = 100) 
         perm = rng.permutation(n)
         if not np.any(perm == base):
             return perm
-    # Rejection sampling exhausted — fall back to a deterministic rotation.
+    # Rejection sampling exhausted. Fall back to a deterministic rotation and warn: the
+    # rotation is a valid derangement but not a uniformly random one, so the resulting null
+    # is slightly biased. In practice this only triggers for pathologically small n.
+    logger.warning(
+        "_random_derangement: no random derangement found in %d tries for n=%d; "
+        "falling back to a deterministic rotation (surrogate not uniformly random).",
+        max_tries,
+        n,
+    )
     return np.roll(base, 1)
 
 
@@ -104,9 +116,12 @@ def phase_randomize(
         fft_vals = np.fft.rfft(arr[ch])
         amp = np.abs(fft_vals)
         random_phases = rng.uniform(0.0, 2 * np.pi, size=len(fft_vals))
-        random_phases[0] = 0.0  # preserve DC
+        # Preserve the DC (and, for even T, Nyquist) coefficient verbatim, sign included: these are
+        # real, so their angle is 0 or pi. Using np.angle (not 0.0) keeps a negative mean negative;
+        # forcing the phase to 0 would flip the sign of any negative-mean / negative-Nyquist channel.
+        random_phases[0] = np.angle(fft_vals[0])
         if T % 2 == 0:
-            random_phases[-1] = 0.0  # preserve Nyquist bin (real)
+            random_phases[-1] = np.angle(fft_vals[-1])
         out[ch] = np.fft.irfft(amp * np.exp(1j * random_phases), n=T)
 
     return out[0] if one_d else out
@@ -276,6 +291,12 @@ def condition_label_shuffle_within_dyad(
         sub_cond = cond[mask]
         uniq_trials, first_idx = np.unique(sub_trials, return_index=True)
         trial_cond = sub_cond[first_idx]
+        # Each (dyad, trial) block must carry one condition; otherwise taking the first row's label
+        # would silently drop the others and not preserve the marginal condition counts.
+        for t in uniq_trials:
+            if np.unique(sub_cond[sub_trials == t]).size > 1:
+                msg = f"dyad {d} trial {t} has multiple conditions; each trial must carry exactly one."
+                raise ValueError(msg)
         perm = rng.permutation(len(uniq_trials))
         mapping = dict(zip(uniq_trials, trial_cond[perm]))
         cond[mask] = np.array([mapping[t] for t in sub_trials])
