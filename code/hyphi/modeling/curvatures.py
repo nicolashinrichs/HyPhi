@@ -6,23 +6,33 @@ Years: 2024
 """
 
 # %% Import
+import warnings
 from functools import wraps
 
 import networkx as nx
 import numpy as np
 
 try:
-    import plotly.graph_objects as go  # TODO: need to be added as optional dependency
+    # plotly is an optional dependency; install it to enable graph visualisation functions.
+    import plotly.graph_objects as go
 except ModuleNotFoundError:
     go = None
-from GraphRicciCurvature.FormanRicci import FormanRicci  # noqa: F401
+from GraphRicciCurvature.FormanRicci import FormanRicci
 from GraphRicciCurvature.OllivierRicci import OllivierRicci
 from scipy import linalg
-
-# from scipy.spatial.distance import pdist  # noqa: ERA001
 from scipy.stats import spearmanr
 from sklearn.metrics.pairwise import cosine_similarity, euclidean_distances
 from sklearn.neighbors import NearestNeighbors
+
+# %% Module-level constants
+
+# Adjacency-method selectors used in adj_matrix()
+_ADJ_METHOD_COSINE = 2
+_ADJ_METHOD_SPEARMAN = 3
+_ADJ_METHOD_PDIST = 4
+
+# Minimum adjacency degree to annotate a node label in graph_vis_direct()
+_ANNOTATION_DEGREE_THRESHOLD = 15
 
 # %% Functions >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
@@ -56,10 +66,10 @@ def adj_matrix(data, method: int = 1):
     """
     if method == 1:
         return np.round(euclidean_distances(data, data), decimals=3)
-    if method == 2:  # noqa: PLR2004
+    if method == _ADJ_METHOD_COSINE:
         cos_sim = cosine_similarity(data)
         return np.round(np.ones_like(cos_sim) - cos_sim, decimals=3)
-    if method == 3:  # noqa: PLR2004
+    if method == _ADJ_METHOD_SPEARMAN:
         n = data.shape[0]
         distance_matrix = np.zeros((n, n))
         for i in range(n):
@@ -67,13 +77,26 @@ def adj_matrix(data, method: int = 1):
                 rho, _ = spearmanr(data[i], data[j])
                 distance_matrix[i, j] = distance_matrix[j, i] = 1 - abs(rho)
         return np.round(distance_matrix, decimals=3)
-    if method == 4:
+    if method == _ADJ_METHOD_PDIST:
         raise NotImplementedError("Method 4 ('Euclidean Distance with pdist function') is not implemented yet.")
     return None
 
 
 def compute_ricci_curvature(adj_mat: np.ndarray, threshold: float = 0.5, alpha: float = 0.5):
-    """Compute the curvature on the distance matrix based on the adjacency matrix and threshold."""
+    """
+    Compute Ollivier-Ricci curvature (ORC) from a thresholded adjacency matrix.
+
+    This sets every edge weight to 1, so ORC here runs on the unweighted graph. That is an
+    incidental implementation choice (Ollivier curvature is defined for weighted graphs too),
+    NOT the reason ORC and Forman-Ricci magnitudes differ. The two are not numerically
+    comparable in absolute terms because they are different kinds of quantity: ORC is a
+    normalized optimal-transport ratio ``1 - W1(m_u, m_v) / d(u, v)`` bounded above by 1; its
+    lower bound is ``-2(1 - alpha)`` for random-walk laziness ``alpha``, so at this function's
+    default ``alpha=0.5`` it lies in [-1, 1] (intensive). By contrast ``compute_forman_curvature``
+    returns an unbounded algebraic sum (degree- and weight-driven, extensive). To compare the two, do not
+    compare raw magnitudes: min-max normalize each to compare relative-intensity profiles, or
+    rank the edges and use a Spearman rank-order correlation.
+    """
     adjacency_matrix = np.copy(adj_mat)
     adjacency_matrix[adj_mat > threshold] = 0
     # in this setting we don't have weight attribute for edges, we need to manually attribute the values to edges
@@ -88,7 +111,15 @@ def compute_ricci_curvature(adj_mat: np.ndarray, threshold: float = 0.5, alpha: 
 
 
 def compute_forman_curvature(adj_mat: np.ndarray, threshold: float = 0.5):
-    """Compute Forman curvature."""
+    """
+    Compute Forman-Ricci curvature (FRC) from a thresholded adjacency matrix.
+
+    This keeps the raw (post-threshold) adjacency values as edge weights, so FRC here runs on
+    the weighted graph. Like the weight choice in ``compute_ricci_curvature`` this is incidental
+    (Forman curvature is defined for unweighted graphs too). FRC is an unbounded algebraic sum,
+    so its magnitudes are not directly comparable to the normalized Ollivier-Ricci ratio; see
+    the note in ``compute_ricci_curvature`` for how to compare them (min-max normalize or rank).
+    """
     adjacency_matrix = np.copy(adj_mat)
     adjacency_matrix[adj_mat > threshold] = 0
     G_generated: nx.Graph = nx.from_numpy_array(adjacency_matrix)  # noqa: N806
@@ -199,7 +230,7 @@ def graph_vis_direct(graph: nx.Graph) -> None:
 
     annotations = []
     for node, adjacencies in graph.adjacency():
-        if len(adjacencies) > 15:
+        if len(adjacencies) > _ANNOTATION_DEGREE_THRESHOLD:
             x, y = pos[node]
             annotations.append(
                 dict(
@@ -242,7 +273,7 @@ def visualize_dist_distribution(dist_matrix: np.ndarray) -> None:
     It shows the histogram of the distance distribution
     and within illustrates the mean, mode, and standard deviation of the distribution.
     """
-    upper_triangle_indices = np.triu_indices(100)
+    upper_triangle_indices = np.triu_indices(dist_matrix.shape[0])
     distances = dist_matrix[upper_triangle_indices]
 
     fig = go.Figure(data=[go.Histogram(x=distances)])
@@ -448,7 +479,7 @@ def sim_graph(data: np.ndarray, k: int = 5, weight: bool = True):
     Create a graph embedding with k nearest neighbors from dissimilarity or distance matrix.
 
     :param data: data (dissimilarity, distance measures)
-    :param k: shows the number of neighbors [default: k=10].
+    :param k: number of nearest neighbors [default: k=5].
     :param weight: selective option for weighted or unweighted graph
     :return: generated graph for nearest neighbors, distance matrix
 
@@ -464,25 +495,44 @@ def sim_graph(data: np.ndarray, k: int = 5, weight: bool = True):
     distance_matrix = np.zeros((n, n))
     for i, neighbors in enumerate(nn_indices):
         for neighbor, distance in zip(neighbors, nn_distances[i], strict=True):
-            if i != neighbor:
-                graph.add_edge(i, neighbor, weight=distance)
-            if weight:
-                graph.add_edge(i, neighbor, weight=distance)
-                distance_matrix[i, neighbor] = distance
-            else:
-                graph.add_edge(i, neighbor, weight=1)
-                distance_matrix[i, neighbor] = distance
+            if i == neighbor:
+                continue  # skip self-loops (a node listing itself among its neighbours)
+            # Add each edge once: weighted by the distance, or unweighted (weight 1) when
+            # weight is False. The distance is always recorded in distance_matrix.
+            graph.add_edge(i, neighbor, weight=distance if weight else 1)
+            distance_matrix[i, neighbor] = distance
     distance_matrix = np.round(distance_matrix, decimals=3)
     return graph, distance_matrix
 
 
 def adaptive_neighborhood_graph(X, k_min=5, k_max=50, density_method="knn"):
     """
-    Compute adapative k and distnaces.
+    Compute an adaptive-k neighborhood graph and distances.
 
-    This function is based on the distance of the data points, and the density is defined as the inverse of the distance
-    weight= non : no weight is considered for the edges, and all have the similar value 1
-    weight= distance: the attribute weight to each neighbor is equal to the Euclidean distance between the nodes
+    The per-node neighbor count is scaled by local density (the inverse of the distance to the
+    k_max-th neighbor). All edge weights are set to 1 regardless of the actual Euclidean
+    distance; the distance is stored as a separate ``"distance"`` edge attribute.
+
+    Parameters
+    ----------
+    X : np.ndarray
+        Data array of shape (n_samples, n_features).
+    k_min : int, optional
+        Minimum number of neighbors per node. Default is 5.
+    k_max : int, optional
+        Maximum number of neighbors per node (also used to estimate density). Default is 50.
+    density_method : str, optional
+        Method for computing local density. Only ``"knn"`` is supported.
+
+    Returns
+    -------
+    G : nx.Graph
+        The adaptive-k neighborhood graph (unit edge weights, distance stored separately).
+    distances : np.ndarray
+        The k_max-nearest-neighbor distances per node.
+    adaptive_k : np.ndarray
+        The per-node neighbor count chosen by local density.
+
     """
     n_samples = X.shape[0]
 
@@ -517,12 +567,39 @@ def adaptive_neighborhood_graph(X, k_min=5, k_max=50, density_method="knn"):
 
 
 def compute_laplacian_matrix(graph, g_weight="ricciCurvature"):
-    """Compute the Laplacian matrix of a given weighted graph."""
+    """
+    Compute the Laplacian matrix of a graph, weighted by an explicit edge attribute.
+
+    Parameters
+    ----------
+    graph : nx.Graph
+        Input graph.
+    g_weight : str
+        Edge attribute used as the weight. The special value ``"non"`` computes the
+        unweighted Laplacian. Note that ``"ricciCurvature"`` and ``"formanCurvature"`` are
+        curvature OUTPUTS, not connectivity weights, so weighting by one of them is only
+        meaningful on a curvature-annotated graph. If any edge lacks the requested attribute,
+        NetworkX silently treats that edge's weight as 1; this function warns when none OR only
+        some edges carry it, so the silent fallback to (partly) unit weights is visible.
+
+    Returns
+    -------
+    np.ndarray
+        The Laplacian matrix.
+
+    """
     if g_weight == "non":
-        laplacian_matrix = nx.laplacian_matrix(graph).toarray()
-    else:
-        laplacian_matrix = nx.laplacian_matrix(graph, weight=g_weight).toarray()
-    return laplacian_matrix
+        return nx.laplacian_matrix(graph).toarray()
+    n_edges = graph.number_of_edges()
+    n_missing = sum(1 for _, _, data in graph.edges(data=True) if g_weight not in data)
+    if n_edges > 0 and n_missing > 0:
+        scope = "no edge carries" if n_missing == n_edges else f"{n_missing} of {n_edges} edges lack"
+        warnings.warn(
+            f"compute_laplacian_matrix: {scope} the attribute {g_weight!r}; "
+            "NetworkX treats those edges as weight 1, so the Laplacian is (partly) unweighted.",
+            stacklevel=2,
+        )
+    return nx.laplacian_matrix(graph, weight=g_weight).toarray()
 
 
 def heat_kernel_distance(L1, L2):
