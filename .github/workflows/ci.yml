@@ -39,6 +39,26 @@ jobs:
       - name: Check formatting
         run: uv run --extra develop ruff format --check code/hyphi code/tests
 
+      # Hard gate: no leaked personal data. Committed notebooks must have cleared outputs (executed
+      # cells leak the runner's environment / absolute home paths), and no tracked text may contain an
+      # absolute personal home path (use relative paths). Guards against re-introducing the kind of
+      # leak the sanitize-config-paths PR removed.
+      - name: No leaked personal data
+        run: |
+          fail=0
+          for nb in $(git ls-files '*.ipynb'); do
+            if ! python3 -c "import json,sys; cells=json.load(open(sys.argv[1]))['cells']; sys.exit(1 if any(c.get('outputs') for c in cells if c.get('cell_type')=='code') else 0)" "$nb"; then
+              echo "::error file=$nb::notebook has non-empty cell outputs; clear them (e.g. jupyter nbconvert --clear-output) before committing"
+              fail=1
+            fi
+          done
+          if git grep -nIE '(/Users/|/home/|/media/|/raven/|/scratch/)[A-Za-z]' -- ':!*.lock' ':!data'; then
+            echo "::error::absolute personal path found above; use a relative path"
+            fail=1
+          fi
+          [ "$fail" = 0 ] && echo "clean: no leaked personal data"
+          exit "$fail"
+
       # Hard gate: every module must import (catches missing deps / broken
       # top-level code that the test suite might not exercise).
       - name: Import every module
