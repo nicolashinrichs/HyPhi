@@ -11,7 +11,7 @@ import numpy as np
 import pytest
 from hyphi.analyses import compute_entropy
 from hyphi.modeling.entropies import (
-    _DEGENERATE_ENTROPY,
+    _CONTENTLESS_ENTROPY,
     entropy_kde_plugin,
     entropy_vasicek,
     get_estimator,
@@ -178,25 +178,56 @@ class TestEstimatorRegistry:
 
 
 class TestDegenerateInput:
-    """Every estimator returns the documented sentinel on degenerate input rather than raising."""
+    """Degenerate and tied input is finite (no -inf/NaN/raise): contentless -> 0.0, constant -> ~0."""
 
     @pytest.mark.parametrize("name", ALL_ESTIMATOR_NAMES)
-    def test_constant_curvatures_return_sentinel(self, name):
-        """A constant (zero-variance) curvature distribution returns the sentinel."""
-        G = _graph_with_curvatures([2.0, 2.0, 2.0, 2.0, 2.0])
-        assert get_estimator(name)(G) == _DEGENERATE_ENTROPY
-
-    @pytest.mark.parametrize("name", ALL_ESTIMATOR_NAMES)
-    def test_single_value_returns_sentinel(self, name):
-        """A single-edge graph (one curvature value) returns the sentinel."""
+    def test_single_value_is_contentless(self, name):
+        """A single-edge graph (one curvature value) has no distribution: returns the 0.0 sentinel."""
         G = _graph_with_curvatures([1.0])
-        assert get_estimator(name)(G) == _DEGENERATE_ENTROPY
+        assert get_estimator(name)(G) == _CONTENTLESS_ENTROPY
 
     @pytest.mark.parametrize("name", ALL_ESTIMATOR_NAMES)
-    def test_empty_returns_sentinel(self, name):
-        """An edgeless graph (no curvatures) returns the sentinel."""
+    def test_empty_is_contentless(self, name):
+        """An edgeless graph (no curvatures) has no distribution: returns the 0.0 sentinel."""
         G = nx.Graph()
-        assert get_estimator(name)(G) == _DEGENERATE_ENTROPY
+        assert get_estimator(name)(G) == _CONTENTLESS_ENTROPY
+
+    @pytest.mark.parametrize("name", ALL_ESTIMATOR_NAMES)
+    @pytest.mark.parametrize("n_samples", [2, 3, 4])
+    def test_too_few_samples_are_contentless(self, name, n_samples):
+        """Fewer than k + 1 = 5 samples is too few for the kNN estimators (which would raise/return
+        inf); the guard returns the 0.0 sentinel for every estimator rather than raising."""
+        G = _graph_with_curvatures([1.0 + i for i in range(n_samples)])
+        assert get_estimator(name)(G) == _CONTENTLESS_ENTROPY
+
+    @pytest.mark.parametrize("name", ALL_ESTIMATOR_NAMES)
+    def test_constant_curvatures_read_as_minimum(self, name):
+        """A constant (zero-variance) distribution dithers to a unit uniform, so entropy reads ~0
+        (the low end), not the high extreme and not -inf."""
+        G = _graph_with_curvatures([2.0] * 30)
+        value = float(get_estimator(name)(G))
+        assert np.isfinite(value)
+        assert abs(value) < 1.2
+
+    @pytest.mark.parametrize("name", ALL_ESTIMATOR_NAMES)
+    def test_few_distinct_integer_curvatures_are_finite(self, name):
+        """Regression for the #28 near-constant gap: a few-distinct, heavily-tied integer curvature
+        distribution (what near-lattice Forman-Ricci graphs produce across the small-world
+        transition) must be finite for every estimator, not -inf/NaN/raise."""
+        rng = np.random.default_rng(0)
+        curvatures = rng.choice([-9.0, -8.0, -7.0], size=60).tolist()
+        G = _graph_with_curvatures(curvatures)
+        value = float(get_estimator(name)(G))
+        assert np.isfinite(value)
+
+    @pytest.mark.parametrize("name", ALL_ESTIMATOR_NAMES)
+    def test_constant_below_disordered(self, name):
+        """The dithered constant (ordered) reads no higher than a genuinely disordered distribution,
+        so the entropy-over-time transition peak is preserved (ordered = minimum)."""
+        rng = np.random.default_rng(1)
+        ordered = _graph_with_curvatures([3.0] * 60)
+        disordered = _graph_with_curvatures(rng.integers(-12, 5, size=60).astype(float).tolist())
+        assert float(get_estimator(name)(ordered)) <= float(get_estimator(name)(disordered)) + 1e-9
 
 
 # o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o END
