@@ -14,14 +14,18 @@ Years: 2026
 """
 
 # %% Import
+import logging
 from collections import Counter
 
+import networkx as nx
 import numpy as np
 import pytest
 from hyphi.null_models import (
     _random_derangement,
     circular_time_shift,
     condition_label_shuffle_within_dyad,
+    configuration_model_null,
+    degree_preserving_rewire,
     dyad_label_shuffle,
     dyad_subject_swap,
     generate_surrogate_stack,
@@ -301,6 +305,110 @@ class TestNullModelHardening:
         cond = np.array(["A", "B", "A", "B"])  # trial 0 carries both A and B -> invalid
         with pytest.raises(ValueError, match="multiple conditions"):
             condition_label_shuffle_within_dyad(cond, dyad, trial_labels=trial, rng=np.random.default_rng(0))
+
+
+# %% Tests for intra-brain (single-graph) nulls >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
+
+
+class TestDegreePreservingRewire:
+    """The degree-preserving rewire keeps every node's degree and is reproducible."""
+
+    def test_preserves_degree_sequence(self):
+        """Double-edge swaps keep the degree of every node fixed."""
+        graph = nx.watts_strogatz_graph(20, 4, 0.3, seed=0)
+        rewired = degree_preserving_rewire(graph, rng=np.random.default_rng(0))
+        before = sorted(d for _, d in graph.degree())
+        after = sorted(d for _, d in rewired.degree())
+        assert before == after
+
+    def test_does_not_mutate_input(self):
+        """The input graph is left untouched."""
+        graph = nx.watts_strogatz_graph(20, 4, 0.3, seed=0)
+        edges_before = set(graph.edges())
+        degree_preserving_rewire(graph, rng=np.random.default_rng(1))
+        assert set(graph.edges()) == edges_before
+
+    def test_reproducible(self):
+        """Same seed gives the same rewired graph."""
+        graph = nx.watts_strogatz_graph(20, 4, 0.3, seed=0)
+        a = degree_preserving_rewire(graph, rng=np.random.default_rng(7))
+        b = degree_preserving_rewire(graph, rng=np.random.default_rng(7))
+        assert set(a.edges()) == set(b.edges())
+
+    def test_tiny_graph_is_noop(self):
+        """A graph too small to swap is returned unchanged (a distinct copy, not the input object)."""
+        graph = nx.Graph()
+        graph.add_edge(0, 1)
+        out = degree_preserving_rewire(graph, rng=np.random.default_rng(0))
+        assert set(out.edges()) == {(0, 1)}
+        assert out is not graph
+
+    def test_complete_graph_warns_not_crashes(self, caplog):
+        """A complete graph has a unique degree realisation, so it must warn and return a copy, not crash."""
+        graph = nx.complete_graph(6)
+        with caplog.at_level(logging.WARNING):
+            out = degree_preserving_rewire(graph, rng=np.random.default_rng(0))
+        assert out is not graph
+        assert set(out.edges()) == set(graph.edges())  # unrewired copy
+        assert "no power" in caplog.text
+
+    def test_degenerate_graph_warns(self, caplog):
+        """A graph past the size guard with no valid swap returns the input and warns (no silent degenerate null)."""
+        graph = nx.path_graph(4)
+        graph.add_nodes_from([4, 5, 6])  # isolated nodes -> 7 nodes, 3 edges, no valid swap
+        with caplog.at_level(logging.WARNING):
+            out = degree_preserving_rewire(graph, rng=np.random.default_rng(0))
+        assert set(out.edges()) == set(graph.edges())
+        assert "no power" in caplog.text
+
+    def test_rejects_directed_graph(self):
+        """A directed graph is out of contract and rejected with a clear error."""
+        graph = nx.DiGraph()
+        graph.add_edges_from([(0, 1), (1, 2), (2, 0), (2, 3)])
+        with pytest.raises(TypeError, match="undirected simple graph"):
+            degree_preserving_rewire(graph, rng=np.random.default_rng(0))
+
+    def test_rejects_multigraph(self):
+        """A multigraph is out of contract and rejected with a clear error."""
+        graph = nx.MultiGraph()
+        graph.add_edges_from([(0, 1), (1, 2), (2, 3), (0, 3)])
+        with pytest.raises(TypeError, match="undirected simple graph"):
+            degree_preserving_rewire(graph, rng=np.random.default_rng(0))
+
+    def test_dense_feasible_graph_not_falsely_flagged_no_power(self, caplog):
+        """A dense but rewireable graph is a valid randomised null; it must not be mislabelled 'no power'."""
+        graph = nx.erdos_renyi_graph(40, 0.8, seed=0)
+        with caplog.at_level(logging.WARNING):
+            out = degree_preserving_rewire(graph, rng=np.random.default_rng(0))
+        assert sorted(d for _, d in out.degree()) == sorted(d for _, d in graph.degree())
+        assert set(out.edges()) != set(graph.edges())  # genuinely randomised
+        assert "no power" not in caplog.text
+
+
+class TestConfigurationModelNull:
+    """The configuration-model null matches the node set and is degree-bounded and reproducible."""
+
+    def test_same_node_count_and_degree_bounded(self):
+        """The null has the same nodes and no more total degree than the original."""
+        graph = nx.watts_strogatz_graph(30, 6, 0.2, seed=0)
+        null = configuration_model_null(graph, rng=np.random.default_rng(0))
+        assert null.number_of_nodes() == graph.number_of_nodes()
+        # Self-loops and parallel edges are removed, so total degree cannot exceed the target.
+        assert sum(d for _, d in null.degree()) <= sum(d for _, d in graph.degree())
+        assert nx.number_of_selfloops(null) == 0
+
+    def test_reproducible(self):
+        """Same seed gives the same configuration-model graph."""
+        graph = nx.watts_strogatz_graph(30, 6, 0.2, seed=0)
+        a = configuration_model_null(graph, rng=np.random.default_rng(3))
+        b = configuration_model_null(graph, rng=np.random.default_rng(3))
+        assert set(a.edges()) == set(b.edges())
+
+    def test_preserves_node_labels(self):
+        """The null keeps the input node identities (not relabeled to 0..n-1)."""
+        graph = nx.relabel_nodes(nx.watts_strogatz_graph(8, 4, 0.3, seed=0), {i: f"ch{i}" for i in range(8)})
+        null = configuration_model_null(graph, rng=np.random.default_rng(0))
+        assert set(null.nodes()) == set(graph.nodes())
 
 
 # o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o END
