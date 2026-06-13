@@ -10,14 +10,21 @@ import numpy as np
 
 def laplace(matrix: np.ndarray):
     """
-    Function calculating eigenvalues of a Laplacian of a given matrix
+    Compute the eigendecomposition of the graph Laplacian of an adjacency matrix.
 
-    input
-    Adjacency matrix
+    Parameters
+    ----------
+    matrix : np.ndarray
+        Square adjacency matrix of the graph.
 
     Returns
     -------
-    eigenvalues, eigenvectors, and Laplacian matrix
+    eigenvalues : np.ndarray
+        Eigenvalues of the Laplacian ``L = D - A``, in ascending order.
+    eigenvectors : np.ndarray
+        The corresponding eigenvectors as columns.
+    L : np.ndarray
+        The Laplacian matrix itself.
 
     """
     # Calculating degrees of nodes
@@ -36,20 +43,34 @@ def laplace(matrix: np.ndarray):
 
 def eigen_in_time(matrices: np.ndarray, plot=False, Fs=1):
     """
-    This function takes multiple matrices as input and finds second to smallest eigenvalue of each.
-    Fs - sampling frequency
+    Track the algebraic connectivity of a sequence of matrices over time.
+
+    Parameters
+    ----------
+    matrices : np.ndarray
+        Sequence of square adjacency matrices, one per time step.
+    plot : bool, optional
+        If True, plot ``lambdas`` and ``gaps`` against a time axis built from ``Fs``.
+        Default is False.
+    Fs : int or float, optional
+        Sampling frequency used to construct the time axis for plotting. Default is 1.
 
     Returns
     -------
-    lambdas - second to smallest eigenvalue of each matrix
-    gaps - moduli of two largest eigenvalues
+    lambdas : np.ndarray
+        Second-smallest Laplacian eigenvalue of each matrix (the algebraic
+        connectivity, or Fiedler value).
+    gaps : np.ndarray
+        Signed gap ``eigenvalues[0] - eigenvalues[1]`` for each matrix. Because the
+        eigenvalues are sorted ascending this is non-positive (``<= 0``); its sign
+        convention is under review (see issue #70).
 
     """
     lambdas = np.zeros(len(matrices))
-    gaps = np.zeros(len(matrices))  # gap between smallest and largest eigenvalues
+    gaps = np.zeros(len(matrices))  # signed gap between the two smallest eigenvalues (<= 0); see issue #70
 
     for i, matrix_item in enumerate(matrices):
-        eigenvalues, eigenvectors, _ = laplace(matrix_item)
+        eigenvalues, _, _ = laplace(matrix_item)
         lambdas[i] = eigenvalues[1]
         gaps[i] = eigenvalues[0] - eigenvalues[1]
 
