@@ -14,9 +14,12 @@ Years: 2026
 """
 
 # %% Import
+from collections import Counter
+
 import numpy as np
 import pytest
 from hyphi.null_models import (
+    _random_derangement,
     circular_time_shift,
     condition_label_shuffle_within_dyad,
     dyad_label_shuffle,
@@ -195,6 +198,109 @@ class TestGenerateSurrogateStack:
     def test_unknown_method_raises(self):
         with pytest.raises(ValueError, match="method must be one of"):
             generate_surrogate_stack(np.zeros((2, 8)), method="bogus", n_surrogates=1)
+
+
+# %% Tests for _random_derangement >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
+
+
+class TestRandomDerangement:
+    """The derangement helper has no fixed points, handles tiny n, and warns on fallback."""
+
+    def test_is_a_derangement(self):
+        """A derangement of [0, n) leaves no index in place."""
+        rng = np.random.default_rng(0)
+        perm = _random_derangement(8, rng)
+        assert not np.any(perm == np.arange(8))
+        assert sorted(perm) == list(range(8))  # still a permutation
+
+    def test_small_n_returns_identity(self):
+        """For n < 2 there is no derangement, so the helper returns the identity."""
+        rng = np.random.default_rng(0)
+        assert list(_random_derangement(0, rng)) == []
+        assert list(_random_derangement(1, rng)) == [0]
+
+    def test_fallback_warns_and_still_deranges(self, caplog):
+        """Exhausting rejection sampling (max_tries=0) warns and falls back to a rotation."""
+        rng = np.random.default_rng(0)
+        with caplog.at_level("WARNING"):
+            perm = _random_derangement(4, rng, max_tries=0)
+        assert "falling back to a deterministic rotation" in caplog.text
+        # The rotation is still a valid derangement (no fixed points).
+        assert not np.any(perm == np.arange(4))
+
+
+# %% Tests for degenerate phase_randomize input >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
+
+
+class TestPhaseRandomizeDegenerate:
+    """phase_randomize stays finite and shape-preserving on degenerate channels."""
+
+    def test_constant_channel_preserves_power_spectrum(self):
+        """A constant channel has all power in DC; the surrogate preserves that and is finite."""
+        signal = np.full((1, 64), 5.0)
+        out = phase_randomize(signal, rng=np.random.default_rng(0))
+        assert out.shape == signal.shape
+        assert np.all(np.isfinite(out))
+        # Power spectrum (|rfft|) is the phase-randomization invariant, even for a constant.
+        np.testing.assert_allclose(np.abs(np.fft.rfft(out[0])), np.abs(np.fft.rfft(signal[0])), atol=1e-8)
+
+    def test_constant_channel_alongside_varying_channel(self):
+        """A degenerate channel does not corrupt a normal channel processed in the same call."""
+        rng = np.random.default_rng(1)
+        varying = rng.standard_normal(128)
+        signal = np.stack([np.full(128, 2.0), varying])
+        out = phase_randomize(signal, rng=np.random.default_rng(2))
+        assert out.shape == signal.shape
+        assert np.all(np.isfinite(out))
+        np.testing.assert_allclose(np.abs(np.fft.rfft(out[1])), np.abs(np.fft.rfft(varying)), atol=1e-8)
+
+
+# %% Null-model hardening >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
+
+
+class TestNullModelHardening:
+    """Spectral DC sign, derangement uniformity, never-identity, stack independence, trial homogeneity."""
+
+    def test_phase_randomize_preserves_negative_mean(self):
+        """The DC component keeps its sign: a negative-mean channel does not flip to positive."""
+        constant = phase_randomize(np.full((1, 64), -5.0), rng=np.random.default_rng(0))
+        assert constant[0].mean() == pytest.approx(-5.0, abs=1e-8)
+        rng = np.random.default_rng(1)
+        varying = rng.standard_normal(128) - 3.0
+        surrogate = phase_randomize(varying, rng=np.random.default_rng(2))
+        assert surrogate.mean() == pytest.approx(varying.mean(), abs=1e-8)
+
+    def test_derangement_is_approximately_uniform(self):
+        """Rejection-sampled derangements are ~uniform over the 9 derangements of [0, 4)."""
+        rng = np.random.default_rng(0)
+        counts = Counter(tuple(_random_derangement(4, rng).tolist()) for _ in range(9000))
+        assert len(counts) == 9  # all 9 derangements appear
+        assert min(counts.values()) > 700  # ~1000 expected each; generous band, deterministic seed
+        assert max(counts.values()) < 1300
+
+    def test_circular_time_shift_never_identity(self):
+        """A circular shift (min_shift >= 1) is never the original signal."""
+        rng = np.random.default_rng(0)
+        sig = rng.standard_normal((3, 32))
+        for _ in range(50):
+            assert not np.array_equal(circular_time_shift(sig, min_shift=1, rng=rng), sig)
+
+    def test_surrogate_stack_draws_are_independent(self):
+        """A surrogate stack holds distinct draws, not one surrogate repeated."""
+        rng = np.random.default_rng(0)
+        sig = rng.standard_normal((2, 64))
+        stack = generate_surrogate_stack(sig, method="phase_randomize", n_surrogates=5, rng=rng)
+        for i in range(len(stack)):
+            for j in range(i + 1, len(stack)):
+                assert not np.allclose(stack[i], stack[j])
+
+    def test_condition_shuffle_rejects_heterogeneous_trial(self):
+        """A (dyad, trial) block carrying multiple conditions is rejected (would lose labels)."""
+        dyad = np.array([0, 0, 0, 0])
+        trial = np.array([0, 0, 1, 1])
+        cond = np.array(["A", "B", "A", "B"])  # trial 0 carries both A and B -> invalid
+        with pytest.raises(ValueError, match="multiple conditions"):
+            condition_label_shuffle_within_dyad(cond, dyad, trial_labels=trial, rng=np.random.default_rng(0))
 
 
 # o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o END
