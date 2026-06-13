@@ -34,6 +34,8 @@ from typing import Any
 import networkx as nx
 import numpy as np
 
+from hyphi.modeling.windowing import compute_plv_pair
+
 # %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 logger = logging.getLogger(__name__)
 
@@ -87,9 +89,8 @@ def compute_plv(phases_i: np.ndarray, phases_j: np.ndarray) -> float:
         PLV in [0, 1]; 1.0 means perfect phase locking.
 
     """
-    phi_i = np.asarray(phases_i, dtype=float)
-    phi_j = np.asarray(phases_j, dtype=float)
-    return float(np.abs(np.mean(np.exp(1j * (phi_i - phi_j)))))
+    # Delegate to the canonical PLV implementation in modeling.windowing.
+    return compute_plv_pair(phases_i, phases_j)
 
 
 def compute_wpli(phases_i: np.ndarray, phases_j: np.ndarray) -> float:

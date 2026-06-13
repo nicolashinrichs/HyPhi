@@ -47,7 +47,7 @@ from .transform_curvature import (
     fit_global_positive_linear_transform,
     transform_curvature_collection,
 )
-from .windowing import build_graphs_from_matrices, compute_plv_matrix, sliding_window_plv
+from .windowing import build_graphs_from_matrices, compute_plv_matrix, compute_plv_pair, sliding_window_plv
 
 __all__ = [
     "apply_linear_transform",
@@ -63,6 +63,7 @@ __all__ = [
     "compute_orc_vec",
     # Windowing and connectivity
     "compute_plv_matrix",
+    "compute_plv_pair",
     "entropy_correa",
     "entropy_ebrahimi",
     "entropy_histogram",
