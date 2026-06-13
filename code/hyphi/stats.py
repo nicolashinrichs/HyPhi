@@ -27,6 +27,8 @@ Years: 2026
 from __future__ import annotations
 
 import logging
+import math
+import warnings
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -85,8 +87,11 @@ def entropy_to_long_df(
 
     Notes
     -----
-    The ``trial_id`` column is ``f"{dyad}__{trial}"``, a concatenation of dyad
-    and trial index so trials within a dyad keep a globally unique identifier.
+    The ``trial_id`` column is ``f"{dyad}__{condition}__{trial}"`` so trials
+    within a dyad stay distinct across conditions: the per-condition trial index
+    restarts at 0, so omitting the condition would merge trial blocks across
+    conditions. (A single recording per (dyad, condition) is assumed; repeated
+    recordings would reuse a trial index and must be enumerated distinctly.)
     This is the block used by the hierarchical permutation scheme.
 
     """
@@ -97,6 +102,9 @@ def entropy_to_long_df(
                 msg = f"Expected (n_freq, n_trials, n_windows) for dyad={dyad} cond={cond}, got shape {arr.shape}."
                 raise ValueError(msg)
             n_freq, n_trials, n_windows = arr.shape
+            if freq_bands is not None and len(freq_bands) != n_freq:
+                msg = f"freq_bands has {len(freq_bands)} names but arrays have {n_freq} frequency rows."
+                raise ValueError(msg)
             for f in range(n_freq):
                 band = freq_bands[f] if freq_bands is not None else f
                 for t in range(n_trials):
@@ -107,7 +115,7 @@ def entropy_to_long_df(
                                 "condition": cond,
                                 "freq": band,
                                 "trial": t,
-                                "trial_id": f"{dyad}__{t}",
+                                "trial_id": f"{dyad}__{cond}__{t}",
                                 "window": w,
                                 value_col: float(arr[f, t, w]),
                             }
@@ -289,6 +297,110 @@ def _default_test_stat(df: pd.DataFrame, value_col: str, condition_col: str) -> 
     return float(total)
 
 
+# Below this many distinct within-dyad label arrangements, the smallest reachable
+# p-value (~1/space) exceeds 0.05, so significance is structurally impossible.
+_MIN_PERMUTATION_SPACE = 20
+
+
+def _validate_hierarchical_input(
+    data: pd.DataFrame, value_col: str, condition_col: str, dyad_col: str, trial_col: str
+) -> None:
+    """Reject inputs that would silently corrupt the hierarchical permutation scheme."""
+    required = {value_col, condition_col, dyad_col, trial_col}
+    missing = required - set(data.columns)
+    if missing:
+        raise ValueError(f"Missing columns: {sorted(missing)}")
+
+    if len(data) == 0:
+        raise ValueError("Empty data: the hierarchical permutation test needs at least one row.")
+
+    # Missing values in ANY of the four columns silently corrupt the scheme:
+    #  - condition: slips past the uniqueness guard below (nunique ignores NaN)
+    #    and makes the observed statistic NaN -> minimum p-value for ANY data;
+    #  - value: dropped by the statistic's mean (an unrequested complete-case analysis);
+    #  - dyad / trial: dropped by groupby (NaN keys are excluded), so those rows
+    #    never enter the permutation index and their labels are frozen, biasing
+    #    the null. Refuse all of them.
+    for col in (condition_col, value_col, dyad_col, trial_col):
+        if data[col].isna().any():
+            raise ValueError(f"Column '{col}' contains missing values; drop or impute them first.")
+    # isna() is False for +/-inf, but an inf value still makes the statistic
+    # non-finite and the p-value meaningless; reject it here for a clear error.
+    if not np.isfinite(data[value_col].to_numpy(dtype=float)).all():
+        raise ValueError(f"Column '{value_col}' contains non-finite values (inf); clean them first.")
+
+    # Each (dyad, trial) block must carry exactly one condition, otherwise the
+    # per-trial condition table silently drops labels and the null distribution
+    # degenerates.
+    conds_per_trial = data.groupby([dyad_col, trial_col])[condition_col].nunique()
+    if (conds_per_trial > 1).any():
+        offending = conds_per_trial[conds_per_trial > 1].index.tolist()[:5]
+        raise ValueError(
+            f"trial ids must uniquely identify a trial within each dyad, but these "
+            f"(dyad, trial) blocks carry more than one condition: {offending}. "
+            f"Use a trial id that does not restart per condition "
+            f"(e.g. the trial_id produced by entropy_to_long_df)."
+        )
+
+    _check_permutation_design(data, condition_col, dyad_col, trial_col)
+
+
+def _check_permutation_design(data: pd.DataFrame, condition_col: str, dyad_col: str, trial_col: str) -> None:
+    """Refuse a degenerate within-dyad design; warn when it is too small for significance."""
+    # The null permutes condition labels WITHIN each dyad. If no dyad carries more
+    # than one condition (a between-subjects design), every permutation is the
+    # identity and the test returns p=1.0 for ANY effect: the wrong tool, not a
+    # non-significant result. Refuse it explicitly.
+    conds_per_dyad = data.groupby(dyad_col)[condition_col].nunique()
+    if not (conds_per_dyad > 1).any():
+        raise ValueError(
+            "No dyad carries more than one condition, so within-dyad permutation cannot alter "
+            "any label and the test is vacuous (p is always 1.0). This within-dyad test needs "
+            "each dyad measured under multiple conditions; for a between-subjects design use a "
+            "test that permutes across dyads."
+        )
+
+    # Warn (do not refuse) when the within-dyad permutation space is so small that
+    # significance is structurally unreachable: the smallest reachable p-value is
+    # ~1/(number of distinct arrangements), so below the threshold below it can
+    # exceed 0.05 regardless of effect size. (In the extreme single-dyad,
+    # one-trial-per-condition case the only labelling is identity-or-swap, and the
+    # sign-symmetric squared-mean-difference default makes the swap reproduce the
+    # observed value, flooring p near 0.5; across many dyads the independent
+    # per-dyad swaps grow the space and significance becomes reachable, which is
+    # why the threshold is on the product of per-dyad arrangement counts.)
+    n_arrangements = 1
+    for _, d_df in data.groupby(dyad_col):
+        counts = d_df.drop_duplicates(subset=[trial_col])[condition_col].value_counts().to_numpy()
+        n_arrangements *= _multinomial(counts)
+        if n_arrangements >= _MIN_PERMUTATION_SPACE:
+            return
+    warnings.warn(
+        f"The within-dyad permutation has only ~{n_arrangements} distinct arrangements, so the "
+        f"smallest reachable p-value is ~1/{n_arrangements}; p < 0.05 may be structurally impossible "
+        f"regardless of effect size. Increase trials per condition per dyad, or the number of dyads.",
+        stacklevel=4,
+    )
+
+
+def _multinomial(counts: np.ndarray) -> int:
+    """Count the distinct label arrangements for the given per-condition counts."""
+    total = int(counts.sum())
+    result = math.factorial(total)
+    for c in counts:
+        result //= math.factorial(int(c))
+    return result
+
+
+def _permutation_p_value(null_dist: np.ndarray, observed: float, n_perms: int, tail: str) -> float:
+    """Add-one permutation p-value (observed included) for the given tail."""
+    if tail == "right":
+        return float((np.sum(null_dist >= observed) + 1) / (n_perms + 1))
+    if tail == "two-sided":
+        return float((np.sum(np.abs(null_dist) >= abs(observed)) + 1) / (n_perms + 1))
+    raise ValueError(f"Unknown tail: {tail!r}")
+
+
 def hierarchical_permutation_test(
     data: pd.DataFrame,
     value_col: str,
@@ -340,24 +452,36 @@ def hierarchical_permutation_test(
     dict
         Keys: ``observed_stat``, ``null_distribution``, ``p_value``,
         ``n_perms``, ``n_dyads``, ``n_trials_per_dyad``, ``tail``.
+        ``n_trials_per_dyad`` counts the permutable trial blocks per dyad,
+        i.e. trials summed ACROSS conditions (a dyad with 4 trials in each of
+        2 conditions reports 8).
 
     """
-    required = {value_col, condition_col, dyad_col, trial_col}
-    missing = required - set(data.columns)
-    if missing:
-        raise ValueError(f"Missing columns: {sorted(missing)}")
+    if n_perms < 1:
+        raise ValueError(f"n_perms must be >= 1 (got {n_perms}); cannot estimate a p-value from zero permutations.")
+
+    _validate_hierarchical_input(data, value_col, condition_col, dyad_col, trial_col)
+
+    # Positional row indices are used below; a non-default index (e.g. after
+    # filtering or concatenation) would silently shuffle the wrong rows.
+    data = data.reset_index(drop=True)
 
     if test_stat_fn is None:
         test_stat_fn = _default_test_stat
 
     rng = np.random.default_rng(seed)
     observed = float(test_stat_fn(data, value_col, condition_col))
+    if not np.isfinite(observed):
+        msg = f"Observed test statistic is not finite ({observed}); check '{value_col}' for missing values."
+        raise ValueError(msg)
 
     # Per-dyad: trial ids and the single condition each carries.
     dyad_trial_info: dict[Any, tuple[np.ndarray, np.ndarray]] = {}
     n_trials_per_dyad: dict[Any, int] = {}
     for d, d_df in data.groupby(dyad_col):
-        trial_ids = d_df[trial_col].drop_duplicates().to_numpy()
+        # Sorted (by string form, so mixed-type ids cannot crash the comparison)
+        # so the drawn permutations do not depend on row order.
+        trial_ids = np.asarray(sorted(d_df[trial_col].drop_duplicates(), key=str), dtype=object)
         trial_conds = (
             d_df.drop_duplicates(subset=[trial_col]).set_index(trial_col).loc[trial_ids, condition_col].to_numpy()
         )
@@ -365,7 +489,8 @@ def hierarchical_permutation_test(
         n_trials_per_dyad[d] = len(trial_ids)
 
     trial_to_row_idx: dict[tuple[Any, Any], np.ndarray] = {}
-    for (d, t), rows in data.groupby(by=[dyad_col, trial_col]).groups.items():  # TODO: test for issues.
+    # Index labels equal positions here thanks to the reset_index above.
+    for (d, t), rows in data.groupby(by=[dyad_col, trial_col]).groups.items():
         trial_to_row_idx[(d, t)] = np.asarray(rows)
 
     null_dist = np.empty(n_perms, dtype=float)
@@ -378,12 +503,7 @@ def hierarchical_permutation_test(
         data_perm = data.assign(**{condition_col: perm_condition})
         null_dist[i] = float(test_stat_fn(data_perm, value_col, condition_col))
 
-    if tail == "right":
-        p_value = float((np.sum(null_dist >= observed) + 1) / (n_perms + 1))
-    elif tail == "two-sided":
-        p_value = float((np.sum(np.abs(null_dist) >= abs(observed)) + 1) / (n_perms + 1))
-    else:
-        raise ValueError(f"Unknown tail: {tail!r}")
+    p_value = _permutation_p_value(null_dist, observed, n_perms, tail)
 
     return {
         "observed_stat": observed,
