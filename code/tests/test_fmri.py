@@ -73,21 +73,15 @@ class TestROIConnectivity:
         with pytest.warns(UserWarning, match="rank-deficient"):
             roi_partial_correlation(data, win_size=8, win_stride=4)
 
-    def test_partial_correlation_rejects_out_of_range(self):
-        """A near-constant ROI can make pinv yield |pcorr| > 1; that out-of-range value must be rejected."""
-        # The blow-up is numerically rare, so sweep a few seeds known to trigger it (seed 179 -> ~3.25);
-        # at least one degenerate window must be rejected with the out-of-range error.
-        raised = 0
-        for seed in (179, 189, 141, 38):
-            rng = np.random.default_rng(seed)
-            data = rng.standard_normal((6, 400))
-            data[1, :] = 7.0 + 1e-14 * rng.standard_normal(400)  # near-constant: ptp != 0, slips the guard
-            try:
-                roi_partial_correlation(data, win_size=150, win_stride=50)
-            except ValueError as exc:
-                if "exceeds" in str(exc):
-                    raised += 1
-        assert raised > 0
+    def test_partial_correlation_rejects_out_of_range(self, monkeypatch):
+        """A degenerate window yielding |pcorr| > 1 is rejected, not fed into curvature."""
+        # In the wild this comes from a near-constant ROI; the blow-up is numerically version-dependent
+        # (it did not reproduce on the 3.13 BLAS), so force it deterministically: stub pinv to the
+        # precision matrix P=[[1,2],[2,1]], giving pcorr_01 = -2.
+        monkeypatch.setattr(np.linalg, "pinv", lambda _m: np.array([[1.0, 2.0], [2.0, 1.0]]))
+        data = np.random.default_rng(0).standard_normal((2, 200))  # 2 valid (non-constant) ROIs
+        with pytest.raises(ValueError, match="exceeds"):
+            roi_partial_correlation(data, win_size=100, win_stride=50)
 
     @pytest.mark.parametrize("fn", [roi_correlation, roi_partial_correlation])
     def test_rejects_nonfinite_input(self, fn):
