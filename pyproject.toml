@@ -51,6 +51,7 @@ dependencies = [
     "tomli>=2.0,<3.0",
     "ipykernel",
     "scipy-stubs~=1.17.1",
+    "pynndescent>=0.5,<1.0", # Approximate nearest-neighbour graph construction (modeling.curvatures)
 ]
 
 [project.optional-dependencies]
@@ -65,6 +66,11 @@ develop = [
 notebook = [
     "marimo>=0.23.8,<1",
     "jupyterlab>=4.5.7,<5",
+]
+
+viz = [
+    "plotly>=5.0,<7.0", # interactive curvature/network figures (modeling.curvatures, visualization)
+    "seaborn>=0.12,<1.0", # statistical plotting helpers in the visualization layer
 ]
 
 experiments = []  # TODO: move depdencies here, that are only relevant for running scripts in `./experiments/`
