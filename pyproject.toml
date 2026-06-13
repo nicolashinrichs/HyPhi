@@ -77,6 +77,29 @@ experiments = []  # TODO: move depdencies here, that are only relevant for runni
 
 tutorial = []  # TODO: move depdencies here, that are only relevant for running scripts in `./tutorials/`
 
+# Accelerator backends for hyphi.backends. The PEP 508 environment markers make
+# `pip install hyphi[accel]` resolve the correct backend for the user's machine
+# automatically: MLX only on Apple Silicon, CuPy only on x86_64 Linux/Windows.
+metal = [
+    # Apple Metal GPU array backend (Apple Silicon only). float32 kernels.
+    "mlx>=0.20,<1.0; sys_platform == 'darwin' and platform_machine == 'arm64'",
+]
+cuda = [
+    # NVIDIA CUDA 12 array backend (x86_64 Linux/Windows). float64 kernels.
+    # For a CUDA 11 toolkit install cupy-cuda11x instead (see docs/acceleration.md).
+    # 'platform_machine in "x86_64 AMD64"' is an allowlist: Linux reports x86_64,
+    # Windows reports AMD64; aarch64 (no cupy wheels) is excluded.
+    "cupy-cuda12x>=13.0,<14; (sys_platform == 'linux' or sys_platform == 'win32') and platform_machine in 'x86_64 AMD64'",
+]
+hpc = [
+    "h5py>=3.8,<4.0", # HDF5 curvature store for large/cluster runs (hyphi.backends.hpc)
+]
+accel = [
+    # One install that auto-selects the right GPU backend for the machine.
+    "hyphi[metal]",
+    "hyphi[cuda]",
+]
+
 [project.urls]
 # homepage = "https://www.hyphi.org" # TODO: change to actual homepage and uncomment
 # documentation = "https://readthedocs.org" # TODO: change to actual documentation  and uncomment
