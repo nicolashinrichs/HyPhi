@@ -11,18 +11,23 @@ num_freqs = 8
 num_trials = 30
 num_windows = 4
 num_channels = 128
-data_loc = "/media/noahguzman/Data_Storage/ccorr_adj"
-behav_loc = "/media/noahguzman/Data_Storage/shottimes"
-result_loc = "/media/noahguzman/Data_Storage/ccorr_curvatures"
-pooled_result_loc = "/media/noahguzman/Data_Storage/ccorr_curvatures_pooled"
-viz_loc = "/media/noahguzman/Data_Storage/ccorr_tv_FRC_viz"
-aug_viz_loc = "/media/noahguzman/Data_Storage/ccorr_tv_augFRC_viz"
-pool_viz_loc = "/media/noahguzman/Data_Storage/ccorr_pool_viz"
+# Paths below are relative to the current working directory (the scripts wrap them in
+# Path(...).absolute()); run the scripts FROM the project root, or point these at your own copy of
+# the data. They are read as raw strings, NOT resolved through config.paths (which config.init()
+# absolutises). The originals were machine-specific absolute paths and are not portable. Note: the
+# CCORR .mat / EEG .fif inputs are not distributed in the repo, so these dirs may not exist locally.
+data_loc = "./data/ccorr/adj"
+behav_loc = "./data/ccorr/shottimes"
+result_loc = "./results/ccorr/curvatures"
+pooled_result_loc = "./results/ccorr/curvatures_pooled"
+viz_loc = "./results/ccorr/tv_FRC_viz"
+aug_viz_loc = "./results/ccorr/tv_augFRC_viz"
+pool_viz_loc = "./results/ccorr/pool_viz"
 nhst_perm = 2000
 nhst_subsample = 100000
-kuramoto_loc = "/raven/u/ntorbati/HYPHI_Flow/HyPhi_base_refactor/data"
+kuramoto_loc = "./data/connectome"
 num_kuramotos = [1, 2, 3, 4, 5, 6, 7, 8, "avg"]
 kuramoto_time = 24
 kuramoto_size = 152
-kuramoto_result_loc = "/raven/u/ntorbati/HYPHI_Flow/HyPhi_base_refactor/results/kur_plv_curvatures"
-kuramoto_viz_loc = "/raven/u/ntorbati/HYPHI_Flow/HyPhi_base_refactor/results/kur_plv_viz"
+kuramoto_result_loc = "./results/kuramoto/plv_curvatures"
+kuramoto_viz_loc = "./results/kuramoto/plv_viz"
