@@ -68,6 +68,10 @@ notebook = [
     "jupyterlab>=4.5.7,<5",
 ]
 
+fmri = [
+    "nilearn>=0.10,<1", # NIfTI parcellation (hyphi.fmri.io.parcellate); pulls nibabel transitively
+]
+
 viz = [
     "plotly>=5.0,<7.0", # interactive curvature/network figures (modeling.curvatures, visualization)
     "seaborn>=0.12,<1.0", # statistical plotting helpers in the visualization layer
