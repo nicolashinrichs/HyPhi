@@ -1,4 +1,4 @@
-"""Compute entropy estimates using various methods."""
+"""Compute entropy estimates of curvature distributions, with a name-keyed registry."""
 
 # %% Import
 from __future__ import annotations
@@ -16,6 +16,55 @@ if TYPE_CHECKING:
     import numpy.typing as npt
 
 import numpy as np
+
+# %% Degenerate-input contract >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
+
+# Sentinel returned for an EXACTLY-degenerate curvature distribution (empty, a single value, or
+# all identical). Such a distribution has no meaningful differential entropy, and an unguarded
+# estimator either raises or returns NaN/inf (the KDE bandwidth selection divides by zero).
+# Returning 0.0 keeps the entropy-over-time trace finite and matches the prior guarded behaviour
+# in analyses.py.
+#
+# KNOWN LIMITATIONS (tracked for the entropy-suite follow-up, issues #11 / #28):
+#  1. This guard keys on EXACT distinctness (np.unique < 2), so a NEAR-constant or
+#     few-distinct-with-ties distribution slips past it. Forman-Ricci curvature is
+#     integer-valued, so near-lattice graphs across the small-world transition still reach the
+#     estimators, where the spacing estimators (vasicek/van_es/ebrahimi/correa) return -inf/NaN
+#     on tied order statistics and kde_plugin can still raise. A variance/tolerance test (or a
+#     nonzero-spacing count) is the proper fix.
+#  2. 0.0 reads as "no disorder" only for the bounded estimators (renyi/tsallis/kde_plugin). For
+#     the unbounded kNN/spacing estimators (including the default kozachenko) real values are
+#     strongly negative, so 0.0 is the HIGH-entropy extreme, not a low reading. Whether the
+#     sentinel should be NaN, an explicit error, or estimator-aware is an open scientific choice.
+_DEGENERATE_ENTROPY = 0.0
+
+# Minimum number of distinct curvature values required to estimate entropy. Fewer than this
+# (an empty array, a single value, or an all-constant distribution) is degenerate. See the
+# KNOWN LIMITATIONS above: this exact-distinctness test does not catch near-constant input.
+_MIN_DISTINCT_VALUES = 2
+
+
+def _entropy_guard(curvatures: npt.ArrayLike) -> float | None:
+    """
+    Return the degenerate-input sentinel, or None when the input is well-formed.
+
+    Parameters
+    ----------
+    curvatures : array-like
+        The curvature values extracted from a graph.
+
+    Returns
+    -------
+    float or None
+        ``_DEGENERATE_ENTROPY`` when the input has fewer than two distinct values (empty,
+        a single value, or constant); otherwise None, meaning estimate normally.
+
+    """
+    arr = np.asarray(curvatures, dtype=float)
+    if np.unique(arr).size < _MIN_DISTINCT_VALUES:
+        return _DEGENERATE_ENTROPY
+    return None
+
 
 # %% Functions >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
@@ -43,10 +92,13 @@ def entropy_vasicek(
     Returns
     -------
     float
-        Vasicek entropy estimate.
+        Vasicek entropy estimate, or the degenerate-input sentinel.
 
     """
     curvatures = extract_curvatures(G, curvature=curvature)
+    sentinel = _entropy_guard(curvatures)
+    if sentinel is not None:
+        return sentinel
     kwargs: dict = {"method": "vasicek", "nan_policy": "omit"}
     if window_length is not None:
         kwargs["window_length"] = window_length
@@ -56,18 +108,27 @@ def entropy_vasicek(
 def entropy_van_es(G: nx.classes.graph.Graph, curvature: str = "formanCurvature") -> npt.number | npt.ndarray:
     """Van Es entropy estimator on graph curvatures."""
     curvatures = extract_curvatures(G, curvature=curvature)
+    sentinel = _entropy_guard(curvatures)
+    if sentinel is not None:
+        return sentinel
     return differential_entropy(curvatures, method="van es", nan_policy="omit")
 
 
 def entropy_ebrahimi(G: nx.classes.graph.Graph, curvature: str = "formanCurvature") -> npt.number | npt.ndarray:
     """Ebrahimi entropy estimator on graph curvatures."""
     curvatures = extract_curvatures(G, curvature=curvature)
+    sentinel = _entropy_guard(curvatures)
+    if sentinel is not None:
+        return sentinel
     return differential_entropy(curvatures, method="ebrahimi", nan_policy="omit")
 
 
 def entropy_correa(G: nx.classes.graph.Graph, curvature: str = "formanCurvature") -> npt.number | npt.ndarray:
     """Correa entropy estimator on graph curvatures."""
     curvatures = extract_curvatures(G, curvature=curvature)
+    sentinel = _entropy_guard(curvatures)
+    if sentinel is not None:
+        return sentinel
     return differential_entropy(curvatures, method="correa", nan_policy="omit")
 
 
@@ -102,10 +163,13 @@ def entropy_kde_plugin(
     Returns
     -------
     float
-        Plugin entropy estimate: -E[log f(X)].
+        Plugin entropy estimate ``-E[log f(X)]``, or the degenerate-input sentinel.
 
     """
     curvatures = extract_curvatures(G, curvature=curvature)
+    sentinel = _entropy_guard(curvatures)
+    if sentinel is not None:
+        return sentinel
     f = TreeKDE(kernel=kernel_type, bw=bw, norm=norm).fit(curvatures)
     fvals = f.evaluate(curvatures)
     epsilon = 1e-10
@@ -123,6 +187,9 @@ def entropy_kozachenko(G: nx.classes.graph.Graph, curvature: str = "formanCurvat
     import infomeasure as im
 
     curvatures = extract_curvatures(G, curvature=curvature)
+    sentinel = _entropy_guard(curvatures)
+    if sentinel is not None:
+        return sentinel
     return im.entropy(curvatures, approach="metric", k=k)
 
 
@@ -133,6 +200,9 @@ def entropy_renyi(
     import infomeasure as im
 
     curvatures = extract_curvatures(G, curvature=curvature)
+    sentinel = _entropy_guard(curvatures)
+    if sentinel is not None:
+        return sentinel
     return im.entropy(curvatures, approach="renyi", alpha=order, k=k)
 
 
@@ -143,7 +213,62 @@ def entropy_tsallis(
     import infomeasure as im
 
     curvatures = extract_curvatures(G, curvature=curvature)
+    sentinel = _entropy_guard(curvatures)
+    if sentinel is not None:
+        return sentinel
     return im.entropy(curvatures, approach="tsallis", q=order, k=k)
+
+
+# ---------------------
+# Estimator registry
+# ---------------------
+
+# Name-keyed registry of every entropy estimator, so the high-level API can dispatch by name
+# instead of a hard-coded if/elif. "kde" is kept as an alias for "kde_plugin" for backwards
+# compatibility with the previous compute_entropy interface.
+ESTIMATORS: dict[str, Callable] = {
+    "vasicek": entropy_vasicek,
+    "van_es": entropy_van_es,
+    "ebrahimi": entropy_ebrahimi,
+    "correa": entropy_correa,
+    "kde_plugin": entropy_kde_plugin,
+    "kde": entropy_kde_plugin,
+    "kozachenko": entropy_kozachenko,
+    "renyi": entropy_renyi,
+    "tsallis": entropy_tsallis,
+}
+
+# The single default estimator shared by compute_entropy and vec_entropy. This is the estimator
+# the analysis pipeline (run_ws_sweep, the experiment scripts) already used through vec_entropy.
+DEFAULT_ENTROPY_METHOD = "kozachenko"
+
+
+def get_estimator(method: str) -> Callable:
+    """
+    Resolve an entropy estimator by name.
+
+    Parameters
+    ----------
+    method : str
+        One of the keys of ``ESTIMATORS``.
+
+    Returns
+    -------
+    callable
+        The estimator function.
+
+    Raises
+    ------
+    ValueError
+        If ``method`` is not a registered estimator name.
+
+    """
+    try:
+        return ESTIMATORS[method]
+    except KeyError:
+        valid = ", ".join(sorted(ESTIMATORS))
+        msg = f"Unknown entropy method {method!r}; choose from: {valid}"
+        raise ValueError(msg) from None
 
 
 # ---------------------
@@ -164,7 +289,8 @@ def vec_entropy(
     graphs : list[nx.Graph]
         Graphs with curvature edge attributes.
     estimator : callable, optional
-        Entropy estimator function taking a graph. Defaults to ``entropy_kozachenko``.
+        Entropy estimator function taking a graph. Defaults to the registry's
+        ``DEFAULT_ENTROPY_METHOD``.
     parallel : bool
         If True, use Ray for parallel computation.
 
@@ -175,7 +301,7 @@ def vec_entropy(
 
     """
     if estimator is None:
-        estimator = entropy_kozachenko
+        estimator = ESTIMATORS[DEFAULT_ENTROPY_METHOD]
 
     if parallel:
         import ray

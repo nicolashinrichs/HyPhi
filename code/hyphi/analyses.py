@@ -9,10 +9,9 @@ from typing import Any
 
 import networkx as nx
 import numpy as np
-from KDEpy import TreeKDE
-from scipy.stats import differential_entropy
 
-from .modeling.graph_curvatures import compute_frc_vec, extract_curvatures
+from .modeling.entropies import DEFAULT_ENTROPY_METHOD, get_estimator
+from .modeling.graph_curvatures import compute_frc_vec
 
 # %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 pass
@@ -61,33 +60,6 @@ def build_sliding_window_graphs(connectivity_matrix: np.ndarray) -> list[nx.Grap
 # ================= #
 
 
-def compute_entropy_kde_plugin(
-    G: nx.Graph, curvature: str = "formanCurvature", kernel: str = "gaussian", bw: str | float = "ISJ"
-) -> float:
-    """Compute plugin entropy estimator using KDE."""
-    curvatures = extract_curvatures(G, curvature=curvature)
-
-    # Needs some variation in data to compute KDE
-    if len(np.unique(curvatures)) <= 1:
-        return 0.0
-
-    f = TreeKDE(kernel=kernel, bw=bw).fit(curvatures)
-    fvals = f.evaluate(curvatures)
-    epsilon = 1e-10
-    log_fvals = np.log(fvals + epsilon)
-    return -np.mean(log_fvals)
-
-
-def compute_entropy_vasicek(
-    G: nx.Graph, curvature: str = "formanCurvature", window_length: int | None = None
-) -> float:
-    """Compute Vasicek entropy estimator."""
-    curvatures = extract_curvatures(G, curvature=curvature)
-    if len(curvatures) < 2:
-        return 0.0
-    return differential_entropy(curvatures, method="vasicek", window_length=window_length, nan_policy="omit")
-
-
 def compute_windowed_curvatures(graphs: list[nx.Graph], method: str = "1d") -> list[nx.Graph]:
     """
     Compute windowed curvatures for a list of graphs.
@@ -97,17 +69,27 @@ def compute_windowed_curvatures(graphs: list[nx.Graph], method: str = "1d") -> l
     return compute_frc_vec(graphs, method=method)
 
 
-def compute_entropy(graphs: list[nx.Graph], method: str = "vasicek") -> np.ndarray:
-    """Compute entropy for a list of graphs."""
-    entropies = []
-    for g in graphs:
-        if method == "vasicek":
-            entropies.append(compute_entropy_vasicek(g))
-        elif method == "kde":
-            entropies.append(compute_entropy_kde_plugin(g))
-        else:
-            raise ValueError("Unsupported entropy method")
-    return np.array(entropies)
+def compute_entropy(graphs: list[nx.Graph], method: str = DEFAULT_ENTROPY_METHOD) -> np.ndarray:
+    """
+    Compute the curvature-distribution entropy of each graph.
+
+    Parameters
+    ----------
+    graphs : list[nx.Graph]
+        Curvature-annotated graphs.
+    method : str
+        Name of the entropy estimator to use; any key of
+        ``hyphi.modeling.entropies.ESTIMATORS`` (for example ``"vasicek"``, ``"kde"``,
+        ``"kozachenko"``, ``"renyi"``, ``"tsallis"``). Defaults to the registry default.
+
+    Returns
+    -------
+    np.ndarray
+        One entropy value per graph.
+
+    """
+    estimator = get_estimator(method)
+    return np.array([estimator(g) for g in graphs])
 
 
 # ========================== #

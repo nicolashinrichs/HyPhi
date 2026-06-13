@@ -5,11 +5,11 @@ import networkx as nx
 import pytest
 from hyphi.analyses import (
     build_sliding_window_graphs,
-    compute_entropy_kde_plugin,
     prune_graph_by_weight,
     remove_self_loops_copy,
     summarize_network,
 )
+from hyphi.modeling.entropies import entropy_kde_plugin
 from hyphi.modeling.graph_curvatures import compute_frc
 
 # %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
@@ -21,7 +21,7 @@ pass
 def test_entropy_zero_variance(complete_graph_k5):
     # For K_n, all curvatures map to same value. Entropy should return 0.0
     G_curv = compute_frc(complete_graph_k5, method="1d")
-    entropy = compute_entropy_kde_plugin(G_curv)
+    entropy = entropy_kde_plugin(G_curv)
     assert entropy == 0.0
 
 

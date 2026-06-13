@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 from hyphi.modeling.density_estimation import fit_kde
 from hyphi.modeling.entropies import entropy_kde_plugin, vec_entropy
-from hyphi.modeling.graph_curvatures import compute_frc_vec
+from hyphi.modeling.graph_curvatures import compute_frc_vec, extract_curvatures
 from hyphi.simulation.graph_simulations import gen_tv_sw
 from scipy.stats import norm
 
@@ -55,18 +55,20 @@ def test_sw_frc_entropy_pipeline():
     assert np.all(np.isfinite(entropies))
 
 
-@pytest.mark.xfail(
-    reason="ISJ bandwidth selection fails on near-constant curvature distributions; "
-    "degenerate-entropy safeguard tracked in issue #28",
-    raises=ValueError,
-    strict=True,
-)
-def test_near_lattice_entropy_degenerate():
-    """Pin issue #28: near-lattice graphs have ~constant FRC, where the KDE entropy chain fails."""
-    # When the safeguard lands, this xfail turns into an unexpected pass
-    # (strict=True makes that a test failure), prompting removal of the marker.
-    _, graphs = gen_tv_sw(100, 10, 3, -4, -4)  # rewiring p = 1e-4 for every graph
-    vec_entropy(compute_frc_vec(graphs), entropy_kde_plugin)
+def test_exactly_constant_curvature_entropy_sentinel():
+    """Issue #28 safeguard (exactly-constant case): at p = 1e-4 the graphs are pure ring lattices,
+    so every edge shares ONE FRC value and the shared guard returns the sentinel (0.0) instead of
+    raising on the KDE bandwidth selection.
+
+    This covers only the EXACTLY-degenerate path (np.unique == 1). The near-constant path (a few
+    distinct integer FRC values with negligible variance), which the guard does not yet catch, is
+    tracked for the entropy-suite follow-up (issues #11 / #28).
+    """
+    _, graphs = gen_tv_sw(100, 10, 3, -4, -4)
+    curvature_graphs = compute_frc_vec(graphs)
+    assert all(np.unique(extract_curvatures(g)).size == 1 for g in curvature_graphs)
+    entropies = np.asarray(vec_entropy(curvature_graphs, entropy_kde_plugin), dtype=float)
+    assert np.all(entropies == 0.0)
 
 
 # o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o END
