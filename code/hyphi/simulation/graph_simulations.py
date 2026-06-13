@@ -1,4 +1,13 @@
-"""TODO: add docstring."""
+"""
+Watts-Strogatz small-world graph generators for ground-truth benchmarks.
+
+Builds static and time-varying small-world graphs by sweeping the Watts-Strogatz rewiring
+probability, which carries a network from a regular lattice to a random graph through a
+small-world regime. These series give HyPhi a controlled setting whose structural transition
+is known, so the curvature-entropy detector can be validated against it. ``gen_tv_sw`` and
+``gen_tv_weighted_sw`` produce time-varying (unweighted and weighted) series, and the
+package also ships fixed-parameter presets of those generators.
+"""
 
 # %% Import
 import networkx as nx
