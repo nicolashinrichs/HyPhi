@@ -1,4 +1,15 @@
-"""TODO: add description here."""
+"""
+Discrete Ricci curvature on connectivity graphs.
+
+Computes edge-wise discrete Ricci curvature, the distinctive geometric layer of HyPhi.
+Three notions are provided, trading fidelity for cost: Forman-Ricci (``compute_frc``, the
+cheap combinatorial default), Augmented Forman-Ricci (``compute_afrc``, with triangle
+corrections), and Ollivier-Ricci (``compute_orc``, defined via optimal transport and the
+most faithful but expensive). The ``*_vec`` variants apply a notion across a list of graphs
+(for example the sliding-window graph series), and ``extract_curvatures`` collapses a
+curvature-annotated graph to its distribution. Forman and Ollivier curvature are computed
+through the ``GraphRicciCurvature`` library.
+"""
 
 # %% Import
 import math

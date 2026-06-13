@@ -1,4 +1,14 @@
-"""TODO: describe what this module does."""
+"""
+Coupled Kuramoto oscillator simulation and phase-locking connectivity.
+
+Simulates a network of coupled Kuramoto phase oscillators (all-to-all mean-field dynamics,
+integrated with a JAX-compiled RK4 step) and derives phase-locking-value (PLV) connectivity
+from the resulting phase trajectories, with the windowed PLV vectorized through ``jax.vmap``.
+By driving the coupling through the synchronization transition, this provides ground-truth
+phase data whose critical point is known, against which the curvature-entropy pipeline is
+benchmarked. ``simulate_kuramoto`` runs the dynamics; ``get_plv_matrix`` and ``get_plv_graphs``
+turn phases into connectivity matrices and graphs.
+"""
 
 # %% Import
 import jax.numpy as jnp
