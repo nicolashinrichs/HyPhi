@@ -8,7 +8,13 @@ synthetic phase signals.
 # %% Import
 import numpy as np
 import pytest
-from hyphi.modeling.windowing import build_graphs_from_matrices, compute_plv_matrix, sliding_window_plv
+from hyphi.benchmarks import compute_plv as benchmarks_compute_plv
+from hyphi.modeling.windowing import (
+    build_graphs_from_matrices,
+    compute_plv_matrix,
+    compute_plv_pair,
+    sliding_window_plv,
+)
 
 # %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 pass
@@ -118,6 +124,37 @@ class TestBuildGraphsFromMatrices:
         G = graphs[0]
         assert G.number_of_nodes() == 3
         assert G.number_of_edges() == 3
+
+
+class TestPLVConsolidation:
+    """The scalar, matrix, and benchmarks PLV all agree (one canonical implementation)."""
+
+    def test_pair_matches_matrix(self):
+        """compute_plv_pair(i, j) equals the (i, j) entry of compute_plv_matrix."""
+        rng = np.random.default_rng(0)
+        n, t = 5, 500
+        phases = rng.uniform(0, 2 * np.pi, (n, t))
+        matrix = compute_plv_matrix(phases)
+        for i in range(n):
+            for j in range(n):
+                assert compute_plv_pair(phases[i], phases[j]) == pytest.approx(matrix[i, j], abs=1e-10)
+
+    def test_benchmarks_delegates_to_canonical(self):
+        """benchmarks.compute_plv returns exactly what the canonical pair function returns."""
+        rng = np.random.default_rng(1)
+        a = rng.uniform(0, 2 * np.pi, 400)
+        b = rng.uniform(0, 2 * np.pi, 400)
+        assert benchmarks_compute_plv(a, b) == compute_plv_pair(a, b)
+
+    def test_jax_plv_matches_numpy(self):
+        """JAX Kuramoto get_plv_matrix equals numpy compute_plv_matrix (pins the documented equivalence)."""
+        from hyphi.simulation.kuramoto_simulations import get_plv_matrix
+
+        rng = np.random.default_rng(0)
+        phase_window = rng.uniform(0, 2 * np.pi, size=(12, 400))
+        numpy_plv = compute_plv_matrix(phase_window)
+        jax_plv = np.asarray(get_plv_matrix(phase_window), dtype=float)
+        np.testing.assert_allclose(jax_plv, numpy_plv, atol=1e-5, rtol=1e-5)
 
 
 # o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o END
