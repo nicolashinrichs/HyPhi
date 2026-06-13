@@ -1,38 +1,72 @@
-"""TODO: add docstring"""
+"""End-to-end smoke tests: density estimation and the FRC-entropy pipeline."""
 
 # %% Import
+import numpy as np
+import pytest
 from hyphi.modeling.density_estimation import fit_kde
 from hyphi.modeling.entropies import entropy_kde_plugin, vec_entropy
 from hyphi.modeling.graph_curvatures import compute_frc_vec
-from hyphi.simulation.graph_simulations import gen_nature_sw
+from hyphi.simulation.graph_simulations import gen_tv_sw
 from scipy.stats import norm
 
-# %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
-pass
-
-# %% Run tests >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
-
-# TODO: convert to proper pytest functionality
-
-# Test the density estimation
-# Generate a distribution and some Gaussian data
-dist = norm(loc=0, scale=1)
-data = dist.rvs(1000)
-
-# Compute density estimates using Sheather Jones, compare to bw = 1
-# bw = 1 is optimal since the underlying distribution has std. dev. = 1
-f_isj = fit_kde(data, bw="ISJ", method="tree")
-x_isj, y_isj = f_isj()
-
-f_truth = fit_kde(data, bw=1, method="tree")
-x_truth, y_truth = f_truth()
+# %% Test functions >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
 
-# Replicate the Nature methods paper small world simulations
-pt_nat, Gt_nat = gen_nature_sw()
+@pytest.fixture(scope="module")
+def gaussian_sample():
+    """1000 draws from a standard normal (its optimal KDE bandwidth is ~1)."""
+    return norm(loc=0, scale=1).rvs(1000, random_state=0)
 
-frc_t_nat = compute_frc_vec(Gt_nat)
 
-ht_nat = vec_entropy(frc_t_nat, entropy_kde_plugin)
+def test_fit_kde_isj_recovers_normal_density(gaussian_sample):
+    """ISJ bandwidth selection recovers the true density, beating an oversmoothed bw."""
+    # The optimal bandwidth for n=1000 standard-normal draws is ~0.27, not the
+    # data's standard deviation, so bw=1 deliberately oversmooths. Grids differ
+    # per bandwidth, so each estimate is compared to the true pdf on its own grid.
+    x_isj, y_isj = fit_kde(gaussian_sample, bw="ISJ", method="tree")()
+    x_wide, y_wide = fit_kde(gaussian_sample, bw=1, method="tree")()
+
+    assert np.all(np.isfinite(y_isj))
+    assert np.all(y_isj >= 0)
+    assert np.trapz(y_isj, x_isj) == pytest.approx(1.0, abs=0.01)  # noqa: NPY201 (numpy is pinned <2.0)
+    assert np.trapz(y_wide, x_wide) == pytest.approx(1.0, abs=0.01)  # noqa: NPY201 (numpy is pinned <2.0)
+    err_isj = np.max(np.abs(y_isj - norm.pdf(x_isj)))
+    err_wide = np.max(np.abs(y_wide - norm.pdf(x_wide)))
+    assert err_isj < 0.1  # noqa: PLR2004 (tolerance)
+    assert err_isj < err_wide
+
+
+def test_sw_frc_entropy_pipeline():
+    """The small-world graphs -> FRC -> entropy chain runs end to end at toy scale."""
+    # Same chain as the Nature methods pipeline; gen_nature_sw() runs it at
+    # full size (1000 nodes, 100 graphs) in minutes. Rewiring probabilities in
+    # [0.1, 1]: near-lattice graphs (p ~ 1e-4) have almost constant curvature,
+    # where the ISJ bandwidth solver is known to fail (the degenerate-entropy
+    # safeguard is tracked in issue #28).
+    pt_nat, graphs = gen_tv_sw(100, 10, 10, -1, 0)
+    assert len(graphs) == len(pt_nat)
+
+    frc_graphs = compute_frc_vec(graphs)
+    assert len(frc_graphs) == len(graphs)
+
+    entropies = vec_entropy(frc_graphs, entropy_kde_plugin)
+    entropies = np.asarray(entropies, dtype=float)
+    assert entropies.shape == (len(graphs),)
+    assert np.all(np.isfinite(entropies))
+
+
+@pytest.mark.xfail(
+    reason="ISJ bandwidth selection fails on near-constant curvature distributions; "
+    "degenerate-entropy safeguard tracked in issue #28",
+    raises=ValueError,
+    strict=True,
+)
+def test_near_lattice_entropy_degenerate():
+    """Pin issue #28: near-lattice graphs have ~constant FRC, where the KDE entropy chain fails."""
+    # When the safeguard lands, this xfail turns into an unexpected pass
+    # (strict=True makes that a test failure), prompting removal of the marker.
+    _, graphs = gen_tv_sw(100, 10, 3, -4, -4)  # rewiring p = 1e-4 for every graph
+    vec_entropy(compute_frc_vec(graphs), entropy_kde_plugin)
+
 
 # o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o END

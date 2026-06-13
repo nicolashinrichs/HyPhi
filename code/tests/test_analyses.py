@@ -18,9 +18,9 @@ pass
 # %% Test Functions o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
 
-def test_entropy_zero_variance(complete_graph):
+def test_entropy_zero_variance(complete_graph_k5):
     # For K_n, all curvatures map to same value. Entropy should return 0.0
-    G_curv = compute_frc(complete_graph, method="1d")
+    G_curv = compute_frc(complete_graph_k5, method="1d")
     entropy = compute_entropy_kde_plugin(G_curv)
     assert entropy == 0.0
 

@@ -6,6 +6,7 @@ Provides lightweight toy graphs with mathematically known properties.
 
 # %% Import
 import networkx as nx
+import numpy as np
 import pytest
 
 # %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
@@ -51,7 +52,15 @@ def star_graph_s6():
 
 # %% Test functions o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
-pass
+
+@pytest.fixture
+def conn_matrix():
+    """Build a connectivity array of shape (windows=3, nodes=5, nodes=5) with zero diagonal."""
+    rng = np.random.default_rng(0)
+    mat = rng.uniform(0.1, 1.0, size=(3, 5, 5))
+    for window in mat:  # a nonzero diagonal would put self-loops in the graphs
+        np.fill_diagonal(window, 0.0)
+    return mat
 
 
 # o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o END
