@@ -17,7 +17,6 @@ except ModuleNotFoundError:
     go = None
 from GraphRicciCurvature.FormanRicci import FormanRicci  # noqa: F401
 from GraphRicciCurvature.OllivierRicci import OllivierRicci
-from pynndescent import NNDescent  # TODO: pynndescent needs to be added to the main dependencies
 from scipy import linalg
 
 # from scipy.spatial.distance import pdist  # noqa: ERA001
@@ -416,9 +415,14 @@ def nearest_neighbor_graph(data: np.ndarray, k: int = 5, weight: bool = False):
     Create graph embedding with k nearest neighbors from given data (n_samples, m_features).
 
     :param data: data array of shape (n_samples, m_features)
-    :param k: number of neighbors [default: k=10].
+    :param k: number of neighbors [default: k=5].
     :return: generated graph for nearest neighbors, distance matrix
     """
+    # Lazy import: pynndescent pulls in numba/llvmlite (~3 s to import); only load
+    # it here, where the approximate-kNN path actually runs, so importing this
+    # module (and hence `import hyphi`) stays fast.
+    from pynndescent import NNDescent  # noqa: PLC0415
+
     index = NNDescent(data)  # metric="euclidean" [default], n_neighbors=30 [default]
     n_neighbor, dist_neighbor = index.query(query_data=data, k=k)
     graph = nx.Graph()
