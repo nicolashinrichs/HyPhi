@@ -38,5 +38,8 @@ clean: ## Remove build artifacts and caches
 tutorial: ## Open the quickstart notebook (marimo) for new HyPhi users
 	uv run --extra notebook --extra tutorial marimo edit tutorials/01_quickstart.py
 
+pipeline: ## Run the end-to-end curvature-entropy pipeline on a demo connectivity series
+	uv run python -m hyphi.main
+
 docs: ## Build the mkdocs site
 	uv run --extra docs mkdocs build
