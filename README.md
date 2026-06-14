@@ -36,7 +36,30 @@ Across simulated and empirical use cases, `HyPhi` follows the same high-level wo
 4. **Information-theoretic tracking**
    Entropy and quantiles of curvature distributions are used to detect regime shifts and phase transitions.
 
-Concrete implementations of this workflow are provided in the `experiments` and `tutorials` directories.
+The same pipeline drawn end to end, with HyPyP and MNE as the upstream synchrony layer that HyPhi
+sits downstream of:
+
+```mermaid
+flowchart TD
+    subgraph upstream["Upstream synchrony (HyPyP / MNE, complementary)"]
+        MOD["Modalities: EEG, MEG, fNIRS, fMRI"]
+        PRE["Preprocessing: filtering, ICA, artifact rejection"]
+        MOD --> PRE
+    end
+    SIM["Simulation ground truth: Kuramoto and Watts-Strogatz"]
+    PRE --> CONN["Connectivity matrix (PLV, wPLI, correlation, CCORR)"]
+    SIM --> CONN
+    CONN --> WIN["Sliding-window graphs (windows x nodes x nodes)"]
+    WIN --> CURV["Discrete Ricci curvature (FRC, AFRC, ORC)"]
+    CURV --> DIST["Curvature distribution"]
+    DIST --> ENT["Entropy and quantiles"]
+    ENT --> PT["Phase-transition detection"]
+```
+
+HyPyP measures how much synchrony there is; HyPhi adds the geometry of how that synchrony is
+distributed across the inter-brain network and how its complexity changes over time. Concrete
+implementations of this workflow are provided in the `experiments` and `tutorials` directories,
+and `python -m hyphi.main` (or `make pipeline`) runs it end to end on a demo connectivity series.
 
 ## Scientific Motivation
 
@@ -106,6 +129,25 @@ For convenience, you can also use the `Makefile` targets. To get an overview run
 ```shell
 make
 ```
+
+## Reproducibility
+
+HyPhi pins its full dependency closure in `uv.lock`, so an install is deterministic: a fresh
+
+```shell
+uv sync
+```
+
+resolves the exact same versions on every machine, which matters for reproducing the numbers in a
+paper's supplementary materials. Scientific dependencies that produce numbers, not just an
+interface, are pinned tightly: `GraphRicciCurvature` is pinned to an exact version, since an API
+change there would silently change curvature values. When you change a dependency, regenerate the
+lockfile deliberately rather than letting it drift.
+
+Stochastic functions take an explicit seed so a run is reproducible from it. The end-to-end
+pipeline (`python -m hyphi.main` or `make pipeline`) records the environment it ran in, as an
+`environment.json` (the interpreter, platform, `hyphi` version, and run arguments), alongside its
+outputs.
 
 ## Relevant publications
 
