@@ -27,8 +27,6 @@ from jax import random
 from ..io import load_config
 from ..simulation.kuramoto_simulations import get_plv_graphs, kuramoto_vector_field, rk4, simulate_kuramoto
 from ..simulation.simulations import load_connectome
-
-# from ..visualization.curvature_visualization import visualize_graph_partitions_markers  # noqa: ERA001
 from .graph_curvatures import compute_frc
 from .windowing import compute_plv_matrix
 
@@ -524,10 +522,7 @@ def main() -> None:
     if args.attach_connectome_weights:
         connectome_w = resolve_connectome_weights(args.connectivity_pkl.resolve(), nodes_per_run=nodes_per_run)
 
-    # TODO (smh): both conditions in if-else lead to same output
-    est_nodes = (
-        len(runs) * nodes_per_run if args.graph_construction == "merge_signals_plv" else len(runs) * nodes_per_run
-    )
+    est_nodes = len(runs) * nodes_per_run  # node-count estimate for the log line below
     print(
         f"[compute] windows={n_windows} nodes_per_run={nodes_per_run} merged_nodes={est_nodes} "
         f"plv_threshold={args.plv_threshold}",
@@ -573,20 +568,7 @@ def main() -> None:
         )
         np.save(base.with_name(base.name + "_forman_values.npy"), frc_vals)
 
-        # Visualization disabled by default for performance.
-        # To re-enable, pass --enable-visualization. # TODO: must be re-enabled with this flag below
-        # partitions = [sorted(list(comp)) for comp in nx.connected_components(graph_flow)]
-        # n_clusters = len(partitions)
-        # viz_name = f"window_{widx:02d}_clusters_{n_clusters}"
-        # visualize_graph_partitions_markers(
-        #     graph=graph,
-        #     partitions=partitions,
-        #     name=name,
-        #     save=True,
-        #     save_path=str(save_path),
-        #     show=False,
-        #     title=title,
-        # )
+        # Per-window cluster visualization is deferred behind a future --enable-visualization flag (see #110).
         n_clusters = int(nx.number_connected_components(graph_flow))
 
         summary = {
