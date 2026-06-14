@@ -7,14 +7,24 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = { file = "LICENSE" }
 authors = [
-    { name = "Nicolas Hinrichs", email = "hinrichs@cbs.mpg.de" }, # TODO: add authors
+    { name = "Nicolas Hinrichs", email = "hinrichs@cbs.mpg.de" },
+    { name = "Noah Guzman" },
 ]
 maintainers = [
-    { name = "Nicolas Hinrichs", email = "hinrichs@cbs.mpg.de" }, # TODO: add maintainers
+    { name = "Nicolas Hinrichs", email = "hinrichs@cbs.mpg.de" },
     { name = "Simon M. Hofmann", email = "simon.hofmann@cbs.mpg.de" },
     { name = "Nahid Torbati", email = "torbati@cbs.mpg.de" },
 ]
-keywords = ["hyperscanning", "geometry", "Ricci", "connectome"] # TODO: add/adapt keywords
+keywords = [
+    "hyperscanning",
+    "geometry",
+    "Ricci curvature",
+    "connectome",
+    "EEG",
+    "entropy",
+    "phase transition",
+    "inter-brain",
+]
 
 # Check for classifiers: https://pypi.org/classifiers/
 classifiers = [
@@ -70,12 +80,24 @@ notebook = [
 ]
 
 fmri = [
-    "nilearn>=0.10,<1", # NIfTI parcellation (hyphi.fmri.io.parcellate); pulls nibabel transitively
+    "nilearn>=0.10,<1", # NIfTI parcellation (hyphi.fmri.io.parcellate)
+    "nibabel>=5.0,<6.0", # NIfTI input (a nilearn dependency, listed explicitly for clarity)
 ]
 
 viz = [
     "plotly>=5.0,<7.0", # interactive curvature/network figures (modeling.curvatures, visualization)
     "seaborn>=0.12,<1.0", # statistical plotting helpers in the visualization layer
+]
+
+docs = [
+    "mkdocs>=1.6,<2.0",
+    # The Material theme that mkdocs.yml uses, pinned to the 9.6.x line: the 9.7 line added a license
+    # nag ("unsuitable for production use") and the 2.0 line a paid license, so 9.6.x is the last
+    # clean, free, no-notice build.
+    "mkdocs-material>=9.6,<9.7",
+    "pymdown-extensions>=10,<11", # pymdownx.highlight / superfences used in mkdocs.yml
+    "mkdocstrings[python]>=0.24,<1.0", # NumPy-style API docs from the docstrings
+    "mkdocs-jupyter>=0.24,<1.0", # render the tutorial notebooks in the docs
 ]
 
 experiments = []  # TODO: move depdencies here, that are only relevant for running scripts in `./experiments/`
@@ -110,6 +132,9 @@ accel = [
 # documentation = "https://readthedocs.org" # TODO: change to actual documentation  and uncomment
 repository = "https://github.com/nicolashinrichs/HyPhi/"
 # Consider other URLs: pre-registration, data repository, etc.
+
+[project.scripts]
+hyphi = "hyphi.main:main"  # the end-to-end pipeline CLI: `hyphi --output results`
 
 [tool.setuptools]
 platforms = [
