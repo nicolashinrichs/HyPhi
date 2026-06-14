@@ -27,6 +27,7 @@ from . import (
     spectral,
     stats,
     visualization,
+    viz,
 )
 
 __author__ = "Hinrichs et al."
@@ -48,4 +49,5 @@ __all__ = [
     "simulation",
     "stats",
     "visualization",
+    "viz",
 ]
