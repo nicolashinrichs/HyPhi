@@ -16,12 +16,12 @@ from matplotlib.cm import ScalarMappable
 
 # TODO: ideally avoid these conditional imports
 try:
-    import seaborn as sns
+    import seaborn as sns  # ty: ignore[unresolved-import]  # optional viz dep
 except ModuleNotFoundError:
     sns = None
 
 try:
-    import plotly.graph_objects as go
+    import plotly.graph_objects as go  # ty: ignore[unresolved-import]  # optional viz dep
 except ModuleNotFoundError:
     go = None
 
@@ -117,7 +117,7 @@ def visualize_graph_on_dataset_plot(G: nx.Graph, pos):
     xn, yn, zn = zip(*pos.values(), strict=True)
 
     # Create the node scatter plot
-    node_trace = go.Scatter3d(x=xn, y=yn, z=zn, mode="markers", marker=dict(size=3, color="gray"), hoverinfo="none")
+    node_trace = go.Scatter3d(x=xn, y=yn, z=zn, mode="markers", marker=dict(size=3, color="gray"), hoverinfo="none")  # ty: ignore[unresolved-attribute]  # _require_plotly guards go is not None
 
     # Get curvature values without normalization
     curvature_values = nx.get_edge_attributes(G, "ricciCurvature")
@@ -136,13 +136,13 @@ def visualize_graph_on_dataset_plot(G: nx.Graph, pos):
         color = f"rgba({int(color_rgb[0] * 255)}, {int(color_rgb[1] * 255)}, {int(color_rgb[2] * 255)}, 0.8)"
 
         # Create a scatter plot for each edge
-        edge_trace = go.Scatter3d(
+        edge_trace = go.Scatter3d(  # ty: ignore[unresolved-attribute]  # _require_plotly guards go is not None
             x=x_values, y=y_values, z=z_values, mode="lines", line=dict(color=color, width=5), hoverinfo="none"
         )
         edge_traces.append(edge_trace)
 
     # Set up the 3D figure with all traces
-    fig = go.Figure(data=[node_trace, *edge_traces])
+    fig = go.Figure(data=[node_trace, *edge_traces])  # ty: ignore[unresolved-attribute]  # _require_plotly guards go is not None
 
     # Update layout for better appearance
     fig.update_layout(
@@ -283,7 +283,7 @@ def curvature_distribution(
         axes[i].set_xlabel("Ricci curvature")
         axes[i].set_ylabel("Frequency")
 
-    plt.tight_layout(rect=[0.0, 0.0, 1.0, 0.96])
+    plt.tight_layout(rect=(0.0, 0.0, 1.0, 0.96))
 
     if save:
         if save_path is not None:
@@ -331,7 +331,7 @@ def heatmap_layers(
         axes[i].set_title(name)
         axes[i].set_xlabel("Distance")
 
-    plt.tight_layout(rect=[0.0, 0.0, 1.0, 0.96])
+    plt.tight_layout(rect=(0.0, 0.0, 1.0, 0.96))
 
     if save:
         if save_path is not None:

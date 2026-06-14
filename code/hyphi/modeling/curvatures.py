@@ -14,7 +14,7 @@ import numpy as np
 
 try:
     # plotly is an optional dependency; install it to enable graph visualisation functions.
-    import plotly.graph_objects as go
+    import plotly.graph_objects as go  # ty: ignore[unresolved-import]  # optional viz dep
 except ModuleNotFoundError:
     go = None
 from GraphRicciCurvature.FormanRicci import FormanRicci
@@ -147,14 +147,14 @@ def graph_vis(dist_mat: np.ndarray, threshold: float) -> None:
     graph = nx.from_numpy_array(dist)
 
     pos = nx.spring_layout(graph)  # Positions for all nodes
-    edge_trace = go.Scatter(x=[], y=[], line=dict(width=0.5, color="#888"), hoverinfo="none", mode="lines")
+    edge_trace = go.Scatter(x=[], y=[], line=dict(width=0.5, color="#888"), hoverinfo="none", mode="lines")  # ty: ignore[unresolved-attribute]  # @requires_go guards go is not None
     for edge in graph.edges():
         x0, y0 = pos[edge[0]]
         x1, y1 = pos[edge[1]]
         edge_trace["x"] += (x0, x1, None)
         edge_trace["y"] += (y0, y1, None)
 
-    node_trace = go.Scatter(
+    node_trace = go.Scatter(  # ty: ignore[unresolved-attribute]  # @requires_go guards go is not None
         x=[],
         y=[],
         text=[],
@@ -172,9 +172,9 @@ def graph_vis(dist_mat: np.ndarray, threshold: float) -> None:
         node_trace["marker"]["color"] += (len(adjacencies[1]),)
 
     # Create the Plotly figure
-    fig = go.Figure(
+    fig = go.Figure(  # ty: ignore[unresolved-attribute]  # @requires_go guards go is not None
         data=[edge_trace, node_trace],
-        layout=go.Layout(
+        layout=go.Layout(  # ty: ignore[unresolved-attribute]  # @requires_go guards go is not None
             title="Network graph made with Plotly",
             titlefont_size=16,
             showlegend=False,
@@ -204,14 +204,14 @@ def graph_vis(dist_mat: np.ndarray, threshold: float) -> None:
 def graph_vis_direct(graph: nx.Graph) -> None:
     """Visualize the graph with Plotly directly on a graph G."""
     pos = nx.spring_layout(graph)  # Positions for all nodes
-    edge_trace = go.Scatter(x=[], y=[], line=dict(width=0.5, color="#888"), hoverinfo="none", mode="lines")
+    edge_trace = go.Scatter(x=[], y=[], line=dict(width=0.5, color="#888"), hoverinfo="none", mode="lines")  # ty: ignore[unresolved-attribute]  # @requires_go guards go is not None
     for edge in graph.edges():
         x0, y0 = pos[edge[0]]
         x1, y1 = pos[edge[1]]
         edge_trace["x"] += (x0, x1, None)
         edge_trace["y"] += (y0, y1, None)
 
-    node_trace = go.Scatter(
+    node_trace = go.Scatter(  # ty: ignore[unresolved-attribute]  # @requires_go guards go is not None
         x=[],
         y=[],
         text=[],
@@ -246,9 +246,9 @@ def graph_vis_direct(graph: nx.Graph) -> None:
                 )
             )
     # Create the Plotly figure
-    fig = go.Figure(
+    fig = go.Figure(  # ty: ignore[unresolved-attribute]  # @requires_go guards go is not None
         data=[edge_trace, node_trace],
-        layout=go.Layout(
+        layout=go.Layout(  # ty: ignore[unresolved-attribute]  # @requires_go guards go is not None
             title="Network graph made with Plotly",
             titlefont_size=16,
             showlegend=False,
@@ -276,7 +276,7 @@ def visualize_dist_distribution(dist_matrix: np.ndarray) -> None:
     upper_triangle_indices = np.triu_indices(dist_matrix.shape[0])
     distances = dist_matrix[upper_triangle_indices]
 
-    fig = go.Figure(data=[go.Histogram(x=distances)])
+    fig = go.Figure(data=[go.Histogram(x=distances)])  # ty: ignore[unresolved-attribute]  # @requires_go guards go is not None
 
     # Calculate mean, mode, and standard deviation of distances
     mean_distance = np.mean(distances)
@@ -384,16 +384,16 @@ def visualise_box_plot(data1, data2, data3) -> None:
     This is used for comparing the curvature values.
     Plot 3 box plot in the same figure.
     """
-    fig = go.Figure()
+    fig = go.Figure()  # ty: ignore[unresolved-attribute]  # @requires_go guards go is not None
 
     # Add subplots for each dataset
-    fig.add_trace(go.Box(y=data1, name="Data 1", marker_color="skyblue", boxmean="sd"))
-    fig.add_trace(go.Box(y=data2, name="Data 2", marker_color="salmon", boxmean="sd"))
-    fig.add_trace(go.Box(y=data3, name="Data 3", marker_color="lightgreen", boxmean="sd"))
+    fig.add_trace(go.Box(y=data1, name="Data 1", marker_color="skyblue", boxmean="sd"))  # ty: ignore[unresolved-attribute]  # @requires_go guards go is not None
+    fig.add_trace(go.Box(y=data2, name="Data 2", marker_color="salmon", boxmean="sd"))  # ty: ignore[unresolved-attribute]  # @requires_go guards go is not None
+    fig.add_trace(go.Box(y=data3, name="Data 3", marker_color="lightgreen", boxmean="sd"))  # ty: ignore[unresolved-attribute]  # @requires_go guards go is not None
 
     # Add histograms for each dataset below the box plots
     fig.add_trace(
-        go.Histogram(
+        go.Histogram(  # ty: ignore[unresolved-attribute]  # @requires_go guards go is not None
             x=data1,
             name="Data 1 Hist",
             marker_color="skyblue",
@@ -403,7 +403,7 @@ def visualise_box_plot(data1, data2, data3) -> None:
         )
     )
     fig.add_trace(
-        go.Histogram(
+        go.Histogram(  # ty: ignore[unresolved-attribute]  # @requires_go guards go is not None
             x=data2,
             name="Data 2 Hist",
             marker_color="salmon",
@@ -413,7 +413,7 @@ def visualise_box_plot(data1, data2, data3) -> None:
         )
     )
     fig.add_trace(
-        go.Histogram(
+        go.Histogram(  # ty: ignore[unresolved-attribute]  # @requires_go guards go is not None
             x=data3,
             name="Data 3 Hist",
             marker_color="lightgreen",
