@@ -559,7 +559,7 @@ def adaptive_neighborhood_graph(X, k_min=5, k_max=50, density_method="knn"):
                 distance = np.linalg.norm(X[i] - X[j])
                 G.add_edge(i, j, weight=1, distance=distance)  # weight= distance
 
-    for i, (density, k) in enumerate(zip(local_density, adaptive_k)):
+    for i, (density, k) in enumerate(zip(local_density, adaptive_k, strict=True)):
         G.nodes[i]["density"] = density
         G.nodes[i]["adaptive_k"] = k
 
@@ -624,7 +624,7 @@ def heat_kernel_distance(L1, L2):
     K1 = np.array([evecs1 @ np.diag(np.exp(-evals1 * ti)) @ evecs1.T for ti in t])
     K2 = np.array([evecs2 @ np.diag(np.exp(-evals2 * ti)) @ evecs2.T for ti in t])
 
-    diff = np.array([np.linalg.norm(k1 - k2, "fro") for k1, k2 in zip(K1, K2)])
+    diff = np.array([np.linalg.norm(k1 - k2, "fro") for k1, k2 in zip(K1, K2, strict=True)])
 
     return np.max(diff)
 
@@ -687,9 +687,7 @@ def kl_divergence(p, q):
     # Mask to ignore zero probabilities in q
     mask = (p_padded > 0) & (q_padded > 0)
 
-    kl_div = np.sum(p_padded[mask] * np.log(p_padded[mask] / (q_padded[mask] + epsilon)))
-
-    return kl_div
+    return np.sum(p_padded[mask] * np.log(p_padded[mask] / (q_padded[mask] + epsilon)))
 
 
 def ricci_flow(

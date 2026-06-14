@@ -34,6 +34,9 @@ import numpy as np
 # %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 logger = logging.getLogger(__name__)
 
+# A derangement / cross-dyad swap is only defined with at least this many elements.
+_MIN_FOR_DERANGEMENT = 2
+
 __all__ = [
     "circular_time_shift",
     "condition_label_shuffle_within_dyad",
@@ -61,7 +64,7 @@ def _random_derangement(n: int, rng: np.random.Generator, max_tries: int = 100) 
 
     For ``n < 2`` no derangement exists, so the identity ``arange(n)`` is returned (``[]`` or ``[0]``).
     """
-    if n < 2:
+    if n < _MIN_FOR_DERANGEMENT:
         return np.arange(n)
     base = np.arange(n)
     for _ in range(max_tries):
@@ -204,7 +207,7 @@ def dyad_subject_swap(
     """
     rng = _as_rng(rng)
     n_dyads = data_matrix.shape[0]
-    if n_dyads < 2:
+    if n_dyads < _MIN_FOR_DERANGEMENT:
         logger.warning("dyad_subject_swap: n_dyads=%d — nothing to swap.", n_dyads)
         return data_matrix.copy()
 
@@ -301,7 +304,7 @@ def condition_label_shuffle_within_dyad(
                 msg = f"dyad {d} trial {t} has multiple conditions; each trial must carry exactly one."
                 raise ValueError(msg)
         perm = rng.permutation(len(uniq_trials))
-        mapping = dict(zip(uniq_trials, trial_cond[perm]))
+        mapping = dict(zip(uniq_trials, trial_cond[perm], strict=True))
         cond[mask] = np.array([mapping[t] for t in sub_trials])
     return cond
 
