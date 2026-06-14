@@ -28,11 +28,28 @@ _MIN_GRAPHS_FOR_DISTANCE = 2
 
 def compute_global_curvature_stats(curvature_dict):
     """
-    Pool curvature arrays from all graphs and compute:
-    - mean
-    - std
-    - median
-    - MAD = median absolute deviation from the median
+    Pool curvature arrays from all graphs and compute global summary statistics.
+
+    Concatenates the curvature arrays from every entry of ``curvature_dict`` and computes
+    their mean, standard deviation (population, ``ddof=0``), median, and median absolute
+    deviation (MAD) from the median.
+
+    Parameters
+    ----------
+    curvature_dict : dict
+        Mapping whose values are arrays (or array-likes) of curvature values.
+
+    Returns
+    -------
+    dict
+        Dictionary with the pooled ``all_curvatures`` array and the float statistics
+        ``mean``, ``std``, ``median``, and ``mad``.
+
+    Raises
+    ------
+    ValueError
+        If no curvature values are provided (the pooled array is empty).
+
     """
     all_curvatures = np.concatenate(
         [np.ravel(np.asarray(curvatures, dtype=float)) for curvatures in curvature_dict.values()]
@@ -54,9 +71,7 @@ def compute_global_curvature_stats(curvature_dict):
 
 
 def compute_frc_bundle_from_adjacency(adjacency, method="1d"):
-    """
-    For one adjacency matrix, compute and return everything that is useful later.
-    """
+    """Compute and return the full FRC bundle for a single adjacency matrix."""
     adjacency = np.asarray(adjacency)
 
     G = nx.from_numpy_array(adjacency)
@@ -191,6 +206,8 @@ def compute_pairwise_gdd_matrix(
         has the transformed curvature weights stored as an edge attribute.
     weight_attr : str
         Edge attribute to use as Laplacian weight.
+    verbose : bool, default=False
+        If True, print each computed pairwise GDD value as it is calculated.
 
     Returns
     -------

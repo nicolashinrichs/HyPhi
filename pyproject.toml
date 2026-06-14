@@ -345,7 +345,7 @@ ignore-names = [
 ]
 
 [tool.ruff.lint.pydocstyle]
-# convention = "google"  # "numpy", "pep257"
+convention = "numpy"  # "google", "pep257"
 
 [tool.ruff.lint.pylint]
 max-args = 10         # default: 5

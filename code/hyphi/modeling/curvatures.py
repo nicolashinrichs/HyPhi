@@ -606,14 +606,21 @@ def heat_kernel_distance(L1, L2):
     """
     Compute the diffusion distance between two Laplacian matrices using the heat kernel.
 
+    Sweeps the diffusion time over 100 points logarithmically spaced in ``[1e-2, 1e2]`` and
+    returns the maximum Frobenius norm of the difference between the two heat kernels over
+    that range.
+
     Parameters
     ----------
-    L1, L2: Laplacian matrices of the two graphs.
-    t: Time parameter for the heat kernel (controls diffusion scale).
+    L1 : numpy.ndarray
+        Laplacian matrix of the first graph.
+    L2 : numpy.ndarray
+        Laplacian matrix of the second graph.
 
     Returns
     -------
-    The diffusion distance between the two graphs.
+    float
+        The maximum heat-kernel diffusion distance between the two graphs.
 
     """
     evals1, evecs1 = linalg.eigh(L1)
@@ -657,14 +664,20 @@ def kl_divergence(p, q):
     """
     Compute Kullback-Leibler Divergence between two probability distributions.
 
+    Both inputs are normalized to sum to 1 and zero-padded to a common length before the
+    divergence is computed.
+
     Parameters
     ----------
-    p (array-like): First probability distribution
-    q (array-like): Second probability distribution
+    p : array-like
+        First probability distribution.
+    q : array-like
+        Second probability distribution.
 
     Returns
     -------
-    float: KL divergence between p and q
+    float
+        The KL divergence between ``p`` and ``q``.
 
     """
     # Convert inputs to numpy arrays

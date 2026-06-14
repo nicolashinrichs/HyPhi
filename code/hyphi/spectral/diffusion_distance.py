@@ -16,21 +16,33 @@ import hyphi.spectral.laplace as lap
 
 
 def main():
+    """Return 0 as the module entry-point placeholder."""
     return 0
 
 
 def diffusion_distance(adj1: np.ndarray, adj2: np.ndarray, time_limit: float, fs: float) -> float:
     """
-    Function calculating heat diffusion distance (d_gdd) of two square matrices matching in shape.
+    Compute the heat-diffusion distance (d_gdd) between two equally shaped square matrices.
 
-    Input
-    Adjacency matrix 1, adjacency matrix 2, time_limit, fs
-    time limit - how many timepoints (in seconds) should be analyzed to find the maximum
-    distance of two heat distributions
-    fs - how many timepoints in one second should be analyzed
+    Sweeps the time axis ``[0, time_limit)`` at sampling rate ``fs`` and returns the
+    maximum Frobenius difference between the two graphs' heat operators over that window.
 
-    Output
-    maximum diffusion distance (d_gdd) in the given time window (0, time_limit)
+    Parameters
+    ----------
+    adj1 : numpy.ndarray
+        First adjacency matrix.
+    adj2 : numpy.ndarray
+        Second adjacency matrix, matching ``adj1`` in shape.
+    time_limit : float
+        Upper bound (in seconds) of the time window analyzed to find the maximum
+        distance between the two heat distributions.
+    fs : float
+        Sampling rate: how many timepoints per second are analyzed.
+
+    Returns
+    -------
+    float
+        The maximum diffusion distance (d_gdd) over the time window ``[0, time_limit)``.
 
     """
 
@@ -54,7 +66,22 @@ def diffusion_distance(adj1: np.ndarray, adj2: np.ndarray, time_limit: float, fs
 
 def edge_deletion(A, i, j):
     """
-    A is an adjacency matrix, i and j are nodes between which we want to remove the edge.
+    Return a copy of adjacency matrix ``A`` with the edge between nodes ``i`` and ``j`` removed.
+
+    Parameters
+    ----------
+    A : numpy.ndarray
+        The original adjacency matrix.
+    i : int
+        First endpoint of the edge to remove.
+    j : int
+        Second endpoint of the edge to remove.
+
+    Returns
+    -------
+    numpy.ndarray
+        A copy of ``A`` with entries ``[i, j]`` and ``[j, i]`` set to 0.
+
     """
     A_prime = np.copy(A)
 
@@ -66,13 +93,30 @@ def edge_deletion(A, i, j):
 
 def EDP(A, m, n, fs):
     """
-    Function that returns the normalized edge detection perturbation.
-    A - adjacency matrix (original)
-    A_prime - is a  A matrix with a delted edge.
+    Compute the normalized edge-deletion perturbation (EDP) for edge ``(m, n)``.
 
-    If edge (m, n) is absent (``A[m, n] == 0``), ``chi`` is 0 and ``A_prime``
-    is returned as an unmodified copy of ``A`` (so callers can rely on a valid
-    matrix in either branch).
+    Deletes the edge ``(m, n)`` from ``A`` and returns the diffusion distance between the
+    original and perturbed graphs, normalized by the edge weight ``A[m, n]``. If edge
+    ``(m, n)`` is absent (``A[m, n] == 0``), ``chi`` is 0 and ``A_prime`` is an unmodified
+    copy of ``A`` (so callers can rely on a valid matrix in either branch).
+
+    Parameters
+    ----------
+    A : numpy.ndarray
+        The original adjacency matrix.
+    m : int
+        First endpoint of the edge to perturb.
+    n : int
+        Second endpoint of the edge to perturb.
+    fs : float
+        Sampling rate passed to :func:`diffusion_distance` (timepoints per second).
+
+    Returns
+    -------
+    tuple[float, numpy.ndarray]
+        The normalized perturbation ``chi`` and the perturbed adjacency matrix
+        ``A_prime``.
+
     """
     if A[m, n]:
         A_prime = edge_deletion(A, m, n)

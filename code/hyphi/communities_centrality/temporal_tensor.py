@@ -1,6 +1,8 @@
 """
-Temporal-tensor helpers: stack per-window adjacency matrices into a single
-``(T, N, N)`` array and visualise inter-window similarity as a heatmap.
+Temporal-tensor helpers for stacking adjacency matrices and visualising their similarity.
+
+Stack per-window adjacency matrices into a single ``(T, N, N)`` array and visualise
+inter-window similarity as a heatmap.
 
 The original contributor version executed the heatmap-rendering block at
 module import time using a free-floating ``temporal_tensor`` variable, which
@@ -17,9 +19,7 @@ from scipy.spatial.distance import pdist, squareform
 
 
 def create_temporal_tensor(folder_path, file_pattern="*_matrix.npy"):
-    """
-    Finds and stacks 2D adjacency matrices into a single 3D temporal tensor.
-    """
+    """Find and stack 2D adjacency matrices into a single 3D temporal tensor."""
     # exclude dotfiles (e.g. macOS "._" AppleDouble artifacts) to match the original glob.glob behavior
     matrix_files = sorted(p for p in Path(folder_path).glob(file_pattern) if not p.name.startswith("."))
 
@@ -37,8 +37,10 @@ def plot_state_stability_heatmap(
     show=False,
 ):
     """
-    Compute frame-by-frame correlation similarity from a ``(T, N, N)`` tensor
-    of per-window adjacency matrices and render it as a heatmap.
+    Compute and plot frame-by-frame correlation similarity of a temporal adjacency tensor.
+
+    Computes the frame-by-frame correlation similarity from a ``(T, N, N)`` tensor of
+    per-window adjacency matrices and renders it as a heatmap.
 
     Parameters
     ----------
