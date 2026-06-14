@@ -35,6 +35,10 @@ from .windowing import compute_plv_matrix
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
+# Stacked phase windows arrive as a 3D array (windows, nodes, time); a single window is 2D.
+_WINDOWED_PHASE_NDIM = 3
+_SINGLE_PHASE_NDIM = 2
+
 # %% Functions >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
 
@@ -69,13 +73,13 @@ def parse_run_ids(raw_runs: Iterable[object]) -> list[int]:
 def phase_windows_from_array(arr: np.ndarray, win_size: int, win_stride: int) -> list[np.ndarray]:
     """Compute phase windows from a 2D array."""
     arr = np.asarray(arr)
-    if arr.ndim == 3:
+    if arr.ndim == _WINDOWED_PHASE_NDIM:
         # Supports (W, N, T) and (W, T, N).
         if arr.shape[1] > arr.shape[2]:
             arr = np.transpose(arr, (0, 2, 1))
         return [np.asarray(arr[w], dtype=float) for w in range(arr.shape[0])]
 
-    if arr.ndim != 2:
+    if arr.ndim != _SINGLE_PHASE_NDIM:
         raise ValueError(f"Unsupported phase array shape: {arr.shape}")
 
     phases = np.asarray(arr, dtype=float)

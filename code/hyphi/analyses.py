@@ -14,7 +14,8 @@ from .modeling.entropies import DEFAULT_ENTROPY_METHOD, get_estimator
 from .modeling.graph_curvatures import compute_frc_vec
 
 # %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
-pass
+# A single connectivity matrix (one window) is a 2D array.
+_SINGLE_WINDOW_NDIM = 2
 
 
 # %% Functions >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
@@ -42,7 +43,7 @@ def build_sliding_window_graphs(connectivity_matrix: np.ndarray) -> list[nx.Grap
         of the connectivity matrix entries.
 
     """
-    if connectivity_matrix.ndim == 2:
+    if connectivity_matrix.ndim == _SINGLE_WINDOW_NDIM:
         connectivity_matrix = connectivity_matrix[np.newaxis, :, :]
 
     graphs = []

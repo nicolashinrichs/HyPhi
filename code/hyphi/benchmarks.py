@@ -57,6 +57,15 @@ __all__ = [
     "extract_window_features",
 ]
 
+# Denominators below this are treated as zero to avoid divide-by-near-zero blow-ups.
+_EPS_DENOM = 1e-15
+# Global efficiency is undefined for fewer than this many nodes.
+_MIN_NODES_FOR_EFFICIENCY = 2
+# A connectivity matrix is a 2D array.
+_CONN_MATRIX_NDIM = 2
+# A windowed CCORR tensor is (freq, trial, window, 2n, 2n).
+_CCORR_TENSOR_NDIM = 5
+
 _FEATURE_NAMES: tuple[str, ...] = (
     "mean_cross",
     "std_cross",
@@ -122,7 +131,7 @@ def compute_wpli(phases_i: np.ndarray, phases_j: np.ndarray) -> float:
     cs = np.exp(1j * (phi_i - phi_j))
     im = np.imag(cs)
     denom = float(np.mean(np.abs(im)))
-    if denom < 1e-15:
+    if denom < _EPS_DENOM:
         return 0.0
     return float(np.abs(np.mean(np.abs(im) * np.sign(im))) / denom)
 
@@ -151,7 +160,7 @@ def compute_imaginary_coherence(
         ``(freqs, imag_coh)`` — frequency array and ``|Im(coherence)|``.
 
     """
-    from scipy.signal import csd, welch
+    from scipy.signal import csd, welch  # noqa: PLC0415 - lazy: keep scipy.signal out of `import hyphi`
 
     si = np.asarray(signal_i, dtype=float)
     sj = np.asarray(signal_j, dtype=float)
@@ -163,7 +172,7 @@ def compute_imaginary_coherence(
     _, pyy = welch(sj, fs=fs, nperseg=nperseg)
 
     denom = np.sqrt(pxx * pyy)
-    denom = np.where(denom < 1e-15, 1e-15, denom)
+    denom = np.where(denom < _EPS_DENOM, _EPS_DENOM, denom)
     return freqs, np.abs(np.imag(pxy / denom))
 
 
@@ -172,9 +181,9 @@ def compute_imaginary_coherence(
 # ---------------------
 
 
-def compute_global_efficiency(G: nx.Graph, weight: str | None = None) -> float:
+def compute_global_efficiency(G: nx.Graph, weight: str | None = None) -> float:  # noqa: ARG001 - weight kept for API parity with the other compute_* benchmarks
     """Global efficiency of a graph; returns 0.0 on degenerate input."""
-    if G.number_of_nodes() < 2:
+    if G.number_of_nodes() < _MIN_NODES_FOR_EFFICIENCY:
         return 0.0
     return float(nx.global_efficiency(G))
 
@@ -243,7 +252,7 @@ def connectivity_matrix_features(
 
     """
     M = np.asarray(corr_matrix, dtype=float)
-    if M.ndim != 2 or M.shape[0] != M.shape[1]:
+    if M.ndim != _CONN_MATRIX_NDIM or M.shape[0] != M.shape[1]:
         raise ValueError(f"Expected square matrix, got shape {M.shape}")
     total = M.shape[0]
     n = n_ch_per_subject
@@ -307,7 +316,7 @@ def extract_window_features(
         ``(n_freq, n_trials, n_windows, n_features)``.
 
     """
-    if ccorr_tensor.ndim != 5:
+    if ccorr_tensor.ndim != _CCORR_TENSOR_NDIM:
         raise ValueError(f"Expected 5-D tensor (freq, trial, window, 2n, 2n), got {ccorr_tensor.shape}")
     n_freq, n_trials, n_windows = ccorr_tensor.shape[:3]
     n_feats = len(_FEATURE_NAMES)
@@ -381,12 +390,12 @@ def classify_curvature_vs_benchmarks(
         ``n_groups`` — plus ``combined_*`` if ``X_combined`` was supplied.
 
     """
-    from sklearn.ensemble import RandomForestClassifier
-    from sklearn.linear_model import LogisticRegression
+    from sklearn.ensemble import RandomForestClassifier  # noqa: PLC0415 - lazy: keep sklearn out of `import hyphi`
+    from sklearn.linear_model import LogisticRegression  # noqa: PLC0415 - lazy: keep sklearn out of `import hyphi`
     from sklearn.model_selection import StratifiedGroupKFold, StratifiedKFold, cross_val_score  # noqa: PLC0415
-    from sklearn.pipeline import make_pipeline
-    from sklearn.preprocessing import StandardScaler
-    from sklearn.svm import SVC
+    from sklearn.pipeline import make_pipeline  # noqa: PLC0415 - lazy: keep sklearn out of `import hyphi`
+    from sklearn.preprocessing import StandardScaler  # noqa: PLC0415 - lazy: keep sklearn out of `import hyphi`
+    from sklearn.svm import SVC  # noqa: PLC0415 - lazy: keep sklearn out of `import hyphi`
 
     X_curvature = np.asarray(X_curvature, dtype=float)
     X_benchmarks = np.asarray(X_benchmarks, dtype=float)

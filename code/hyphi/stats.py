@@ -43,6 +43,15 @@ if TYPE_CHECKING:
 # %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 logger = logging.getLogger(__name__)
 
+# Entropy arrays are nested (n_freq, n_trials, n_windows).
+_ENTROPY_NDIM = 3
+# Standard deviation below this is treated as zero (return d = 0 instead of dividing).
+_SD_FLOOR = 1e-15
+# A sample variance (ddof=1) needs at least this many observations.
+_MIN_SAMPLES_FOR_VARIANCE = 2
+# At least this many distinct conditions are needed to form a pairwise contrast.
+_MIN_CONDITIONS = 2
+
 __all__ = [
     "cohens_d",
     "cohens_d_timeseries",
@@ -98,7 +107,7 @@ def entropy_to_long_df(
     rows = []
     for dyad, by_cond in entropy_by_dyad_condition.items():
         for cond, arr in by_cond.items():
-            if arr.ndim != 3:
+            if arr.ndim != _ENTROPY_NDIM:
                 msg = f"Expected (n_freq, n_trials, n_windows) for dyad={dyad} cond={cond}, got shape {arr.shape}."
                 raise ValueError(msg)
             n_freq, n_trials, n_windows = arr.shape
@@ -154,17 +163,17 @@ def cohens_d(group_a: np.ndarray, group_b: np.ndarray, paired: bool = False) -> 
             raise ValueError("Paired Cohen's d requires equal-length arrays.")
         diff = a - b
         sd = float(np.std(diff, ddof=1))
-        if sd < 1e-15:
+        if sd < _SD_FLOOR:
             return 0.0
         return float(np.mean(diff) / sd)
 
     na, nb = len(a), len(b)
-    if na < 2 or nb < 2:
+    if na < _MIN_SAMPLES_FOR_VARIANCE or nb < _MIN_SAMPLES_FOR_VARIANCE:
         return 0.0
     var_a = float(np.var(a, ddof=1))
     var_b = float(np.var(b, ddof=1))
     pooled_sd = float(np.sqrt(((na - 1) * var_a + (nb - 1) * var_b) / (na + nb - 2)))
-    if pooled_sd < 1e-15:
+    if pooled_sd < _SD_FLOOR:
         return 0.0
     return float((np.mean(a) - np.mean(b)) / pooled_sd)
 
@@ -203,8 +212,7 @@ def cohens_d_timeseries(arr_a: np.ndarray, arr_b: np.ndarray, axis: int = 0) -> 
     var_b = b.var(axis=0, ddof=1) if nb > 1 else np.zeros_like(mean_b)
     pooled_sd = np.sqrt(((na - 1) * var_a + (nb - 1) * var_b) / max(na + nb - 2, 1))
     with np.errstate(divide="ignore", invalid="ignore"):
-        d = np.where(pooled_sd > 1e-15, (mean_a - mean_b) / pooled_sd, 0.0)
-    return d
+        return np.where(pooled_sd > _SD_FLOOR, (mean_a - mean_b) / pooled_sd, 0.0)
 
 
 # ---------------------
@@ -555,7 +563,7 @@ def energy_distance_hierarchical(
         dyad_stats = []
         for _, d_df in df.groupby(dyad_col):
             conds = np.unique(d_df[cond].values)
-            if len(conds) < 2:
+            if len(conds) < _MIN_CONDITIONS:
                 continue
             pairs = []
             for i in range(len(conds)):

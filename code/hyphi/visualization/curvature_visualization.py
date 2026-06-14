@@ -26,7 +26,8 @@ except ModuleNotFoundError:
     go = None
 
 # %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
-pass
+# Matplotlib's discrete "tab20" colormap carries 20 distinct colors; beyond this we fall back to hsv.
+_TAB20_MAX_CLUSTERS = 20
 
 
 # %% Functions >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
@@ -435,7 +436,7 @@ def visualize_graph_partitions_markers(
     community_to_marker = {community: next(marker_cycle) for community in unique_communities}
 
     # Discrete color mapping; fallback to hsv if clusters exceed tab20.
-    if n_clusters <= 20:
+    if n_clusters <= _TAB20_MAX_CLUSTERS:
         cmap = plt.get_cmap("tab20", n_clusters)
         community_to_color = {community: cmap(i) for i, community in enumerate(unique_communities)}
     else:
@@ -507,7 +508,7 @@ def visualize_graph_partitions_markers(
         bbox_to_anchor=(1.02, 1.0),
         frameon=True,
         title="Clusters",
-        ncol=1 if n_clusters < 20 else 2,
+        ncol=1 if n_clusters < _TAB20_MAX_CLUSTERS else 2,
     )
     fig.tight_layout()
 

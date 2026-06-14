@@ -8,8 +8,8 @@ raised ``NameError`` on import.  The same code now lives in
 :func:`plot_state_stability_heatmap`, which takes the tensor as an argument.
 """
 
-import glob
-import os
+import contextlib
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -20,13 +20,11 @@ def create_temporal_tensor(folder_path, file_pattern="*_matrix.npy"):
     """
     Finds and stacks 2D adjacency matrices into a single 3D temporal tensor.
     """
-    search_path = os.path.join(folder_path, file_pattern)
-    matrix_files = sorted(glob.glob(search_path))
+    # exclude dotfiles (e.g. macOS "._" AppleDouble artifacts) to match the original glob.glob behavior
+    matrix_files = sorted(p for p in Path(folder_path).glob(file_pattern) if not p.name.startswith("."))
 
     matrix_list = [np.load(f) for f in matrix_files]
-    temporal_tensor = np.stack(matrix_list)
-
-    return temporal_tensor
+    return np.stack(matrix_list)
 
 
 def plot_state_stability_heatmap(
@@ -59,11 +57,9 @@ def plot_state_stability_heatmap(
 
     """
     if style:
-        try:
+        # Style may not exist in older matplotlib; fall back silently.
+        with contextlib.suppress(OSError, ValueError):
             plt.style.use(style)
-        except (OSError, ValueError):
-            # Style may not exist in older matplotlib; fall back silently.
-            pass
 
     num_frames = temporal_tensor.shape[0]
     flat_tensor = temporal_tensor.reshape(num_frames, -1)

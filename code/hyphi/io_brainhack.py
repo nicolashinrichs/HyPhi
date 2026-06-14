@@ -24,6 +24,7 @@ from __future__ import annotations
 import io
 import pickle
 from pathlib import Path
+from typing import ClassVar
 
 import numpy as np
 
@@ -80,7 +81,7 @@ def load_pickle_adjacency(
                 self.__dict__["_state"] = state
 
         class _CompatUnpickler(pickle.Unpickler):
-            _VIEW_NAMES = {
+            _VIEW_NAMES: ClassVar[set[str]] = {
                 "NodeView",
                 "NodeDataView",
                 "EdgeView",
@@ -111,7 +112,7 @@ def load_pickle_adjacency(
     try:
         with path.open("rb") as f:
             obj = pickle.load(f)
-    except Exception:
+    except Exception:  # noqa: BLE001 - any unpickling failure (cross-NetworkX class/module mismatch) should fall back to the compat shim
         obj = _compat_load(path)
 
     if isinstance(obj, (list, tuple)):
@@ -215,7 +216,7 @@ def load_adjacencies_from_paths(
 
 
 def build_kuramoto_paths(
-    indices=range(1, 9),
+    indices=None,
     base_dir=Path("HyPhi") / "data" / "connectome",
     suffix="connectome_kuramoto.pkl",
 ):
@@ -228,6 +229,8 @@ def build_kuramoto_paths(
 
     and check that they exist.
     """
+    if indices is None:
+        indices = range(1, 9)
     paths = {idx: Path(base_dir) / f"{idx}_{suffix}" for idx in indices}
 
     missing = [idx for idx, path in paths.items() if not path.exists()]
@@ -239,7 +242,7 @@ def build_kuramoto_paths(
 
 
 def load_all_kuramoto_adjacencies(
-    indices=range(1, 9),
+    indices=None,
     base_dir=Path("HyPhi") / "data" / "connectome",
     suffix="connectome_kuramoto.pkl",
     weight_key="weight",
@@ -248,6 +251,8 @@ def load_all_kuramoto_adjacencies(
     verbose=False,
 ):
     """Load all Kuramoto adjacency matrices only."""
+    if indices is None:
+        indices = range(1, 9)
     paths = build_kuramoto_paths(
         indices=indices,
         base_dir=base_dir,
@@ -282,7 +287,7 @@ def load_all_kuramoto_adjacencies(
 
 
 def build_prebase_paths(
-    indices=range(1, 30),
+    indices=None,
     base_dir=Path("HyPhi") / "data" / "prebase",
     suffix="_prebase_graph.pkl",
 ):
@@ -291,6 +296,8 @@ def build_prebase_paths(
     01_prebase_graph.pkl, ..., 29_prebase_graph.pkl
     and check that they exist.
     """
+    if indices is None:
+        indices = range(1, 30)
     paths = {idx: Path(base_dir) / f"{idx:02d}{suffix}" for idx in indices}
 
     missing = [idx for idx, path in paths.items() if not path.exists()]
@@ -302,7 +309,7 @@ def build_prebase_paths(
 
 
 def load_all_prebase_adjacencies(
-    indices=range(1, 30),
+    indices=None,
     base_dir=Path("HyPhi") / "data" / "prebase",
     suffix="_prebase_graph.pkl",
     weight_key="weight",
@@ -311,6 +318,8 @@ def load_all_prebase_adjacencies(
     verbose=False,
 ):
     """Load all prebase adjacency matrices only."""
+    if indices is None:
+        indices = range(1, 30)
     paths = build_prebase_paths(
         indices=indices,
         base_dir=base_dir,

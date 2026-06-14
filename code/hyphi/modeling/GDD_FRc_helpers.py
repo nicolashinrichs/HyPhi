@@ -8,6 +8,8 @@ actual graph maths live in :mod:`hyphi.modeling.graph_curvatures` (FRC) and
 :mod:`hyphi.modeling.curvatures` (Laplacian, heat-kernel distance).
 """
 
+import itertools
+
 import networkx as nx
 import numpy as np
 
@@ -19,6 +21,9 @@ from hyphi.modeling.graph_curvatures import (
     compute_frc,
     extract_curvatures,
 )
+
+# At least two graphs are needed to form a successive or pairwise distance.
+_MIN_GRAPHS_FOR_DISTANCE = 2
 
 
 def compute_global_curvature_stats(curvature_dict):
@@ -148,12 +153,12 @@ def compute_successive_gdd(
     """
     indices = sorted(weighted_graphs.keys())
 
-    if len(indices) < 2:
+    if len(indices) < _MIN_GRAPHS_FOR_DISTANCE:
         raise ValueError("Need at least two graphs to compute successive distances.")
 
     gdd_dict = {}
 
-    for prev_idx, curr_idx in zip(indices[:-1], indices[1:]):
+    for prev_idx, curr_idx in itertools.pairwise(indices):
         G_prev = weighted_graphs[prev_idx]
         G_curr = weighted_graphs[curr_idx]
 
@@ -199,7 +204,7 @@ def compute_pairwise_gdd_matrix(
     """
     indices = sorted(weighted_graphs.keys())
 
-    if len(indices) < 2:
+    if len(indices) < _MIN_GRAPHS_FOR_DISTANCE:
         raise ValueError("Need at least two graphs to compute pairwise distances.")
 
     laplacians = {}

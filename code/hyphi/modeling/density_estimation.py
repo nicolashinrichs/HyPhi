@@ -28,8 +28,10 @@ def select_kde(kernel_type="gaussian", bw="ISJ", norm=2, method="FFT"):
     KDE estimator object (unfitted).
 
     """
-    assert (bw in ["scott", "silverman", "ISJ"]) or isinstance(bw, (int, float)), f"BW {bw} not an approved type!"
-    assert isinstance(norm, int)
+    if not ((bw in ["scott", "silverman", "ISJ"]) or isinstance(bw, (int, float))):
+        raise ValueError(f"BW {bw} not an approved type!")
+    if not isinstance(norm, int):
+        raise ValueError(f"norm must be an int, got {type(norm).__name__}.")
 
     match method:
         case "naive":
