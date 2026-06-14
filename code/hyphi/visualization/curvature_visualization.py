@@ -110,7 +110,7 @@ def visualize_graph_with_curvature(
         plt.show()
 
 
-def visualize_graph_on_dataset_plot(G: nx.Graph, pos):  # noqa: N803
+def visualize_graph_on_dataset_plot(G: nx.Graph, pos):
     _require_plotly()
     # Extract node positions
     xn, yn, zn = zip(*pos.values(), strict=True)
@@ -164,7 +164,7 @@ def visualize_graph_on_dataset_3d(
     pos,
     colors=None,
     node_size: float = 20,
-    edge_size: float = 1.5,  # noqa: N803
+    edge_size: float = 1.5,
 ) -> None:
     """Visualize a graph on a 3D dataset layout."""
     fig = plt.figure(figsize=(8, 6))
@@ -197,7 +197,7 @@ def visualize_graph_on_dataset_3d(
 
 
 def visualize_graph_on_dataset_2d(
-    G: nx.Graph,  # noqa: N803
+    G: nx.Graph,
     dataset: np.ndarray,
     colors=None,
     node_size: int | float = 20,
@@ -526,7 +526,7 @@ def visualize_graph_partitions_markers(
         plt.close(fig)
 
 
-def visualize_graph_on_dataset_with_colors(G: nx.Graph, pos, partitions) -> None:  # noqa: N803
+def visualize_graph_on_dataset_with_colors(G: nx.Graph, pos, partitions) -> None:
     """
     Visualize the graph with a given layout.
 

@@ -44,7 +44,7 @@ _VALID_LAYOUTS = ("spring", "kamada_kawai", "spectral", "circular", "shell")
 # %% Helpers >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
 
-def _get_layout_positions(G: nx.Graph, layout: str = "spring", seed: int = 42) -> dict:  # noqa: N803
+def _get_layout_positions(G: nx.Graph, layout: str = "spring", seed: int = 42) -> dict:
     """Dispatch to the chosen ``networkx`` layout; raises on unknown names."""
     if G.number_of_nodes() == 0:
         return {}
@@ -75,7 +75,7 @@ def _safe_color_limits(values: Iterable[float]) -> tuple[float, float]:
 
 
 def plot_weight_distribution(
-    G: nx.Graph,  # noqa: N803
+    G: nx.Graph,
     bins: int = 20,
     figsize: tuple[float, float] = (7, 4),
     title: str = "Distribution of edge weights",
@@ -120,7 +120,7 @@ def plot_weight_distribution(
 
 
 def plot_network(
-    G: nx.Graph,  # noqa: N803
+    G: nx.Graph,
     layout: str = "spring",
     figsize: tuple[float, float] = (10, 10),
     title: str | None = None,
@@ -150,7 +150,7 @@ def plot_network(
 
 
 def plot_curvature_network(
-    G: nx.Graph,  # noqa: N803
+    G: nx.Graph,
     curvature_attr: str = "formanCurvature",
     layout: str = "spring",
     figsize: tuple[float, float] = (10, 10),
@@ -229,7 +229,7 @@ def plot_curvature_network(
 
 
 def plot_curvature_network_layouts(
-    G: nx.Graph,  # noqa: N803
+    G: nx.Graph,
     curvature_attr: str = "formanCurvature",
     layouts: tuple[str, ...] = ("spring", "kamada_kawai", "circular"),
     figsize: tuple[float, float] = (18, 6),

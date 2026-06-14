@@ -46,8 +46,8 @@ def load_connectome(pickle_path: str) -> tuple[np.ndarray, np.ndarray, list[str]
     """
     import pickle
 
-    with open(pickle_path, "rb") as f:  # noqa: S301
-        W, tract, roi_names, _centers_raw, _hemis_raw, _areas_raw = pickle.load(f)  # noqa: S301
+    with open(pickle_path, "rb") as f:
+        W, tract, roi_names, _centers_raw, _hemis_raw, _areas_raw = pickle.load(f)
 
     # Symmetrize and zero diagonal
     W = (W + W.T) / 2.0

@@ -279,6 +279,13 @@ ignore = [
     "S301",   # suspicious-pickle-usage
     "TD002",  # Missing author in To-Do
     "TD003",  # Missing issue link on the line following a To-Do
+    # Cyclomatic / size complexity: accepted on load-bearing scientific code (the ricci_flow CLI, the
+    # multi-parameter plot functions, the pickle-adjacency loader). Refactoring working numerics for a
+    # lint count is high-risk, low-value; see the Bucket-A cleanup decision.
+    "C901",    # function is too complex
+    "PLR0912", # too many branches
+    "PLR0913", # too many arguments
+    "PLR0915", # too many statements
 ]
 
 # ignore-init-module-imports = true # void automatically removing unused imports in __init__.py
@@ -289,6 +296,8 @@ ignore = [
 "configs.py" = ["UP036", "UP038"]
 "*.ipynb" = ["D100"]                            # ignore docsstring in notebooks
 "code/tests/*.py" = ["S101", "PLC2701", "N802"] # ignore assert statements in tests, private name imports, & lowercase (tearDown, setUp)
+"GDD_FRc_*.py" = ["N999"]                        # GDD = Graph Diffusion Distance (a domain acronym); renaming the module would break imports
+"graph_simulations.py" = ["PLC2401"]            # the spacing parameter is the Greek letter epsilon (ε), matching the math
 
 [tool.ruff.format]
 # Check: https://docs.astral.sh/ruff/settings/#format
@@ -319,7 +328,20 @@ known-local-folder = ["code/hyphi"]
 max-complexity = 10 # default x: 10
 
 [tool.ruff.lint.pep8-naming]
-ignore-names = [] # fill with specific class, function, variable names
+# Allow the source mathematics' notation (CLAUDE.md sec 10): single-letter graph / matrix /
+# neuroscience symbols and their documented subscripted forms, matching the equations rather than
+# renaming ~100 variables across the scientific modules. The globs cover the suffixed families
+# (W_inter, G_prev, X_curvature, ...). Names outside this set are still flagged.
+ignore-names = [
+    # single-letter symbols: graph, weight, design matrix, Laplacian, adjacency, correlation/coupling,
+    # time, degree/distance, entropy or graph-H, generic matrix, node count, coupling constant
+    "G", "W", "X", "L", "A", "C", "T", "D", "H", "M", "N", "K", "_N",
+    "Gt", "Ht", "Qt", "FRCt", "Dmax", "Hreps", "Qreps", # per-window / reduced forms
+    "W_*", "G_*", "L_*", "X_*", "D_*", "H_*", "C_*", "A_*", # subscripted symbol families (W_inter, A_prime, ...)
+    "K[0-9]", "L[0-9]", # K1/K2 curvatures, L1/L2 Laplacians
+    "intra_A", "intra_B", "mean_intra_*", "mean_W", # subject-A / subject-B block labels
+    "EDP", # Effective Diffusion Path (a domain acronym; the N802 function name)
+]
 
 [tool.ruff.lint.pydocstyle]
 # convention = "google"  # "numpy", "pep257"

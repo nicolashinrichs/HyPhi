@@ -231,12 +231,12 @@ def forman_ricci_flow(
     weight: str = "weight",
 ) -> nx.Graph:
     """Compute the Forman-Ricci flow on a graph."""
-    G = graph.copy()  # noqa: N806
+    G = graph.copy()
     eps = 1e-12
     normalized_weight = float(max(1, G.number_of_edges()))
 
     if not nx.get_edge_attributes(G, "formanCurvature"):
-        G = compute_frc(G, method=method)  # noqa: N806
+        G = compute_frc(G, method=method)
 
     if not nx.get_edge_attributes(G, "original_FRC"):
         for u, v in G.edges():
@@ -258,7 +258,7 @@ def forman_ricci_flow(
             weights[edge] = max(eps, weights[edge] * scale)
         nx.set_edge_attributes(G, values=weights, name=weight)
 
-        G = compute_frc(G, method=method)  # noqa: N806
+        G = compute_frc(G, method=method)
         rc = nx.get_edge_attributes(G, "formanCurvature")
         if not rc or (max(rc.values()) - min(rc.values()) < delta):
             break

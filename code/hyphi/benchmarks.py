@@ -179,7 +179,7 @@ def compute_global_efficiency(G: nx.Graph, weight: str | None = None) -> float:
     return float(nx.global_efficiency(G))
 
 
-def compute_modularity(G: nx.Graph, weight: str | None = "weight") -> float:  # noqa: N803
+def compute_modularity(G: nx.Graph, weight: str | None = "weight") -> float:
     """Modularity via greedy community detection; 0.0 if no edges."""
     if G.number_of_edges() == 0:
         return 0.0
@@ -187,7 +187,7 @@ def compute_modularity(G: nx.Graph, weight: str | None = "weight") -> float:  # 
     return float(nx.algorithms.community.quality.modularity(G, communities, weight=weight))
 
 
-def compute_assortativity(G: nx.Graph, weight: str | None = "weight") -> float:  # noqa: N803
+def compute_assortativity(G: nx.Graph, weight: str | None = "weight") -> float:
     """Degree assortativity coefficient; 0.0 when undefined on the graph."""
     if G.number_of_edges() == 0:
         return 0.0

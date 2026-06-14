@@ -139,7 +139,7 @@ def plot_processed_graph(
 
     """
     with Path(graph_pkl_path).open("rb") as f:
-        G: nx.Graph = pickle.load(f)  # noqa: N806
+        G: nx.Graph = pickle.load(f)
     df: pd.DataFrame = pd.read_csv(filepath_or_buffer=stats_csv_path, index_col=0)
 
     node_colors = [df.loc[node, "Community"] for node in G.nodes()]
