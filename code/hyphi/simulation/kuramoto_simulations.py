@@ -63,8 +63,7 @@ def get_plv_pair(phi_i, phi_j):
     return jnp.abs(jnp.mean(jnp.exp(1j * (phi_i - phi_j))))
 
 
-# TODO: should this be here, alone?
-# vectorize across j to build full row (PLV for )  # TODO: for ...?!
+# Vectorize get_plv_pair across the second argument to build a full PLV row.
 get_plv_row = vmap(get_plv_pair, in_axes=(None, 0), out_axes=0)
 
 
