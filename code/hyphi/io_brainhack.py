@@ -292,9 +292,16 @@ def build_prebase_paths(
     suffix="_prebase_graph.pkl",
 ):
     """
-    Build paths like:
-    01_prebase_graph.pkl, ..., 29_prebase_graph.pkl
-    and check that they exist.
+    Build the prebase pickle paths for the given indices and verify they exist.
+
+    Constructs paths like ``01_prebase_graph.pkl, ..., 29_prebase_graph.pkl`` (one per
+    index, defaulting to 1..29) under ``base_dir`` and checks that each file exists.
+
+    Raises
+    ------
+    FileNotFoundError
+        If any of the expected prebase pickle files is missing.
+
     """
     if indices is None:
         indices = range(1, 30)

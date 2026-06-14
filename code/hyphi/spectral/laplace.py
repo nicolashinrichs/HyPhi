@@ -1,7 +1,8 @@
 """
-Graph Laplacian and eigenvalue helpers used by the spectral diffusion / GDD
-analyses.  Pure NumPy; only depends on ``matplotlib`` for the optional plot
-inside :func:`eigen_in_time`.
+Graph Laplacian and eigenvalue helpers for the spectral diffusion / GDD analyses.
+
+Pure NumPy; only depends on ``matplotlib`` for the optional plot inside
+:func:`eigen_in_time`.
 """
 
 import matplotlib.pyplot as plt

@@ -358,6 +358,29 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> None:
+    """
+    Run the per-window Kuramoto PLV to Forman Ricci-flow analysis from the command line.
+
+    Parses command-line arguments (falling back to the config file for unset run ids, data
+    directories, and window counts), then for each time window builds the aggregate graph
+    (by merging precomputed graphs or by computing a merged PLV graph from phase windows,
+    simulating any missing phase files when enabled), computes Forman curvature and Forman
+    Ricci flow, writes the per-window Forman curvature values (``_forman_values.npy``) and, when
+    ``--save-graphs`` is set, the aggregated / Forman / Ricci-flow graph pickles, and writes a
+    per-window ``summary.json`` to the output directory.
+
+    Raises
+    ------
+    ValueError
+        If no run ids are available, if only one of ``--win-size`` / ``--win-stride`` is
+        given, if ``--force-simulate-phases`` is set without simulation enabled, or if
+        fewer windows are available than requested.
+    FileNotFoundError
+        If a required run graph or phase file is missing and simulation is not enabled.
+    RuntimeError
+        If a merged PLV graph does not have the expected number of nodes.
+
+    """
     args = parse_args()
 
     need_config = any(v is None for v in (args.runs, args.data_dir, args.phase_dir, args.target_windows))
