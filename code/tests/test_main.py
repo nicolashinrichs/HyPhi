@@ -6,6 +6,8 @@ writes the entropy series, quantiles, and a figure.
 """
 
 # %% Import
+import json
+
 import matplotlib
 
 matplotlib.use("Agg")  # headless backend for the figure the CLI saves
@@ -47,7 +49,7 @@ class TestMainCLI:
     """The command-line entry point runs and writes its outputs."""
 
     def test_writes_outputs(self, tmp_path):
-        """The CLI writes entropy.csv, quantiles.csv, and entropy.png to the output directory."""
+        """The CLI writes entropy.csv, quantiles.csv, entropy.png, and environment.json to the output directory."""
         out = tmp_path / "run"
         main(["--output", str(out), "--nodes", "15", "--windows", "5"])
         assert (out / "entropy.csv").exists()
@@ -56,6 +58,15 @@ class TestMainCLI:
         # The entropy CSV has one value per window.
         entropy = np.loadtxt(out / "entropy.csv", delimiter=",")
         assert entropy.shape == (5,)
+
+    def test_writes_environment_record(self, tmp_path):
+        """The CLI records the run environment as environment.json alongside the outputs."""
+        out = tmp_path / "run"
+        n_windows = 4
+        main(["--output", str(out), "--nodes", "12", "--windows", str(n_windows)])
+        environment = json.loads((out / "environment.json").read_text())
+        assert set(environment) >= {"hyphi_version", "python_version", "platform", "args"}
+        assert environment["args"]["windows"] == n_windows
 
 
 class TestValidation:
