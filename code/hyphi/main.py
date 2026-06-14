@@ -15,6 +15,10 @@ at a saved ``(windows, nodes, nodes)`` ``.npy`` array to run on your own connect
 from __future__ import annotations
 
 import argparse
+import json
+import platform
+import sys
+from importlib.metadata import version
 from pathlib import Path
 from typing import Any
 
@@ -129,7 +133,7 @@ def run_pipeline(
 
 
 def main(argv: list[str] | None = None) -> None:
-    """Command-line entry point: run the pipeline and write the entropy series and a figure."""
+    """Run the pipeline and write the entropy series, quantiles, a figure, and an environment record."""
     parser = argparse.ArgumentParser(description="Run the HyPhi curvature-entropy pipeline.")
     parser.add_argument("--input", type=str, default=None, help="path to a (windows, nodes, nodes) .npy file")
     parser.add_argument("--output", type=str, default="results", help="directory for the outputs")
@@ -143,6 +147,16 @@ def main(argv: list[str] | None = None) -> None:
 
     out_dir = Path(args.output)
     out_dir.mkdir(parents=True, exist_ok=True)
+    # Record the environment alongside the outputs so a run is reproducible: the full dependency
+    # closure is pinned in uv.lock, and this captures the interpreter, platform, hyphi version, and
+    # the run's arguments (including the seed for the demo series).
+    environment = {
+        "hyphi_version": version("hyphi"),
+        "python_version": sys.version,
+        "platform": platform.platform(),
+        "args": vars(args),
+    }
+    (out_dir / "environment.json").write_text(json.dumps(environment, indent=2))
     np.savetxt(out_dir / "entropy.csv", results["entropy"], delimiter=",")
     np.savetxt(out_dir / "quantiles.csv", results["quantiles"], delimiter=",")
 
