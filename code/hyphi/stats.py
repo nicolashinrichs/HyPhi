@@ -498,7 +498,7 @@ def hierarchical_permutation_test(
 
     trial_to_row_idx: dict[tuple[Any, Any], np.ndarray] = {}
     # Index labels equal positions here thanks to the reset_index above.
-    for (d, t), rows in data.groupby(by=[dyad_col, trial_col]).groups.items():
+    for (d, t), rows in data.groupby(by=[dyad_col, trial_col]).groups.items():  # ty: ignore[not-iterable]  # grouping by two columns yields 2-tuple keys
         trial_to_row_idx[(d, t)] = np.asarray(rows)
 
     null_dist = np.empty(n_perms, dtype=float)
