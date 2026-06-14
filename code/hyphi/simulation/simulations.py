@@ -334,40 +334,6 @@ def run_delayed_kuramoto(
 # ====================================================
 
 
-def gen_weighted_sw(n: int, k: int, p: float, epsilon: float, seed: int = 42) -> nx.Graph:
-    """
-    Generate a single weighted small-world graph.
-
-    Parameters
-    ----------
-    n : int
-        Number of nodes.
-    k : int
-        Each node is connected to *k* nearest neighbors in ring topology.
-    p : float
-        Rewiring probability.
-    epsilon : float
-        Spacing parameter for distance-based weights.
-    seed : int
-        Random seed.
-
-    Returns
-    -------
-    nx.Graph
-        Weighted Watts-Strogatz graph.
-
-    """
-    G = nx.watts_strogatz_graph(n, k, p, seed=seed)
-    nx.set_node_attributes(G, values=1.0, name="weight")
-
-    Dmax = (np.floor(n / 2) + 1) * epsilon
-    for ii, jj in G.edges:
-        d_ij = min(np.abs(ii - jj), n - np.abs(ii - jj))
-        G[ii][jj]["weight"] = (Dmax - d_ij).item()
-
-    return G
-
-
 def run_ws_sweep(
     n: int = 1000,
     k: int = 50,
@@ -405,8 +371,9 @@ def run_ws_sweep(
         Shapes: ``pt (t_rez,)``, ``Hreps (n_reps, t_rez)``, ``Qreps (n_reps, t_rez, 5)``.
 
     """
-    from hyphi.analyses import compute_frc_vec
     from hyphi.modeling.entropies import vec_entropy, vec_quantiles
+    from hyphi.modeling.graph_curvatures import compute_frc_vec
+    from hyphi.simulation.graph_simulations import gen_weighted_sw
 
     pt = np.logspace(min_pow, max_pow, t_rez)
     qvals = np.array([0.05, 0.25, 0.5, 0.75, 0.95])
@@ -416,7 +383,7 @@ def run_ws_sweep(
 
     for rep in range(n_reps):
         # Generate time-varying SW networks
-        Gt = [gen_weighted_sw(n, k, pt[t], epsilon, seed=seed_base + rep) for t in range(t_rez)]
+        Gt = [gen_weighted_sw(n, k, pt[t], epsilon, seed_val=seed_base + rep) for t in range(t_rez)]
 
         # Compute curvatures
         FRCt = compute_frc_vec(Gt)
