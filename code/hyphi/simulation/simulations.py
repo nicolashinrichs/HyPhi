@@ -12,6 +12,8 @@ Years: 2026
 # %% Import
 from __future__ import annotations
 
+import warnings
+
 import networkx as nx
 import numpy as np
 
@@ -133,49 +135,104 @@ def setup_delayed_kuramoto(
     Parameters
     ----------
     W : np.ndarray
-        Connectivity matrix (2N x 2N for dual-brain).
+        Connectivity weight matrix (N x N single-brain, 2N x 2N for dual-brain). Must be square,
+        symmetric, and finite. It is spectrally normalized (divided by its largest eigenvalue) so
+        ``c_intra`` is a scale-free coupling strength independent of the connectome's magnitude.
     tract : np.ndarray
-        Tract lengths matrix (2N x 2N).
+        Tract lengths matrix (same shape as ``W``), in metres. Zero-length tracts give zero delay
+        (instantaneous coupling): this is the intended model for inter-brain links, which are
+        coupled in weight but carry no conduction delay.
     omega : np.ndarray
-        Natural frequencies of oscillators.
+        Natural frequencies of the oscillators (length ``W.shape[0]``).
     c_intra : float
-        Intra-brain coupling scale.
+        Coupling scale (applied to the spectrally normalized weights).
     velocity : float
-        Axonal velocity in m/s.
+        Axonal velocity in m/s (must be positive).
     noise_strength : float
-        Dirac delta noise strength.
+        Diffusion coefficient D of the additive phase noise (the reference's "Dirac delta noise
+        strength"); applied in :func:`run_delayed_kuramoto` as a Wiener increment.
     seed : int
         Random seed.
 
     Returns
     -------
     object
-        Configured DDE solver.
+        Configured DDE solver. The seeded rng and the noise strength travel on the solver so the
+        run function keeps its signature.
+
+    Raises
+    ------
+    ValueError
+        If ``velocity`` is not positive; if ``W``/``tract``/``omega`` contain non-finite values;
+        if ``W`` is not square or ``tract``/``omega`` shapes do not match ``W``; if ``W`` is not
+        symmetric; or if ``W`` has no positive eigenvalue (it cannot be spectrally normalized).
 
     Notes
     -----
-    The solver uses ``jitcdde`` with delayed coupling::
+    The solver uses ``jitcdde`` with weighted, delayed coupling::
 
-        d(theta_i)/dt = omega_i + c * sum_j W_ji * sin(theta_j(t - delay_ij) - theta_i(t))
+        d(theta_i)/dt = omega_i + c_intra * sum_j W_ji * sin(theta_j(t - delay_ij) - theta_i(t))
 
-    where ``delay_ij = tract_ij / velocity``.
-
-    Reference implementation in ``connectome_kuramoto.ipynb``::
-
-        from jitcdde import jitcdde, t, y
-        from symengine import sin
-
-        delays = tract / velocity
-        solver = jitcdde(system_generator, n=n_osc, delays=delays.flatten())
-        solver.set_integration_parameters(rtol=0, atol=1e-5)
-        solver.constant_past(initial_phases, time=0.0)
-        solver.integrate_blindly(max_delay, 0.1)
+    where ``delay_ij = tract_ij / velocity`` and ``W`` is spectrally normalized. A connection is
+    included whenever ``W_ji != 0`` (a zero delay is a valid instantaneous term), matching the
+    reference ``connectome_kuramoto.ipynb``.
 
     """
-    raise NotImplementedError(
-        "TODO: Insert original delayed Kuramoto DDE simulation logic. "
-        "See connectome_kuramoto.ipynb for reference implementation."
-    )
+    from jitcdde import jitcdde, t, y  # noqa: PLC0415 (lazy: keep the DDE compile stack out of import hyphi)
+    from symengine import sin  # noqa: PLC0415 (lazy: keep the DDE compile stack out of import hyphi)
+
+    w = np.asarray(W, dtype=float)
+    tract_arr = np.asarray(tract, dtype=float)
+    omega_arr = np.asarray(omega, dtype=float)
+    if velocity <= 0:
+        msg = f"velocity must be positive (got {velocity}); a non-positive velocity has no physical meaning."
+        raise ValueError(msg)
+    if not (np.isfinite(w).all() and np.isfinite(tract_arr).all() and np.isfinite(omega_arr).all()):
+        msg = "W, tract, and omega must be finite (no inf or NaN); clean the connectome first."
+        raise ValueError(msg)
+    n_osc = int(w.shape[0])
+    if w.ndim != 2 or w.shape[0] != w.shape[1]:
+        msg = f"W must be a square matrix, got shape {w.shape}."
+        raise ValueError(msg)
+    if tract_arr.shape != w.shape:
+        msg = f"tract must match W shape {w.shape}, got {tract_arr.shape}."
+        raise ValueError(msg)
+    if omega_arr.shape != (n_osc,):
+        msg = f"omega must have length {n_osc} (one per oscillator), got shape {omega_arr.shape}."
+        raise ValueError(msg)
+    if not np.allclose(w, w.T):
+        msg = "W must be symmetric for spectral normalization; symmetrize the connectome first."
+        raise ValueError(msg)
+
+    eig_max = float(np.linalg.eigvalsh(w).max())
+    if eig_max <= 0:
+        msg = "W has no positive eigenvalue, so it cannot be spectrally normalized (is it all-zero?)."
+        raise ValueError(msg)
+    w = w / eig_max  # scale-free c_intra: dynamics no longer depend on the connectome's magnitude
+    delays = tract_arr / velocity  # conduction delay (seconds) per connection; 0 for instantaneous links
+
+    def rhs():
+        for i in range(n_osc):
+            # Include every weighted connection; a zero delay is a valid instantaneous coupling term
+            # (the inter-brain links in the dual-brain model are coupled but carry no conduction delay).
+            coupling = sum(
+                c_intra * float(w[j, i]) * sin(y(j, t - float(delays[i, j])) - y(i))
+                for j in range(n_osc)
+                if w[j, i] != 0
+            )
+            yield omega_arr[i] + coupling
+
+    solver = jitcdde(rhs, n=n_osc, verbose=False)
+    rng = np.random.default_rng(seed)
+    initial_phases = rng.uniform(0.0, 2.0 * np.pi, n_osc)
+    solver.constant_past(initial_phases, time=0.0)
+    solver.set_integration_parameters(rtol=0, atol=1e-5)
+    max_delay = float(delays.max()) if delays.size else 0.0
+    solver.integrate_blindly(max(max_delay, 0.01), 0.01)
+    # The noise configuration travels with the solver so run_delayed_kuramoto keeps its signature.
+    solver.hyphi_noise_strength = float(noise_strength)  # ty: ignore[unresolved-attribute]
+    solver.hyphi_rng = rng  # ty: ignore[unresolved-attribute]
+    return solver
 
 
 def run_delayed_kuramoto(
@@ -184,6 +241,7 @@ def run_delayed_kuramoto(
     t_max: float,
     n_osc: int,
     t_skip: float = 2.0,
+    n_per_brain: int | None = None,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Integrate the delayed Kuramoto model and return phase trajectories.
@@ -193,34 +251,82 @@ def run_delayed_kuramoto(
     solver : object
         Configured DDE solver from :func:`setup_delayed_kuramoto`.
     dt : float
-        Integration time step.
+        Integration time step (must be positive).
     t_max : float
-        Total simulation time.
+        Total simulation horizon (must be positive).
     n_osc : int
         Number of oscillators.
     t_skip : float
-        Seconds of transients to discard.
+        Seconds of initial transient to discard (must be shorter than the horizon).
+    n_per_brain : int or None
+        For a dual-brain run, the number of oscillators per brain (``n_osc / 2``); the order
+        parameter is then the per-brain average ``(rA + rB) / 2`` over oscillators ``[0:n_per_brain]``
+        and ``[n_per_brain:]``, matching the reference. When ``None`` (single brain), the order
+        parameter is the global mean over all oscillators.
 
     Returns
     -------
     tuple
-        ``(times, theta_history, order_parameters)``
+        ``(times, theta_history, order_parameters)`` after discarding the first ``t_skip`` seconds.
+        ``theta_history`` is ``(n_kept_steps, n_osc)``.
+
+    Raises
+    ------
+    ValueError
+        If ``dt`` or ``t_max`` is not positive; if ``n_per_brain`` is given but ``2 * n_per_brain``
+        does not equal ``n_osc``; or if ``t_skip`` is not shorter than the simulated horizon (which
+        would leave no samples).
 
     Notes
     -----
-    For each time step::
-
-        phases = solver.integrate(time) % (2 * np.pi)
-        phases += noise_term
-        r = |mean(exp(j * phases))|   # order parameter
-
-    Return trimmed results after ``t_skip``.
+    For each step the phases are read from the solver, wrapped to ``[0, 2pi)``, and given an additive
+    Wiener-increment read-out noise ``sqrt(2 * D * dt) * N(0, 1)`` (``D`` = ``noise_strength`` from
+    setup). The Kuramoto order parameter is ``r = |mean(exp(i * theta))|`` in ``[0, 1]``.
 
     """
-    raise NotImplementedError(
-        "TODO: Insert original delayed Kuramoto integration loop. "
-        "See connectome_kuramoto.ipynb for reference implementation."
-    )
+    if dt <= 0:
+        msg = f"dt must be positive, got {dt}."
+        raise ValueError(msg)
+    if t_max <= 0:
+        msg = f"t_max must be positive, got {t_max}."
+        raise ValueError(msg)
+    if n_per_brain is not None and 2 * n_per_brain != n_osc:
+        msg = f"n_per_brain ({n_per_brain}) must be half of n_osc ({n_osc}) for a dual-brain split."
+        raise ValueError(msg)
+
+    start = float(getattr(solver, "t", 0.0))
+    # Sample strictly ahead of the solver's current time so every integration step advances.
+    n_steps = max(1, round(t_max / dt))
+    times = start + np.arange(1, n_steps + 1) * dt
+    horizon = n_steps * dt
+    if t_skip >= horizon:
+        msg = f"t_skip ({t_skip}) must be shorter than the simulated horizon ({horizon}); nothing would remain."
+        raise ValueError(msg)
+
+    noise_strength = float(getattr(solver, "hyphi_noise_strength", 0.0))
+    rng = getattr(solver, "hyphi_rng", None)
+    if rng is None:
+        rng = np.random.default_rng(0)
+    # One segment (global r) for a single brain; two equal halves (per-brain r, averaged) for a dyad.
+    segments = (slice(None),) if n_per_brain is None else (slice(0, n_per_brain), slice(n_per_brain, None))
+
+    theta_history = np.empty((len(times), n_osc), dtype=float)
+    order_parameters = np.empty(len(times), dtype=float)
+    with warnings.catch_warnings():
+        # Dense sampling (dt finer than the adaptive step) makes jitcdde interpolate within an already
+        # accepted step and warn; verified benign (the integration always advances), so silence the flood.
+        warnings.filterwarnings(
+            "ignore", message="The target time is smaller than the current time", category=UserWarning
+        )
+        for k, time in enumerate(times):
+            phases = np.asarray(solver.integrate(time), dtype=float) % (2.0 * np.pi)  # ty: ignore[unresolved-attribute]
+            if noise_strength:
+                phases = (phases + np.sqrt(2.0 * noise_strength * dt) * rng.standard_normal(n_osc)) % (2.0 * np.pi)
+            theta_history[k] = phases
+            order_parameters[k] = float(np.mean([np.abs(np.mean(np.exp(1j * phases[seg]))) for seg in segments]))
+
+    keep = times >= (start + t_skip)
+    return times[keep], theta_history[keep], order_parameters[keep]
 
 
 # ====================================================
