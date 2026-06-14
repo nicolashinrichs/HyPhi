@@ -112,6 +112,27 @@ def visualize_graph_with_curvature(
 
 
 def visualize_graph_on_dataset_plot(G: nx.Graph, pos):
+    """
+    Render an interactive 3D Plotly view of a graph with curvature-colored edges.
+
+    Builds a 3D scatter of the nodes at the given positions and one line trace per edge,
+    coloring each edge by its ``ricciCurvature`` attribute mapped onto the RdBu colormap
+    over the range ``[-1, 1]``, then displays the figure. Requires the optional ``plotly``
+    dependency.
+
+    Parameters
+    ----------
+    G : networkx.Graph
+        The graph to visualize, with edge attribute ``"ricciCurvature"``.
+    pos : dict
+        Mapping from node to its ``(x, y, z)`` coordinates.
+
+    Raises
+    ------
+    ModuleNotFoundError
+        If ``plotly`` is not installed.
+
+    """
     _require_plotly()
     # Extract node positions
     xn, yn, zn = zip(*pos.values(), strict=True)
@@ -207,13 +228,22 @@ def visualize_graph_on_dataset_2d(
     """
     Visualize a graph on a 2D dataset layout.
 
+    Nodes are placed at the first two coordinates of each dataset row and edges are colored
+    by their ``ricciCurvature`` attribute via the RdBu colormap over ``[-1, 1]``.
+
     Parameters
     ----------
-    - G: networkx.Graph
-      The graph to visualize.
-    - dataset: np.ndarray
-      A 2D NumPy array where each row represents a point (x, y).
-    # TODO: add missing params
+    G : networkx.Graph
+        The graph to visualize, with edge attribute ``"ricciCurvature"``.
+    dataset : np.ndarray
+        A 2D NumPy array where each row gives a node's ``(x, y)`` position.
+    colors : array-like, optional
+        Per-node color values; if provided and non-empty, nodes are colored with the
+        ``Spectral`` colormap, otherwise they are drawn gray.
+    node_size : int | float, default=20
+        Marker size for the nodes.
+    edge_size : float, default=1.5
+        Line width for the edges.
 
     """
     # Extract 2D positions for nodes from the dataset
@@ -258,13 +288,22 @@ def curvature_distribution(
     """
     Visualize histograms of curvature distributions for multiple datasets.
 
+    Draws one histogram subplot per dataset (40 bins, x-axis fixed to ``[-1, 1]``) and
+    optionally saves the combined figure as a PNG.
+
     Parameters
     ----------
-    - data_list: List of datasets (each dataset is a list or array of values).
-    - name_list: List of names corresponding to each dataset.
-    - plot_name: Name of the plot file (without extension).
-    - save_path: Directory to save the plot (optional).
-    - save: Boolean, if True saves the plot as a PNG file.
+    data_list : list[np.ndarray]
+        List of datasets, each a list or array of curvature values.
+    name_list : list[str]
+        Names corresponding to each dataset, used as subplot titles.
+    plot_name : str
+        Name of the plot file (without extension).
+    save_path : str | Path, optional
+        Directory to save the plot. If None and ``save`` is True, the file is written to
+        the current directory.
+    save : bool, default=True
+        If True, saves the plot as a PNG file.
 
     """
     num_plots = len(data_list)
@@ -304,15 +343,25 @@ def heatmap_layers(
     save: bool = True,
 ) -> None:
     """
-    Visualize histograms of curvature distributions for multiple datasets.
+    Visualize heatmaps of curvature values across layers for multiple datasets.
+
+    Draws one heatmap subplot per dataset (via seaborn when available, otherwise a
+    matplotlib ``imshow`` with a colorbar) and optionally saves the combined figure as a
+    PNG.
 
     Parameters
     ----------
-    - data_list: List of datasets (each dataset is a list or array of values).
-    - name_list: List of names corresponding to each dataset.
-    - plot_name: Name of the plot file (without extension).
-    - save_path: Directory to save the plot (optional).
-    - save: Boolean, if True saves the plot as a PNG file.
+    data_list : list[np.ndarray]
+        List of datasets, each a 2D array of values to render as a heatmap.
+    name_list : list[str]
+        Names corresponding to each dataset, used as subplot titles.
+    plot_name : str
+        Name of the plot file (without extension).
+    save_path : str | Path, optional
+        Directory to save the plot. If None and ``save`` is True, the file is written to
+        the current directory.
+    save : bool, default=True
+        If True, saves the plot as a PNG file.
 
     """
     num_plots = len(data_list)
@@ -345,6 +394,21 @@ def heatmap_layers(
 
 
 def node_to_partition(communities):
+    """
+    Build a node-to-partition-id lookup from an iterable of communities.
+
+    Parameters
+    ----------
+    communities : iterable
+        Iterable of communities, where each community is an iterable of node identifiers.
+        The community's index in ``communities`` becomes its partition id.
+
+    Returns
+    -------
+    dict
+        Mapping from each node to the integer id of the community that contains it.
+
+    """
     result = {}
     for partition_id, community in enumerate(communities):
         for node in community:
