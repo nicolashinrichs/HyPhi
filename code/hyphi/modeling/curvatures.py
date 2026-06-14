@@ -122,10 +122,10 @@ def compute_forman_curvature(adj_mat: np.ndarray, threshold: float = 0.5):
     """
     adjacency_matrix = np.copy(adj_mat)
     adjacency_matrix[adj_mat > threshold] = 0
-    G_generated: nx.Graph = nx.from_numpy_array(adjacency_matrix)  # noqa: N806
+    G_generated: nx.Graph = nx.from_numpy_array(adjacency_matrix)
     frc = FormanRicci(G=G_generated, verbose="TRACE")
     frc.compute_ricci_curvature()
-    G_frc: nx.Graph = frc.G.copy()  # save an intermediate result # noqa: N806
+    G_frc: nx.Graph = frc.G.copy()  # save an intermediate result
     forman_curvtures = np.array(list(nx.get_edge_attributes(G_frc, "formanCurvature").values()))
     return forman_curvtures, G_frc
 
