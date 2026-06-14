@@ -15,6 +15,9 @@ heatmap / successive-GDD analyses in the ``GDD_FRc_*`` notebooks rely on.
 import networkx as nx
 import numpy as np
 
+# A rescale spec is a (low, high) pair.
+_RESCALE_PAIR_LEN = 2
+
 
 def as_1d_float_array(values):
     """
@@ -91,7 +94,7 @@ def fit_global_positive_linear_transform(
         scale = 1.0
         shift = -signed_min + float(eps)
     else:
-        if not isinstance(rescale, (tuple, list)) or len(rescale) != 2:
+        if not isinstance(rescale, (tuple, list)) or len(rescale) != _RESCALE_PAIR_LEN:
             raise ValueError("rescale must be None or a tuple/list (low, high).")
 
         low, high = map(float, rescale)

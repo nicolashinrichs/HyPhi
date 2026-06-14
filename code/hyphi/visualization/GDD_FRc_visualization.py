@@ -19,6 +19,10 @@ from collections.abc import Mapping, Sequence
 import matplotlib.pyplot as plt
 import numpy as np
 
+# A pairwise-GDD heatmap is a square 2D matrix.
+_PAIRWISE_GDD_NDIM = 2
+
+
 # ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
@@ -28,8 +32,7 @@ def _as_1d_array(values) -> np.ndarray:
     """Return ``values`` as a 1D float array (flattening dicts of edge values)."""
     if isinstance(values, Mapping):
         values = list(values.values())
-    arr = np.asarray(values, dtype=float).ravel()
-    return arr
+    return np.asarray(values, dtype=float).ravel()
 
 
 # ---------------------------------------------------------------------------
@@ -84,7 +87,7 @@ def plot_weight_distributions_by_matrix(
     fig, axes = plt.subplots(nrows, ncols, figsize=figsize, squeeze=False)
     axes_flat = axes.flatten()
 
-    for ax, key in zip(axes_flat, keys):
+    for ax, key in zip(axes_flat, keys, strict=False):
         arr = _as_1d_array(curvature_dict[key])
         if arr.size == 0:
             ax.set_visible(False)
@@ -198,7 +201,7 @@ def plot_gdd_heatmap(
 
     """
     arr = np.asarray(pairwise_gdd, dtype=float)
-    if arr.ndim != 2 or arr.shape[0] != arr.shape[1]:
+    if arr.ndim != _PAIRWISE_GDD_NDIM or arr.shape[0] != arr.shape[1]:
         raise ValueError(f"pairwise_gdd must be a square 2D array; got shape {arr.shape}.")
 
     n = arr.shape[0]

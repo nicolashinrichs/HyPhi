@@ -12,13 +12,15 @@ Years: 2026
 # %% Import
 from __future__ import annotations
 
+import pickle
 import warnings
+from pathlib import Path
 
-import networkx as nx
 import numpy as np
 
 # %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
-pass
+# The connectome W (and the tract matrix) is a square 2D adjacency matrix.
+_CONNECTOME_NDIM = 2
 
 
 # %% Functions >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
@@ -44,9 +46,7 @@ def load_connectome(pickle_path: str) -> tuple[np.ndarray, np.ndarray, list[str]
         ``(W, tract, roi_names)`` — connectivity matrix, tract lengths, region labels.
 
     """
-    import pickle
-
-    with open(pickle_path, "rb") as f:
+    with Path(pickle_path).open("rb") as f:
         W, tract, roi_names, _centers_raw, _hemis_raw, _areas_raw = pickle.load(f)
 
     # Symmetrize and zero diagonal
@@ -191,7 +191,7 @@ def setup_delayed_kuramoto(
         msg = "W, tract, and omega must be finite (no inf or NaN); clean the connectome first."
         raise ValueError(msg)
     n_osc = int(w.shape[0])
-    if w.ndim != 2 or w.shape[0] != w.shape[1]:
+    if w.ndim != _CONNECTOME_NDIM or w.shape[0] != w.shape[1]:
         msg = f"W must be a square matrix, got shape {w.shape}."
         raise ValueError(msg)
     if tract_arr.shape != w.shape:
@@ -371,9 +371,12 @@ def run_ws_sweep(
         Shapes: ``pt (t_rez,)``, ``Hreps (n_reps, t_rez)``, ``Qreps (n_reps, t_rez, 5)``.
 
     """
-    from hyphi.modeling.entropies import vec_entropy, vec_quantiles
-    from hyphi.modeling.graph_curvatures import compute_frc_vec
-    from hyphi.simulation.graph_simulations import gen_weighted_sw
+    from hyphi.modeling.entropies import (  # noqa: PLC0415 - lazy: defer the entropy/curvature (KDEpy/scipy) chain to call time
+        vec_entropy,
+        vec_quantiles,
+    )
+    from hyphi.modeling.graph_curvatures import compute_frc_vec  # noqa: PLC0415 (lazy)
+    from hyphi.simulation.graph_simulations import gen_weighted_sw  # noqa: PLC0415 (lazy)
 
     pt = np.logspace(min_pow, max_pow, t_rez)
     qvals = np.array([0.05, 0.25, 0.5, 0.75, 0.95])

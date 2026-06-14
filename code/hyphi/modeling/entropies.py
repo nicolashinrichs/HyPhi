@@ -38,7 +38,6 @@ interchangeable, so the choice is a load-bearing methodological parameter, not a
 from __future__ import annotations
 
 import zlib
-from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from KDEpy import TreeKDE
@@ -48,6 +47,8 @@ from hyphi.modeling.graph_curvatures import extract_curvatures
 from hyphi.spectral.laplace import laplace
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     import networkx as nx
     import numpy.typing as npt
 
@@ -285,7 +286,7 @@ def entropy_kde_plugin(
 
 def entropy_kozachenko(G: nx.classes.graph.Graph, curvature: str = "formanCurvature", k: int = 4) -> float:
     """Kozachenko-Leonenko kNN entropy estimator."""
-    import infomeasure as im
+    import infomeasure as im  # noqa: PLC0415 - lazy: keep the optional infomeasure dep out of `import hyphi`
 
     sentinel, curvatures = _prepare_curvatures(extract_curvatures(G, curvature=curvature))
     if sentinel is not None:
@@ -297,7 +298,7 @@ def entropy_renyi(
     G: nx.classes.graph.Graph, curvature: str = "formanCurvature", order: float | int = 2, k: int = 4
 ) -> float:
     """Rényi entropy estimator via kNN."""
-    import infomeasure as im
+    import infomeasure as im  # noqa: PLC0415 - lazy: keep the optional infomeasure dep out of `import hyphi`
 
     sentinel, curvatures = _prepare_curvatures(extract_curvatures(G, curvature=curvature))
     if sentinel is not None:
@@ -309,7 +310,7 @@ def entropy_tsallis(
     G: nx.classes.graph.Graph, curvature: str = "formanCurvature", order: float | int = 2, k: int = 4
 ) -> float:
     """Tsallis entropy estimator via kNN."""
-    import infomeasure as im
+    import infomeasure as im  # noqa: PLC0415 - lazy: keep the optional infomeasure dep out of `import hyphi`
 
     sentinel, curvatures = _prepare_curvatures(extract_curvatures(G, curvature=curvature))
     if sentinel is not None:
@@ -349,7 +350,7 @@ def entropy_von_neumann(G: nx.classes.graph.Graph) -> float:
         sentinel for an edgeless graph.
 
     """
-    import networkx as nx
+    import networkx as nx  # noqa: PLC0415 - local: top-level networkx is TYPE_CHECKING-only; this is the sole runtime use
 
     if G.number_of_edges() == 0:
         return _CONTENTLESS_ENTROPY
@@ -586,7 +587,7 @@ def vec_entropy(
         estimator = ESTIMATORS[DEFAULT_ENTROPY_METHOD]
 
     if parallel:
-        import ray
+        import ray  # noqa: PLC0415 - lazy: Ray is an optional parallelism dep, imported only on the parallel path
 
         @ray.remote
         def _par_estim(g):

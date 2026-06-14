@@ -25,15 +25,20 @@ def diffusion_distance(adj1: np.ndarray, adj2: np.ndarray, time_limit: float, fs
 
     Input
     Adjacency matrix 1, adjacency matrix 2, time_limit, fs
-    time limit - how many timepoints (in seconds) should be analyzed to find the maximum distance of two heat distributions
+    time limit - how many timepoints (in seconds) should be analyzed to find the maximum
+    distance of two heat distributions
     fs - how many timepoints in one second should be analyzed
 
     Output
     maximum diffusion distance (d_gdd) in the given time window (0, time_limit)
 
     """
-    frobenius = lambda A: la.norm(A, ord="fro")
-    exp = lambda t, eigvals, eigvecs: eigvecs @ la.expm(t * eigvals) @ la.inv(eigvecs)
+
+    def frobenius(A):
+        return la.norm(A, ord="fro")
+
+    def exp(t, eigvals, eigvecs):
+        return eigvecs @ la.expm(t * eigvals) @ la.inv(eigvecs)
 
     time = np.arange(0, time_limit, 1 / fs)
 
@@ -59,7 +64,7 @@ def edge_deletion(A, i, j):
     return A_prime
 
 
-def EDP(A, m, n, Fs):
+def EDP(A, m, n, fs):
     """
     Function that returns the normalized edge detection perturbation.
     A - adjacency matrix (original)
@@ -71,7 +76,7 @@ def EDP(A, m, n, Fs):
     """
     if A[m, n]:
         A_prime = edge_deletion(A, m, n)
-        dgdd = diffusion_distance(A, A_prime, 100, Fs)
+        dgdd = diffusion_distance(A, A_prime, 100, fs)
         chi = dgdd / A[m, n]
     else:
         # No edge to delete — return an untouched copy so callers always

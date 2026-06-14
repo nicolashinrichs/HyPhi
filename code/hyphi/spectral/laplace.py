@@ -41,7 +41,7 @@ def laplace(matrix: np.ndarray):
     return eigenvalues, eigenvectors, L
 
 
-def eigen_in_time(matrices: np.ndarray, plot=False, Fs=1):
+def eigen_in_time(matrices: np.ndarray, plot=False, fs=1):
     """
     Track the algebraic connectivity of a sequence of matrices over time.
 
@@ -50,9 +50,9 @@ def eigen_in_time(matrices: np.ndarray, plot=False, Fs=1):
     matrices : np.ndarray
         Sequence of square adjacency matrices, one per time step.
     plot : bool, optional
-        If True, plot ``lambdas`` and ``gaps`` against a time axis built from ``Fs``.
+        If True, plot ``lambdas`` and ``gaps`` against a time axis built from ``fs``.
         Default is False.
-    Fs : int or float, optional
+    fs : int or float, optional
         Sampling frequency used to construct the time axis for plotting. Default is 1.
 
     Returns
@@ -75,8 +75,8 @@ def eigen_in_time(matrices: np.ndarray, plot=False, Fs=1):
         gaps[i] = eigenvalues[0] - eigenvalues[1]
 
     if plot:
-        T = len(matrices) / Fs
-        t = np.arange(0, T, 1 / Fs)
+        T = len(matrices) / fs
+        t = np.arange(0, T, 1 / fs)
         plt.plot(t, lambdas)
         plt.plot(t, gaps)
 
