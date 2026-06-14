@@ -37,7 +37,7 @@ from .adjacency_from_pickle import load_pickle_adjacency
 # %% Functions >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
 
-def find_centrality(file_path: str | Path):  # TODO: add type-hints for return
+def find_centrality(file_path: str | Path):
     """Calculate matrix, graph, communities, and centrality."""
     adj_matrix = load_pickle_adjacency(file_path)
     graph = nx.from_numpy_array(adj_matrix)
@@ -62,7 +62,6 @@ def find_centrality(file_path: str | Path):  # TODO: add type-hints for return
     return adj_matrix, graph, results
 
 
-# TODO (smh): I would revise (lets discuss) or drop this function
 def process_folder(
     input_folder: str | Path,
     output_folder: str | Path,

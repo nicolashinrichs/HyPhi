@@ -14,7 +14,6 @@ import networkx as nx
 import numpy as np
 from matplotlib.cm import ScalarMappable
 
-# TODO: ideally avoid these conditional imports
 try:
     import seaborn as sns  # ty: ignore[unresolved-import]  # optional viz dep
 except ModuleNotFoundError:
@@ -180,7 +179,6 @@ def visualize_graph_on_dataset_plot(G: nx.Graph, pos):
     fig.show()
 
 
-# TODO: add typehints
 def visualize_graph_on_dataset_3d(
     G: nx.Graph,
     pos,
@@ -455,11 +453,6 @@ def visualize_graph_partitions_colors(graph: nx.Graph, partitions, name: str, sa
         graph, pos, width=2, edge_color=edge_colors, edge_cmap=edge_palette, edge_vmin=-1, edge_vmax=1
     )
 
-    # nodes_to_annotate = [10, 28, 31]  # Example nodes to annotate
-    # labels = {node: str(node) for node in nodes_to_annotate}
-    # Uncomment below if node annotations are needed
-    # nx.draw_networkx_labels(graph, pos, labels, font_size=12, font_color='red')
-
     sm_edges = ScalarMappable(cmap=edge_palette, norm=plt.Normalize(vmin=-1, vmax=1))
     sm_edges.set_array([])
     cbar_edges = plt.colorbar(sm_edges, orientation="horizontal", shrink=0.3, pad=0.03)
@@ -627,21 +620,6 @@ def visualize_graph_on_dataset_with_colors(G: nx.Graph, pos, partitions) -> None
     ax.set_xlabel("X")
     ax.set_ylabel("Y")
     ax.set_zlabel("Z")
-
-    # TODO: remove?!
-    # legend_handles = [
-    #     plt.Line2D(
-    #         [0],
-    #         [0],
-    #         marker="o",
-    #         color="w",
-    #         label=f"Community {community}",
-    #         markerfacecolor=community_to_color[community],
-    #         markersize=10,
-    #     )
-    #     for community in unique_communities
-    # ]
-    # ax.legend(handles=legend_handles, loc='upper right', title="Communities")
 
     plt.show()
 
