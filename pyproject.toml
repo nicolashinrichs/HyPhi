@@ -44,6 +44,7 @@ dependencies = [
     "jaxlib>=0.4,<1.0",
     "jitcdde>=1.8,<2.0", # Delayed DDE Kuramoto (connectome model)
     "symengine>=0.11,<1.0",
+    "sympy>=1.12,<2", # jitcdde's compile path (symengine simplify) needs it; required for the delayed Kuramoto
     "mne>=1.5,<2.0", # EEG forward modeling
     "astropy>=5.0,<7.0", # Circular statistics
     "statsmodels>=0.14,<1.0", # Statistics & machine learning
