@@ -178,7 +178,7 @@ def _prepare_curvatures(curvatures: npt.ArrayLike) -> tuple[float | None, np.nda
 
 def entropy_vasicek(
     G: nx.classes.graph.Graph, curvature: str = "formanCurvature", window_length: int | None = None
-) -> npt.number | npt.ndarray:
+) -> float | np.floating:
     """
     Vasicek entropy estimator on graph curvatures.
 
@@ -206,7 +206,7 @@ def entropy_vasicek(
     return differential_entropy(curvatures, **kwargs)
 
 
-def entropy_van_es(G: nx.classes.graph.Graph, curvature: str = "formanCurvature") -> npt.number | npt.ndarray:
+def entropy_van_es(G: nx.classes.graph.Graph, curvature: str = "formanCurvature") -> float | np.floating:
     """Van Es entropy estimator on graph curvatures."""
     sentinel, curvatures = _prepare_curvatures(extract_curvatures(G, curvature=curvature))
     if sentinel is not None:
@@ -214,7 +214,7 @@ def entropy_van_es(G: nx.classes.graph.Graph, curvature: str = "formanCurvature"
     return differential_entropy(curvatures, method="van es", nan_policy="omit")
 
 
-def entropy_ebrahimi(G: nx.classes.graph.Graph, curvature: str = "formanCurvature") -> npt.number | npt.ndarray:
+def entropy_ebrahimi(G: nx.classes.graph.Graph, curvature: str = "formanCurvature") -> float | np.floating:
     """Ebrahimi entropy estimator on graph curvatures."""
     sentinel, curvatures = _prepare_curvatures(extract_curvatures(G, curvature=curvature))
     if sentinel is not None:
@@ -222,7 +222,7 @@ def entropy_ebrahimi(G: nx.classes.graph.Graph, curvature: str = "formanCurvatur
     return differential_entropy(curvatures, method="ebrahimi", nan_policy="omit")
 
 
-def entropy_correa(G: nx.classes.graph.Graph, curvature: str = "formanCurvature") -> npt.number | npt.ndarray:
+def entropy_correa(G: nx.classes.graph.Graph, curvature: str = "formanCurvature") -> float | np.floating:
     """Correa entropy estimator on graph curvatures."""
     sentinel, curvatures = _prepare_curvatures(extract_curvatures(G, curvature=curvature))
     if sentinel is not None:
@@ -461,7 +461,9 @@ def entropy_kde_renyi(
     sentinel, curvatures = _prepare_curvatures(extract_curvatures(G, curvature=curvature))
     if sentinel is not None:
         return sentinel
-    fvals = _kde_density_at_samples(curvatures, kernel_type, bw, norm) + 1e-10
+    # curvatures is non-None here: _prepare_curvatures returns (None, ndarray) when sentinel is None,
+    # but ty cannot narrow the second tuple element from the first; runtime invariant holds.
+    fvals = _kde_density_at_samples(curvatures, kernel_type, bw, norm) + 1e-10  # ty: ignore[invalid-argument-type]
     if abs(order - 1.0) < _ORDER_TOL:
         return float(-np.mean(np.log(fvals)))
     integral = float(np.mean(fvals ** (order - 1)))  # E_f[f^(a-1)] = int f^a dx
@@ -491,7 +493,9 @@ def entropy_kde_tsallis(
     sentinel, curvatures = _prepare_curvatures(extract_curvatures(G, curvature=curvature))
     if sentinel is not None:
         return sentinel
-    fvals = _kde_density_at_samples(curvatures, kernel_type, bw, norm) + 1e-10
+    # curvatures is non-None here: _prepare_curvatures returns (None, ndarray) when sentinel is None,
+    # but ty cannot narrow the second tuple element from the first; runtime invariant holds.
+    fvals = _kde_density_at_samples(curvatures, kernel_type, bw, norm) + 1e-10  # ty: ignore[invalid-argument-type]
     if abs(order - 1.0) < _ORDER_TOL:
         return float(-np.mean(np.log(fvals)))
     integral = float(np.mean(fvals ** (order - 1)))
@@ -560,10 +564,10 @@ def get_estimator(method: str) -> Callable:
 
 
 def vec_entropy(
-    graphs: npt.NDArray[nx.classes.graph.Graph] | list[nx.classes.graph.Graph],
+    graphs: npt.NDArray[np.object_] | list[nx.classes.graph.Graph],
     estimator: Callable | None = None,
     parallel: bool = False,
-) -> npt.NDArray[float]:
+) -> npt.NDArray[np.float64]:
     """
     Compute entropy over a list of curvature-annotated graphs.
 
@@ -602,18 +606,18 @@ def vec_entropy(
 
 
 def get_quantiles(
-    G: nx.classes.graph.Graph, qs: npt.NDArray[float] | list[float], curvature: str = "formanCurvature"
-) -> npt.NDArray[float]:
+    G: nx.classes.graph.Graph, qs: npt.NDArray[np.float64] | list[float], curvature: str = "formanCurvature"
+) -> npt.NDArray[np.float64]:
     """Get quantiles of the curvature distribution on a single graph."""
     curvatures = extract_curvatures(G, curvature=curvature)
     return np.quantile(curvatures, qs)
 
 
 def vec_quantiles(
-    graphs: npt.NDArray[nx.classes.graph.Graph] | list[nx.classes.graph.Graph],
-    qs: npt.NDArray[float] | list[float],
+    graphs: npt.NDArray[np.object_] | list[nx.classes.graph.Graph],
+    qs: npt.NDArray[np.float64] | list[float],
     curvature: str = "formanCurvature",
-) -> npt.NDArray[float]:
+) -> npt.NDArray[np.float64]:
     """Get quantiles for a list of graphs."""
     return np.array([get_quantiles(G, qs=qs, curvature=curvature) for G in graphs])
 

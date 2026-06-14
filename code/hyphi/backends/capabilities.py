@@ -57,7 +57,7 @@ def _cuda_available() -> bool:
 
 def _metal_available() -> bool:
     try:
-        import mlx.core as mx  # noqa: PLC0415
+        import mlx.core as mx  # noqa: PLC0415  # ty: ignore[unresolved-import]  # optional Apple-silicon backend
 
         mx.eval(mx.sqrt(mx.array([4.0], dtype=mx.float32)))
     except Exception:  # noqa: BLE001

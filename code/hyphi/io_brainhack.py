@@ -197,7 +197,7 @@ def load_adjacencies_from_paths(
         if return_nodes:
             adjacency, nodes = loaded
             adjacencies[idx] = adjacency
-            node_orders[idx] = nodes
+            node_orders[idx] = nodes  # ty: ignore[invalid-assignment]  # node_orders is a dict when return_nodes is True (set above)
         else:
             adjacencies[idx] = loaded
 

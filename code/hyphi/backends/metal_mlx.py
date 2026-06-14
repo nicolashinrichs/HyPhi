@@ -54,7 +54,7 @@ class MlxBackend(CurvatureBackend):
     def is_available(cls) -> bool:
         """Report whether MLX and a usable Apple Metal GPU are present."""
         try:
-            import mlx.core as mx  # noqa: PLC0415
+            import mlx.core as mx  # noqa: PLC0415  # ty: ignore[unresolved-import]  # optional Apple-silicon backend
 
             probe = mx.sqrt(mx.array([4.0], dtype=mx.float32))
             mx.eval(probe)
@@ -74,7 +74,7 @@ class MlxBackend(CurvatureBackend):
                 f"MlxBackend implements method='1d' only; got {method!r}. "
                 "The dispatcher falls back to a CPU backend for 'augmented'."
             )
-        import mlx.core as mx  # noqa: PLC0415
+        import mlx.core as mx  # noqa: PLC0415  # ty: ignore[unresolved-import]  # optional Apple-silicon backend
 
         if graph.n_edges == 0:
             return np.zeros(0, dtype=np.float64)

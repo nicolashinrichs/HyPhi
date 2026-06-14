@@ -197,7 +197,7 @@ def plot_curvature_network(
         If the graph has no edges to color.
 
     """
-    cmap = cmap if cmap is not None else plt.cm.coolwarm  # ty:ignore[unresolved-attribute]
+    cmap = cmap if cmap is not None else plt.cm.coolwarm  # ty: ignore[unresolved-attribute] (coolwarm is a real colormap; plt.cm members are dynamic)
     pos = _get_layout_positions(G, layout=layout, seed=seed)
 
     edge_curvs = [data[curvature_attr] for _, _, data in G.edges(data=True)]
@@ -249,7 +249,7 @@ def plot_curvature_network_layouts(
     structurally (i.e., the same edges stand out regardless of layout).
 
     """
-    cmap = cmap if cmap is not None else plt.cm.coolwarm
+    cmap = cmap if cmap is not None else plt.cm.coolwarm  # ty: ignore[unresolved-attribute] (coolwarm is a real colormap; plt.cm members are dynamic)
 
     edge_curvs = [data[curvature_attr] for _, _, data in G.edges(data=True)]
     if len(edge_curvs) == 0:
