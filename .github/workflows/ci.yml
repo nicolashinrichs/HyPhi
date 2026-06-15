@@ -84,15 +84,13 @@ jobs:
       - name: Run tests with coverage
         run: uv run --extra develop pytest code/tests --cov=hyphi --cov-report=term-missing --cov-report=xml
 
-      # Advisory: code/hyphi still carries pre-existing lint debt (naming,
-      # docstrings) tracked under the docstring and naming issues; not yet a
-      # blocking gate. Flips to a hard gate once the cleanup lands.
-      - name: Lint (advisory)
-        continue-on-error: true
+      # Hard gate: code/hyphi is lint-clean after the Bucket-A cleanup
+      # (scientific naming and complexity allowances live in the ruff config;
+      # bare TODOs are permitted, FIXME/XXX/HACK still fail). Keep it clean.
+      - name: Lint
         run: uv run --extra develop ruff check code/hyphi
 
-      # Advisory: the only remaining ty diagnostics are the optional-import
-      # (plotly/seaborn) None-union pattern that static analysis cannot follow.
-      - name: Type check (advisory)
-        continue-on-error: true
+      # Hard gate: code/hyphi is type-clean; the unavoidable optional-import
+      # (plotly/seaborn) None-union false positives carry targeted ty: ignore.
+      - name: Type check
         run: uv run --extra develop ty check code/hyphi
