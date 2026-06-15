@@ -11,7 +11,7 @@ from pathlib import Path
 import networkx as nx
 import numpy as np
 import scipy as sp
-from hyphi.configs import config
+from hyphi.configs import config, resolve_loc_paths
 from hyphi.io import load_config
 from hyphi.modeling.entropies import entropy_kozachenko, get_quantiles
 from hyphi.modeling.graph_curvatures import compute_orc
@@ -24,7 +24,7 @@ config.init()  # load hyphi config
 config_file = Path(config.paths.experiments.configs, sys.argv[1])
 
 # Load the configuration parameters into a dictionary
-config = load_config(config_file)
+config = resolve_loc_paths(load_config(config_file))
 
 # Load the CCORR data tensors from .mat files
 # We store data for each trial type separately

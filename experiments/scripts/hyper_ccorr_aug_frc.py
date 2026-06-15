@@ -9,6 +9,7 @@ import networkx as nx
 import numpy as np
 import scipy as sp
 from hyphi.configs import config as hyphi_config
+from hyphi.configs import resolve_loc_paths
 from hyphi.io import load_config
 from hyphi.modeling.entropies import vec_entropy, vec_quantiles
 from hyphi.modeling.graph_curvatures import compute_frc_vec
@@ -20,7 +21,7 @@ hyphi_config.init()  # load hyphi config
 config_file = Path(hyphi_config.paths.experiments.configs, sys.argv[1])
 
 # Load the configuration parameters into a dictionary
-config = load_config(config_file)
+config = resolve_loc_paths(load_config(config_file))
 
 # Load the CCORR data tensors from .mat files
 # We store data for each trial type separately
