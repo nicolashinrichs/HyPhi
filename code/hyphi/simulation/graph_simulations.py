@@ -16,13 +16,13 @@ import numpy as np
 # %% Functions >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
 
-def gen_weighted_sw(n: int, k: int, p: float, ε: float, seed_val: int = 42):
+def gen_weighted_sw(n: int, k: int, p: float, epsilon: float, seed_val: int = 42):
     """
     Generate a distance-weighted Watts-Strogatz small-world graph.
 
     Builds a Watts-Strogatz graph, sets every node weight to unity, and assigns each
     edge a weight of ``Dmax - d_ij``, where ``d_ij`` is the shortest distance between the
-    two endpoints around the ring and ``Dmax = (floor(n / 2) + 1) * ε`` is the maximum
+    two endpoints around the ring and ``Dmax = (floor(n / 2) + 1) * epsilon`` is the maximum
     possible ring distance plus one spacing.
 
     Parameters
@@ -33,7 +33,7 @@ def gen_weighted_sw(n: int, k: int, p: float, ε: float, seed_val: int = 42):
         Each node is joined to its ``k`` nearest neighbors in the ring.
     p : float
         Watts-Strogatz rewiring probability.
-    ε : float
+    epsilon : float
         Spacing between adjacent nodes on the ring, used to scale edge distances.
     seed_val : int, optional
         Seed passed to the Watts-Strogatz generator for reproducibility (default 42).
@@ -50,10 +50,10 @@ def gen_weighted_sw(n: int, k: int, p: float, ε: float, seed_val: int = 42):
     # Set the node weights to unity for curvature computations
     nx.set_node_attributes(G, values=1.0, name="weight")
 
-    # Maximum distance between nodes = max(d_ij) + ε
-    # If nodes are spaced ε apart on the ring, then
-    # max(d_ij) = ⌊n/2⌋ * ε even if n is odd
-    Dmax = (np.floor(n / 2) + 1) * ε
+    # Maximum distance between nodes = max(d_ij) + epsilon
+    # If nodes are spaced epsilon apart on the ring, then
+    # max(d_ij) = ⌊n/2⌋ * epsilon even if n is odd
+    Dmax = (np.floor(n / 2) + 1) * epsilon
 
     for ii, jj in G.edges:
         # Distance between nodes is the shortest path around the ring
@@ -65,7 +65,7 @@ def gen_weighted_sw(n: int, k: int, p: float, ε: float, seed_val: int = 42):
 
 
 def gen_tv_weighted_sw(
-    n: int, k: int, ε: float, trez: int, minpow: float | int, maxpow: float | int, seed_val: int = 42
+    n: int, k: int, epsilon: float, trez: int, minpow: float | int, maxpow: float | int, seed_val: int = 42
 ):
     """
     Generate a time-varying series of distance-weighted small-world graphs.
@@ -80,7 +80,7 @@ def gen_tv_weighted_sw(
         Number of nodes in each graph.
     k : int
         Each node is joined to its ``k`` nearest neighbors in the ring.
-    ε : float
+    epsilon : float
         Node spacing on the ring, used to scale edge distances.
     trez : int
         Number of probability (time) points in the series.
@@ -106,7 +106,7 @@ def gen_tv_weighted_sw(
 
     # Simulate
     for t in range(trez):
-        Gt.append(gen_weighted_sw(n, k, pt[t], ε, seed_val=seed_val))
+        Gt.append(gen_weighted_sw(n, k, pt[t], epsilon, seed_val=seed_val))
 
     # Return time series of graphs
     return pt, Gt
@@ -182,7 +182,7 @@ def gen_neureps_wsw(seed_val: int = 42):
     Generate the fixed-parameter weighted small-world series preset.
 
     Convenience wrapper around :func:`gen_tv_weighted_sw` with the preset parameters
-    ``n=1000``, ``k=50``, ``ε=1.0``, ``trez=100``, ``minpow=-4``, ``maxpow=0``.
+    ``n=1000``, ``k=50``, ``epsilon=1.0``, ``trez=100``, ``minpow=-4``, ``maxpow=0``.
 
     Parameters
     ----------

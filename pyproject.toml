@@ -298,7 +298,6 @@ ignore = [
 "*.ipynb" = ["D100"]                            # ignore docsstring in notebooks
 "code/tests/*.py" = ["S101", "PLC2701", "N802"] # ignore assert statements in tests, private name imports, & lowercase (tearDown, setUp)
 "GDD_FRc_*.py" = ["N999"]                        # GDD = Graph Diffusion Distance (a domain acronym); renaming the module would break imports
-"graph_simulations.py" = ["PLC2401"]            # the spacing parameter is the Greek letter epsilon (ε), matching the math
 "io.py" = ["A005"]                              # intentional domain module name (hyphi.io); renaming would break imports
 
 [tool.ruff.format]
