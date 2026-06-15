@@ -2,8 +2,7 @@
 Brainhack I/O helpers for loading adjacency matrices.
 
 This module bundles loaders for the two graph-pickle datasets used by the
-GDD / Forman-Ricci transformation notebooks (`GDD_FRc_Kuramoto.ipynb`,
-`GDD_FRc_prebase.ipynb`):
+GDD / Forman-Ricci transformation pipeline (:mod:`hyphi.modeling.GDD_FRc_helpers`):
 
 - the per-window Kuramoto connectomes shipped in ``data/connectome/``
 - the per-dyad prebase graphs (external — see ``data/README.md`` for download

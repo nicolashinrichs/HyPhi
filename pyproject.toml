@@ -195,7 +195,7 @@ exclude_lines = ["if __name__ == .__main__.:", "if TYPE_CHECKING:", "@abstract"]
 directory = "code/tests/coverage_html_report"
 
 [tool.ruff]
-src = ["code/hyphi", "code/notebooks", "code/tests"]
+src = ["code/hyphi", "code/tests"]
 include = ["*.py", "*.pyi", "**/pyproject.toml", "*.ipynb"]
 
 # Exclude a variety of commonly ignored directories:
@@ -358,7 +358,7 @@ max-nested-blocks = 5 # default: 5
 # allow-magic-value-types = ["int"]
 
 [tool.ty.src]
-include = ["code/hyphi", "code/notebooks", "code/tests"]
+include = ["code/hyphi", "code/tests"]
 exclude = [
     "code/hyphi/configs.py",
 ]

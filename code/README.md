@@ -28,9 +28,9 @@ uv sync [--extra develop] [--extra notebook]
 Or use other package management tools (e.g., `conda`, `pip`, or `pixi`) to install the package in editable mode.
 
 
-### Notebooks
+### Tutorials
 
-`Jupyter` | `marimo` notebooks are stored in `./code/notebooks/`
+Interactive [marimo](https://marimo.io/) walkthroughs are in `../tutorials/` (run `make tutorial`); the rendered docs are under `../docs/tutorials/`.
 
 ### Configs
 

@@ -121,7 +121,6 @@ ENV/
 .vscode/
 .idea/
 .ipynb_checkpoints/
-code/notebooks/.ipynb_checkpoints/
 
 # Mac specific
 *.key

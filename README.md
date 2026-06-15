@@ -116,7 +116,7 @@ All dependencies are specified in `pyproject.toml` and can be installed via `uv`
 uv sync [--extra develop] [--extra notebook]
 ```
 
-Use `--extra develop` to install development dependencies (e.g., testing, linting) and `--extra notebook` to install `Jupyter`|`marimo`-related dependencies for running the notebooks in the `tutorials` and `code/notebooks` directories.
+Use `--extra develop` to install development dependencies (e.g., testing, linting) and `--extra notebook` to install `Jupyter`|`marimo`-related dependencies for running the notebooks in the `tutorials` directory.
 
 To check that the package is installed correctly, you can run:
 

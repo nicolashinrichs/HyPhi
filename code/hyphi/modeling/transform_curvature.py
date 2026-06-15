@@ -1,15 +1,50 @@
 """
 Curvature transformation for Graph Diffusion Distance (GDD) computation.
 
-Forman-Ricci curvature is signed, but the GDD construction in
-:mod:`hyphi.modeling.curvatures` (via :func:`compute_laplacian_matrix` /
-:func:`heat_kernel_distance`) requires strictly positive edge weights.
+We want to compute graph diffusion distance (GDD) with the method of Hammond et
+al. (2013), but using Forman-Ricci curvature as the edge weights. Forman-Ricci
+curvature is signed (it takes both positive and negative values), whereas the
+GDD construction in :mod:`hyphi.modeling.curvatures` (via
+:func:`compute_laplacian_matrix` / :func:`heat_kernel_distance`) requires
+strictly positive edge weights. This module bridges the two.
 
-The helpers in this module fit ONE global linear transform (sign flip + shift,
-optional rescale) across the pooled curvature values from a *collection* of
-graphs, then apply the same parameters to every graph.  This keeps the
-transformed weights comparable across the collection, which is what the GDD
-heatmap / successive-GDD analyses in the ``GDD_FRc_*`` notebooks rely on.
+The transform
+-------------
+Let ``c`` be an original Forman-Ricci curvature value. We first flip the sign,
+
+    c_star = -c,
+
+and then apply one global affine map,
+
+    c_tilde = a * c_star + b = -a * c + b,    with a > 0,
+
+where ``a`` (``scale``) and ``b`` (``shift``) are constants fitted ONCE from the
+pooled curvatures of the whole collection and then applied uniformly to every
+graph. By default ``a = 1`` and ``b`` is the smallest shift that keeps every
+transformed value strictly positive.
+
+Why these choices
+-----------------
+- **Sign flip.** More negative Forman-Ricci curvature corresponds to more
+  conductance, so we want a *larger* weight for a *more negative* curvature; the
+  flip ``c_star = -c`` makes the mapping monotonically increasing in conductance.
+- **Global fit.** The parameters are fitted across all curvatures of all networks
+  in the experiment at once, so the resulting weights stay comparable across the
+  collection (this is what the GDD heatmap / successive-GDD analyses rely on).
+- **Ordering preserved.** The affine map (after the sign flip, with ``a > 0``)
+  preserves the ordering of the transformed values.
+- **Strict positivity preserved.** ``b`` is chosen so the smallest transformed
+  weight is strictly positive rather than exactly zero (see ``eps`` below), which
+  the Laplacian/heat-kernel step requires.
+- **No rescaling for FRC.** The ``rescale`` option exists but must NOT be used for
+  Forman-Ricci curvatures: rescaling into an arbitrary range destroys the
+  interpretability of the curvature magnitudes, so ``rescale=None`` is the default.
+
+Reference
+---------
+Hammond, D. K., Gur, Y., & Johnson, C. R. (2013). Graph diffusion distance: A
+difference measure for weighted graphs based on the graph Laplacian exponential
+kernel. IEEE GlobalSIP, 419-422.
 """
 
 import networkx as nx
