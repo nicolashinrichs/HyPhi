@@ -49,19 +49,23 @@ def diffusion_distance(adj1: np.ndarray, adj2: np.ndarray, time_limit: float, fs
     def frobenius(A):
         return la.norm(A, ord="fro")
 
-    def exp(t, eigvals, eigvecs):
-        return eigvecs @ la.expm(t * eigvals) @ la.inv(eigvecs)
+    def heat_operator(t, eigvals, eigvecs):
+        # lap.laplace uses eigh on the symmetric Laplacian, so its eigenvectors are orthonormal
+        # and the heat kernel is exp(-t * L) = V @ diag(exp(-t * lambda)) @ V.T. Build the matrix
+        # exponential from the (1-D) eigenvalues rather than calling expm on the eigenvalue vector.
+        # The decaying sign matches hyphi.modeling.curvatures.heat_kernel_distance.
+        return eigvecs @ np.diag(np.exp(-t * eigvals)) @ eigvecs.T
 
     time = np.arange(0, time_limit, 1 / fs)
 
     eigvals1, eigvecs1, _ = lap.laplace(adj1)
     eigvals2, eigvecs2, _ = lap.laplace(adj2)
 
-    diffusion_distance = np.array(
-        [frobenius(exp(t, eigvals1, eigvecs1) - exp(t, eigvals2, eigvecs2)) for t in time]
-    )  # should be a 1D matrix
+    distances = np.array(
+        [frobenius(heat_operator(t, eigvals1, eigvecs1) - heat_operator(t, eigvals2, eigvecs2)) for t in time]
+    )
 
-    return np.max(diffusion_distance)
+    return np.max(distances)
 
 
 def edge_deletion(A, i, j):
