@@ -81,19 +81,24 @@ def compute_plv_matrix(phase_window):
     return (C + C.T) / 2.0
 
 
-def sliding_window_plv(phases, win_size, win_stride):
+def sliding_window_plv(phases, win_size, win_stride, samples_axis=-1):
     """
     Build a time series of PLV graphs using a sliding window.
 
     Parameters
     ----------
     phases : np.ndarray
-        Phase trajectories of shape (n_steps, N_oscillators) or (N_oscillators, n_steps).
-        If shape[0] < shape[1], assumed to be (N, T) already; otherwise transposed.
+        2-D phase trajectories. By default the channels/oscillators are the first axis and
+        time is the last axis, i.e. shape ``(N, T)``.
     win_size : int
         Number of time-steps per window.
     win_stride : int
         Stride between consecutive windows.
+    samples_axis : int, default=-1
+        Which axis is the time/samples axis. The default (``-1``) treats ``phases`` as
+        ``(N, T)``; pass ``samples_axis=0`` for ``(T, N)`` input. The orientation is taken from
+        this argument rather than guessed from the shape, so windows with more channels than time
+        samples are no longer silently transposed.
 
     Returns
     -------
@@ -101,13 +106,11 @@ def sliding_window_plv(phases, win_size, win_stride):
         List of weighted NetworkX graphs, one per window.
 
     """
-    # Normalise to (N, T)
     if phases.ndim != _NDIM_2D:
         raise ValueError(f"phases must be 2-D, got shape {phases.shape}")
 
-    # Heuristic: if first dim > second dim, it is (T, N), so transpose to (N, T)
-    if phases.shape[0] > phases.shape[1]:
-        phases = phases.T
+    # Normalise to (N, T) using the declared samples axis (no shape-based guessing).
+    phases = np.moveaxis(phases, samples_axis, -1)
 
     _N, T = phases.shape
     graphs = []

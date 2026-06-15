@@ -95,13 +95,23 @@ class TestSlidingWindowPLV:
         for G in graphs:
             assert G.number_of_nodes() == N
 
-    def test_transposed_input(self):
-        """Should handle (T, N) input by auto-transposing."""
+    def test_explicit_samples_axis_handles_time_first_input(self):
+        """(T, N) input is handled when the caller declares samples_axis=0 (no shape-based guessing)."""
         N, T = 4, 600
         np.random.seed(42)
         phases = np.random.uniform(0, 2 * np.pi, (T, N))  # (T, N) format
-        graphs = sliding_window_plv(phases, 100, 50)
+        graphs = sliding_window_plv(phases, 100, 50, samples_axis=0)
         assert len(graphs) > 0
+        assert graphs[0].number_of_nodes() == N
+
+    def test_more_channels_than_samples_is_not_silently_transposed(self):
+        """A short window with N > T is treated as (N, T) by default, not silently transposed (issue #92)."""
+        N, T = 64, 40  # more channels than time samples
+        np.random.seed(42)
+        phases = np.random.uniform(0, 2 * np.pi, (N, T))
+        graphs = sliding_window_plv(phases, 20, 10)
+        assert len(graphs) > 0
+        # Nodes are the N channels, not the T time samples (the old heuristic would have transposed).
         assert graphs[0].number_of_nodes() == N
 
 

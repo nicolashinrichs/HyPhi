@@ -8,6 +8,10 @@ Pure NumPy; only depends on ``matplotlib`` for the optional plot inside
 import matplotlib.pyplot as plt
 import numpy as np
 
+# The Fiedler value lambda_2 needs at least two eigenvalues; the eigengap lambda_3 - lambda_2 needs three.
+_MIN_NODES_FOR_FIEDLER = 2
+_MIN_NODES_FOR_EIGENGAP = 3
+
 
 def laplace(matrix: np.ndarray):
     """
@@ -60,20 +64,23 @@ def eigen_in_time(matrices: np.ndarray, plot=False, fs=1):
     -------
     lambdas : np.ndarray
         Second-smallest Laplacian eigenvalue of each matrix (the algebraic
-        connectivity, or Fiedler value).
+        connectivity, or Fiedler value lambda_2).
     gaps : np.ndarray
-        Signed gap ``eigenvalues[0] - eigenvalues[1]`` for each matrix. Because the
-        eigenvalues are sorted ascending this is non-positive (``<= 0``); its sign
-        convention is under review (see issue #70).
+        The eigengap ``lambda_3 - lambda_2 = eigenvalues[2] - eigenvalues[1]`` for each matrix
+        (non-negative). This is the gap *above* the Fiedler value, an indicator of how cleanly the
+        network separates into communities over time; it is informative and non-redundant, unlike the
+        former ``eigenvalues[0] - eigenvalues[1]`` which (since the smallest Laplacian eigenvalue is
+        always 0) was just the negated Fiedler value (resolves issue #70). NaN where a matrix has
+        fewer than three nodes (no lambda_3).
 
     """
     lambdas = np.zeros(len(matrices))
-    gaps = np.zeros(len(matrices))  # signed gap between the two smallest eigenvalues (<= 0); see issue #70
+    gaps = np.zeros(len(matrices))  # eigengap lambda_3 - lambda_2 (>= 0); see issue #70
 
     for i, matrix_item in enumerate(matrices):
         eigenvalues, _, _ = laplace(matrix_item)
-        lambdas[i] = eigenvalues[1]
-        gaps[i] = eigenvalues[0] - eigenvalues[1]
+        lambdas[i] = eigenvalues[1] if eigenvalues.size >= _MIN_NODES_FOR_FIEDLER else np.nan
+        gaps[i] = eigenvalues[2] - eigenvalues[1] if eigenvalues.size >= _MIN_NODES_FOR_EIGENGAP else np.nan
 
     if plot:
         T = len(matrices) / fs

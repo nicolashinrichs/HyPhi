@@ -130,6 +130,22 @@ class TestQuantiles:
         result = vec_quantiles([G1, G2], qs=[0.5])
         assert result.shape == (2, 1)
 
+    def test_edge_poor_graph_returns_nan_sentinel(self):
+        """An edgeless graph yields a NaN sentinel of the right shape, not an IndexError (issue #102)."""
+        empty = nx.empty_graph(5)  # 5 nodes, no edges -> empty curvature distribution
+        qs = [0.1, 0.25, 0.5, 0.75, 0.9]
+
+        result = get_quantiles(empty, qs=qs)
+        assert result.shape == (len(qs),)
+        assert np.all(np.isnan(result))
+
+        # vec_quantiles over a mix keeps the per-graph rows aligned (NaN row for the edge-poor graph).
+        good = self._make_graph_with_known_curvatures(np.random.randn(50))
+        stacked = vec_quantiles([empty, good], qs=qs)
+        assert stacked.shape == (2, len(qs))
+        assert np.all(np.isnan(stacked[0]))
+        assert np.all(np.isfinite(stacked[1]))
+
 
 class TestVecEntropy:
     """Tests for vectorised entropy."""

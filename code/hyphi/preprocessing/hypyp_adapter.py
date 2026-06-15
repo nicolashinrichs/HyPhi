@@ -122,13 +122,14 @@ def epochs_to_plv_graphs(inst: Any, win_size: int, win_stride: int, picks: Any =
     data = _to_data_array(inst, picks=picks)
     if data.ndim == 1:
         data = data[np.newaxis, :]
-    # sliding_window_plv infers orientation by assuming channels <= times and silently transposes
-    # otherwise; a window/epoch with more channels than time samples would be transposed (turning
-    # time samples into graph nodes). Reject it loudly rather than return a corrupted graph.
+    # The adapter feeds (channels, time) data to sliding_window_plv (time on the last axis, its
+    # default). A window/epoch with more channels than time samples yields a degenerate PLV (a few
+    # phase samples cannot estimate locking across many channels), so reject it loudly rather than
+    # return an unreliable graph.
     if data.ndim >= _CHANNELS_TIME_NDIM and data.shape[-2] > data.shape[-1]:
         msg = (
             f"more channels ({data.shape[-2]}) than time samples ({data.shape[-1]}) per epoch/window; "
-            "sliding_window_plv cannot disambiguate the orientation. Provide more time samples than channels."
+            "the PLV over so few samples is unreliable. Provide more time samples than channels."
         )
         raise ValueError(msg)
     if data.ndim == _CHANNELS_TIME_NDIM:
