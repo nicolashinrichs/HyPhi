@@ -279,6 +279,7 @@ ignore = [
     "S301",   # suspicious-pickle-usage
     "TD002",  # Missing author in To-Do
     "TD003",  # Missing issue link on the line following a To-Do
+    "FIX002", # Line contains TODO: bare TODOs are allowed in dev; FIXME/XXX/HACK (FIX001/3/4) still gate
     # Cyclomatic / size complexity: accepted on load-bearing scientific code (the ricci_flow CLI, the
     # multi-parameter plot functions, the pickle-adjacency loader). Refactoring working numerics for a
     # lint count is high-risk, low-value; see the Bucket-A cleanup decision.
