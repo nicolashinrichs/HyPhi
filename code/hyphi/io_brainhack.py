@@ -13,20 +13,21 @@ Each loader returns plain NumPy adjacency matrices keyed by integer index, so
 downstream code (``hyphi.modeling.GDD_FRc_helpers``) can build NetworkX graphs
 and compute curvatures without re-implementing the unpickling logic.
 
-A small back-compat shim (`_compat_load`) lets us read graph pickles produced
-under older NetworkX versions even when the importing environment ships a
-different NetworkX, by stubbing out the legacy ``Graph`` / ``*View`` classes
-referenced inside the pickle stream and reading the ``_adj`` dict directly.
+The shared back-compat unpickler (``hyphi._compat.load_compat_pickle``) lets us
+read graph pickles produced under older NetworkX or NumPy versions even when the
+importing environment ships a different version, by stubbing out the legacy
+``Graph`` / ``*View`` classes referenced inside the pickle stream (and remapping
+the ``numpy._core`` namespace) and reading the ``_adj`` dict directly.
 """
 
 from __future__ import annotations
 
-import io
 import pickle
 from pathlib import Path
-from typing import ClassVar
 
 import numpy as np
+
+from hyphi._compat import load_compat_pickle
 
 # ------------------------------------------------------------------------------------------
 # general
@@ -64,56 +65,11 @@ def load_pickle_adjacency(
     """
     path = Path(pickle_path)
 
-    def _compat_load(path_obj: Path):
-        class _CompatGraph:
-            def __init__(self, *args, **kwargs):
-                pass
-
-            def __setstate__(self, state):
-                if isinstance(state, dict):
-                    self.__dict__.update(state)
-
-        class _CompatView:
-            def __init__(self, *args, **kwargs):
-                pass
-
-            def __setstate__(self, state):
-                self.__dict__["_state"] = state
-
-        class _CompatUnpickler(pickle.Unpickler):
-            _VIEW_NAMES: ClassVar[set[str]] = {
-                "NodeView",
-                "NodeDataView",
-                "EdgeView",
-                "OutEdgeView",
-                "InEdgeView",
-                "MultiEdgeView",
-                "OutMultiEdgeView",
-                "InMultiEdgeView",
-                "EdgeDataView",
-                "OutEdgeDataView",
-                "InEdgeDataView",
-                "MultiEdgeDataView",
-                "OutMultiEdgeDataView",
-                "InMultiEdgeDataView",
-            }
-
-            def find_class(self, module, name):
-                if module == "networkx.classes.graph" and name == "Graph":
-                    return _CompatGraph
-                if module == "networkx.classes.reportviews" and name in self._VIEW_NAMES:
-                    return _CompatView
-                return super().find_class(module, name)
-
-        with path_obj.open("rb") as f:
-            raw = f.read()
-        return _CompatUnpickler(io.BytesIO(raw)).load()
-
     try:
         with path.open("rb") as f:
             obj = pickle.load(f)
-    except Exception:  # noqa: BLE001 - any unpickling failure (cross-NetworkX class/module mismatch) should fall back to the compat shim
-        obj = _compat_load(path)
+    except Exception:  # noqa: BLE001 - any unpickling failure (cross-NetworkX/NumPy class/module mismatch) should fall back to the shared compat unpickler
+        obj = load_compat_pickle(path)
 
     if isinstance(obj, (list, tuple)):
         if not obj:
