@@ -12,7 +12,7 @@ from hyphi.configs import config
 from tqdm import tqdm
 
 config.init()  # load hyphi config
-from hyphi.configs import config
+from hyphi.configs import config, resolve_loc_paths
 from hyphi.io import load_config
 from hyphi.modeling.entropies import vec_entropy, vec_quantiles
 from hyphi.modeling.graph_curvatures import compute_frc_vec
@@ -21,7 +21,7 @@ from hyphi.modeling.graph_curvatures import compute_frc_vec
 config.init()
 
 # Load the configuration parameters into a dictionary
-config = load_config(Path(config.paths.experiments.configs, sys.argv[1]))
+config = resolve_loc_paths(load_config(Path(config.paths.experiments.configs, sys.argv[1])))
 
 # Load the CCORR data tensors from .mat files
 # We store data for each trial type separately

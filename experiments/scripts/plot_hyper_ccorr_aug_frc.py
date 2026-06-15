@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy as sp
 from hyphi.configs import config as hyphi_config
+from hyphi.configs import resolve_loc_paths
 from hyphi.io import load_config
 from plot_hyper_ccorr_frc import (
     params,
@@ -25,7 +26,7 @@ hyphi_config.init()
 plt.rcParams.update(params)
 
 # Load the configuration parameters into a dictionary
-config = load_config(Path(hyphi_config.paths.experiments.configs, sys.argv[1]))
+config = resolve_loc_paths(load_config(Path(hyphi_config.paths.experiments.configs, sys.argv[1])))
 
 # Create map between dyads and dates
 dyad_date_map = dict(zip(config["dyads"], config["dyad_dates"], strict=True))
