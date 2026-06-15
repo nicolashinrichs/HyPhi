@@ -163,7 +163,10 @@ def compute_successive_gdd(
     Returns
     -------
     gdd_dict : dict
-        Dictionary like {2: d(G2, G1), 3: d(G3, G2), ...}
+        Dictionary keyed by the EARLIER index of each consecutive pair:
+        {1: d(G2, G1), 2: d(G3, G2), ...}. For sorted indices t, entry ``t``
+        holds the diffusion distance between graph ``t`` and graph ``t+1`` (the
+        successive-pair distance plotted against the earlier index).
 
     """
     indices = sorted(weighted_graphs.keys())

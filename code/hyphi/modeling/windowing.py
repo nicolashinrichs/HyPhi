@@ -8,7 +8,7 @@ but exists only for Kuramoto-simulated phases (the simulation package and the
 simulate-missing-phases step of ``modeling.ricci_flow_analysis``); everything else uses this
 module. The two agree to float32 tolerance (pinned by ``test_jax_plv_matches_numpy``).
 
-Extracted from KuramotoSimulations.py and connectome_kuramoto.ipynb.
+Extracted from the original KuramotoSimulations.py and connectome exploration code.
 """
 
 # %% Import
