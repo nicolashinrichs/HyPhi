@@ -99,8 +99,8 @@ def test_laplace_returns_psd_laplacian_with_zero_smallest_eigenvalue():
     assert np.allclose(eigenvectors.T @ eigenvectors, np.eye(3))
 
 
-def test_eigen_in_time_tracks_fiedler_value_and_nonpositive_gap():
-    """eigen_in_time returns the per-matrix Fiedler value and the (<= 0) two-smallest gap."""
+def test_eigen_in_time_tracks_fiedler_value_and_eigengap():
+    """eigen_in_time returns the per-matrix Fiedler value and the non-negative lambda_3 - lambda_2 eigengap (issue #70)."""
     lambdas, gaps = eigen_in_time(np.array([_A_PATH, _A_TRIANGLE]))
 
     assert lambdas.shape == (2,)
@@ -108,6 +108,18 @@ def test_eigen_in_time_tracks_fiedler_value_and_nonpositive_gap():
     for i, matrix in enumerate((_A_PATH, _A_TRIANGLE)):
         eigenvalues, _, _ = laplace(matrix)
         assert lambdas[i] == pytest.approx(eigenvalues[1])
-        assert gaps[i] == pytest.approx(eigenvalues[0] - eigenvalues[1])
-    # The gap is the ascending (smallest - second-smallest), so it is non-positive.
-    assert np.all(gaps <= _TOL)
+        assert gaps[i] == pytest.approx(eigenvalues[2] - eigenvalues[1])
+    # The eigengap lambda_3 - lambda_2 is non-negative (eigenvalues are ascending).
+    assert np.all(gaps >= -_TOL)
+
+
+def test_eigen_in_time_degenerate_small_graphs_give_nan_not_crash():
+    """A 2-node matrix has a Fiedler value but no eigengap; a 1-node matrix has neither (no IndexError)."""
+    two_node = np.array([[0.0, 1.0], [1.0, 0.0]])
+    one_node = np.array([[0.0]])
+    lambdas, gaps = eigen_in_time(np.array([two_node, one_node], dtype=object))
+
+    assert np.isfinite(lambdas[0])  # lambda_2 defined for 2 nodes
+    assert np.isnan(gaps[0])  # no lambda_3
+    assert np.isnan(lambdas[1])  # no lambda_2 for a single node
+    assert np.isnan(gaps[1])

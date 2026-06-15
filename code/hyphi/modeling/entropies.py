@@ -608,8 +608,16 @@ def vec_entropy(
 def get_quantiles(
     G: nx.classes.graph.Graph, qs: npt.NDArray[np.float64] | list[float], curvature: str = "formanCurvature"
 ) -> npt.NDArray[np.float64]:
-    """Get quantiles of the curvature distribution on a single graph."""
+    """Get quantiles of the curvature distribution on a single graph.
+
+    Returns NaN (matching the shape of ``qs``) for an edge-poor graph whose curvature distribution is
+    empty: the quantile positions are then undefined, so a NaN sentinel is emitted rather than raising
+    an IndexError (issue #102). Downstream summaries can mask NaN. The entropy estimators use a 0.0
+    sentinel for the same degenerate case, but quantile *positions* are undefined rather than zero.
+    """
     curvatures = extract_curvatures(G, curvature=curvature)
+    if np.asarray(curvatures).size == 0:
+        return np.full(np.shape(qs), np.nan, dtype=float)
     return np.quantile(curvatures, qs)
 
 
