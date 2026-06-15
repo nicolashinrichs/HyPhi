@@ -10,6 +10,7 @@ import matplotlib.colors as mpc
 import matplotlib.pyplot as plt
 import numpy as np
 from hyphi.configs import config as hyphi_config
+from hyphi.configs import resolve_loc_paths
 from hyphi.io import load_config
 from matplotlib import cm
 from matplotlib.gridspec import GridSpec
@@ -37,7 +38,7 @@ plt.rcParams.update(params)
 config_file = os.path.join(hyphi_config.paths.experiments.configs, sys.argv[1])
 
 # Load the configuration parameters into a dictionary
-config = load_config(config_file)
+config = resolve_loc_paths(load_config(config_file))
 
 # Type of curvature
 curv_type = sys.argv[2]

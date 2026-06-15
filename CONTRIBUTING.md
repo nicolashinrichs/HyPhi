@@ -305,17 +305,22 @@ the dual-EEG pipeline and the Forman-Ricci examples.
 
 ## Configuration
 
-> *UNDER CONSTRUCTION*: This might change soon (TODO)
-
 Two loaders, two scopes:
 
 - `hyphi.configs.config` / `paths` / `params` — project-wide singleton populated from
-  `code/configs/*config.toml`.  Library code can read it without side effects; entry
-  points (`hyphi.main`, tutorial notebooks, experiment scripts) call
-  [TODO: consider adding] `hyphi.configs.bootstrap()` once at startup to chdir, configure logging, and print the
-  banner.
+  `code/configs/*config.toml`.  Library code can read it without side effects.  Entry
+  points (`hyphi.main`, tutorial notebooks, experiment scripts) call `config.init()` once at
+  startup, which discovers and loads the config, resolves every path under `config.paths` to
+  an absolute path against the project root, configures logging, and prints the banner.
+  `config.init()` does NOT change the process working directory: anything read through
+  `config.paths` is already absolute, so it does not depend on the current directory.
 - `hyphi.io.load_config(path)` — per-file TOML loader for arbitrary user configs (e.g.
-  `experiments/configs/*.toml`).  Returns a plain dict.
+  `experiments/configs/*.toml`).  Returns a plain dict and does NOT resolve paths, so the
+  relative `*_loc` entries in those per-experiment configs would otherwise be anchored on the
+  current directory.  The experiment scripts therefore wrap it with
+  `hyphi.configs.resolve_loc_paths(load_config(...))`, which rewrites every relative `*_loc`
+  value to an absolute path under the project root; the scripts are then robust to the launch
+  directory.  A new path-bearing config key should follow the `*_loc` naming so it is anchored too.
 
 Do not introduce a third loader.
 

@@ -7,6 +7,7 @@ from pathlib import Path
 import networkx as nx
 import numpy as np
 from hyphi.configs import config as hyphi_config
+from hyphi.configs import resolve_loc_paths
 from hyphi.io import load_config, load_network_pkl
 from hyphi.modeling.entropies import vec_entropy, vec_quantiles
 from hyphi.modeling.graph_curvatures import compute_frc_vec
@@ -18,7 +19,7 @@ from tqdm import tqdm
 hyphi_config.init()
 
 # Load the configuration parameters into a dictionary
-config = load_config(Path(hyphi_config.paths.experiments.configs, sys.argv[1]))
+config = resolve_loc_paths(load_config(Path(hyphi_config.paths.experiments.configs, sys.argv[1])))
 
 # Type of curvature
 curv_type: str = sys.argv[2]

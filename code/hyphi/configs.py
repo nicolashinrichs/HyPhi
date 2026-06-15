@@ -33,7 +33,6 @@ Years: 2023 & 2026
 from __future__ import annotations
 
 import logging.config
-import os
 import tomllib as toml  # expects python>=3.11
 from pathlib import Path
 from typing import Any
@@ -286,57 +285,6 @@ class _CONFIG:
             print("\033[91mPaths can't be converted to absolute paths, since no PROJECT_ROOT is found!\033[0m")  # red
 
 
-def _set_wd(new_dir: str | Path) -> None:
-    """
-    Set the given directory as the new working directory of the project.
-
-    :param new_dir: name of new working directory (must be in the project folder)
-    """
-    if not str(Path.cwd().absolute()).startswith(str(Path(PROJECT_ROOT).absolute())):
-        msg = f"Current working dir '{Path.cwd()}' is outside of project root '{PROJECT_ROOT}'."
-        raise OSError(msg)
-
-    print("\033[94m" + f"Current working dir:\t{Path.cwd()}" + "\033[0m")  # print blue
-
-    # Check if new_dir is a folder path or just a folder name
-    new_dir = Path(new_dir)
-    if new_dir.is_absolute():
-        found = new_dir.is_dir()
-        change_dir = new_dir.absolute() != Path.cwd()
-        if found and change_dir:
-            os.chdir(new_dir)
-
-    else:
-        # Remove '/' if new_dir == 'folder/' OR '/folder'
-        new_dir = new_dir.name
-
-        # Check if new_dir is the current dir
-        found = new_dir == Path.cwd().name
-        change_dir = not found
-
-        # First look down the tree
-        if not found:
-            # Note: This works only for unique folder names
-            paths_found = sorted(Path(PROJECT_ROOT).parent.glob(f"**/{new_dir}"), key=lambda x: len(x.parents))
-            if len(paths_found) > 1:
-                msg = (
-                    f"Found multiple folders with name '{new_dir}' in project '{PROJECT_NAME}'!\n\n"
-                    f"Please specify the absolute path to the desired folder:\n\n{[str(p) for p in paths_found]}"
-                )
-                raise ValueError(msg)
-
-            if len(paths_found) == 1:
-                found = True
-                os.chdir(paths_found.pop())
-
-    if found and change_dir:
-        print("\033[93m" + f"New working dir: '{Path.cwd()}'\n" + "\033[0m")  # yellow print
-    elif found and not change_dir:
-        pass
-    else:
-        print("\033[91m" + f"Given folder not found. Working dir remains: '{Path.cwd()}'\n" + "\033[0m")  # red print
-
-
 # %% Setup configuration object < o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
 # Module-level objects ready for import in other scripts. They remain "empty"/None until either an
@@ -411,10 +359,43 @@ def _configure(config_obj: _CONFIG, *, project_name: str | None = None) -> None:
     _w = 95
     print("\n" + ("*" * _w + "\n") * 2 + "\n" + f"{PROJECT_NAME:^{_w}}" + "\n" * 2 + ("*" * _w + "\n") * 2)
 
-    # Set the project working directory
-    _set_wd(PROJECT_ROOT)
-
+    # Note: configuration does NOT change the process working directory. All config paths under
+    # `config.paths` are resolved to absolute paths against PROJECT_ROOT above, so callers do not
+    # depend on the current working directory.
     return
+
+
+def resolve_loc_paths(experiment_config: dict[str, Any], root: str | Path | None = None) -> dict[str, Any]:
+    """
+    Anchor relative ``*_loc`` paths of a loaded experiment config on the project root.
+
+    :func:`hyphi.io.load_config` returns the raw TOML dict without resolving any paths, and the
+    per-experiment configs use relative input/output locations (e.g. ``result_loc = "./results"``).
+    Because :meth:`_CONFIG.init` no longer changes the working directory, those relative values would
+    otherwise resolve against the current directory. This rewrites every ``*_loc`` entry whose value
+    is a relative path string to an absolute path under ``root`` (the project root by default), in
+    place, and returns the same dict. Absolute paths and non-``*_loc`` keys are left untouched, so the
+    function is idempotent and safe to apply more than once.
+
+    Parameters
+    ----------
+    experiment_config : dict
+        The dict returned by :func:`hyphi.io.load_config`.
+    root : str or pathlib.Path, optional
+        Directory to anchor relative paths on. Defaults to the discovered ``PROJECT_ROOT`` (set by
+        :meth:`_CONFIG.init`).
+
+    Returns
+    -------
+    dict
+        The same ``experiment_config`` dict, with its relative ``*_loc`` values made absolute.
+
+    """
+    base = Path(root if root is not None else PROJECT_ROOT)
+    for key, value in experiment_config.items():
+        if key.endswith("_loc") and isinstance(value, str) and not Path(value).is_absolute():
+            experiment_config[key] = str(base / value)
+    return experiment_config
 
 
 # o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o END

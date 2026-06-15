@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 import numpy as np
-from hyphi.configs import config
+from hyphi.configs import config, resolve_loc_paths
 from hyphi.io import load_config
 from joblib import Parallel, delayed
 from scipy.stats import energy_distance
@@ -22,7 +22,7 @@ from tqdm_joblib import tqdm_joblib  # TODO: needs to be added to optional depen
 config.init()
 
 # Load the configuration parameters into a dictionary
-config = load_config(Path(config.paths.experiments.configs, sys.argv[1]))
+config = resolve_loc_paths(load_config(Path(config.paths.experiments.configs, sys.argv[1])))
 
 # If the pooled results directory doesn't exist, make it
 Path(config["pooled_result_loc"]).absolute().mkdir(parents=True, exist_ok=True)

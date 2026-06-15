@@ -62,7 +62,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 from hyphi.benchmarks import classify_curvature_vs_benchmarks, extract_window_features
-from hyphi.configs import config as hyphi_config
+from hyphi.configs import config as hyphi_config, resolve_loc_paths
 
 from hyphi.io import load_config
 from hyphi.null_models import dyad_label_shuffle
@@ -554,7 +554,7 @@ def main(config_file: str, curvature: str, strict: bool = False) -> dict:
     assert curvature in {"FRC", "AFRC"}, f"Curvature must be FRC or AFRC; got {curvature!r}"
 
     config_path = os.path.join(hyphi_config.paths.experiments.configs, config_file)
-    config = load_config(config_path)
+    config = resolve_loc_paths(load_config(config_path))
     freq_bands = list(config.get("freq_bands", [f"band{i}" for i in range(int(config.get("num_freqs", 8)))]))
 
     # --- Load (cheap) ------------------------------------------------------

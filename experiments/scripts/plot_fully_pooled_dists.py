@@ -8,7 +8,7 @@ from pathlib import Path
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
-from hyphi.configs import config as hyphi_config
+from hyphi.configs import config as hyphi_config, resolve_loc_paths
 
 from hyphi.io import load_config
 
@@ -16,7 +16,7 @@ from hyphi.io import load_config
 hyphi_config.init()  # load hyphi config
 
 # Load the configuration parameters into a dictionary
-config = load_config(Path(hyphi_config.paths.experiments.configs, sys.argv[1]))
+config = resolve_loc_paths(load_config(Path(hyphi_config.paths.experiments.configs, sys.argv[1])))
 
 # Type of curvature
 curv_type = sys.argv[2]
