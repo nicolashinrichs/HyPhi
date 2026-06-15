@@ -281,28 +281,22 @@ NumPy style.  Match the terse register already in the codebase:
 - No `Examples` section unless the surrounding module already uses them.
 
 
-## Adding, extending, using `HyPhi` notebooks
+## Running the tutorials
 
-The repository includes notebooks for interactive exploration and analysis in `./code/notebooks/`:
-
-| Notebook | Format |
-|---|---|
-| `code/notebooks/hyphi.ipynb` | Jupyter notebook |
-| `code/notebooks/hyphi_explore.py` | [marimo](https://marimo.io/) notebook |
-
-### Running notebooks
-
-**Jupyter:**
+Interactive walkthroughs live in `./tutorials/`. The quickstart is a
+[marimo](https://marimo.io/) notebook that runs the canonical workflow (config,
+adjacency loading, Forman-Ricci curvature, entropy, a network plot) on a small
+shipped Kuramoto connectome:
 
 ```shell
-uv run --extra notebook jupyter lab code/notebooks/hyphi.ipynb
+make tutorial
+# or, equivalently:
+uv run --extra notebook --extra tutorial marimo edit tutorials/01_quickstart.py
 ```
 
-**marimo:**
-
-```shell
-uv run --extra notebook marimo edit code/notebooks/hyphi_explore.py
-```
+The other tutorials (`tutorials/02_dual_eeg_pipeline.md`,
+`tutorials/HyPhi_FRC_examples.md`) and the rendered docs (`docs/tutorials/`) cover
+the dual-EEG pipeline and the Forman-Ricci examples.
 
 > **Note:** Make sure the notebook kernel points to the project's virtual environment (`.venv`) so that `import hyphi` works.
 

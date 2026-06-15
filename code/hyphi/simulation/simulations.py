@@ -1,10 +1,22 @@
 """
 Simulations module for HyPhi: Kuramoto model and Watts-Strogatz network sweeps.
 
-1. Connectome-informed Kuramoto model with delays
-   (structural outline extracted from connectome_kuramoto.ipynb)
+1. Connectome-informed Kuramoto model with delays. The anatomical-connectivity
+   Kuramoto formulation follows Dumas et al. (2012), built on the CoCoMac
+   structural connectome (Kotter, 2004) in the spirit of The Virtual Brain
+   (Sanz Leon et al., 2013).
 2. Watts-Strogatz small-world sweep
    (parameterized version of the sweep in NeuRepsSimulations.py)
+
+References
+----------
+Dumas, G., Chavez, M., Nadel, J., & Martinerie, J. (2012). Anatomical
+connectivity influences both intra- and inter-brain synchronizations. PLoS ONE,
+7(5), e36414.
+Kotter, R. (2004). Online retrieval, processing, and visualization of primate
+connectivity data from the CoCoMac database. Neuroinformatics, 2(2), 127-144.
+Sanz Leon, P., Knock, S. A., Woodman, M. M., et al. (2013). The Virtual Brain:
+a simulator of primate brain network dynamics. Frontiers in Neuroinformatics, 7, 10.
 
 Years: 2026
 """
@@ -174,8 +186,8 @@ def setup_delayed_kuramoto(
         d(theta_i)/dt = omega_i + c_intra * sum_j W_ji * sin(theta_j(t - delay_ij) - theta_i(t))
 
     where ``delay_ij = tract_ij / velocity`` and ``W`` is spectrally normalized. A connection is
-    included whenever ``W_ji != 0`` (a zero delay is a valid instantaneous term), matching the
-    reference ``connectome_kuramoto.ipynb``.
+    included whenever ``W_ji != 0`` (a zero delay is a valid instantaneous term), following the
+    Dumas et al. (2012) anatomical-connectivity formulation (see the module docstring).
 
     """
     from jitcdde import jitcdde, t, y  # noqa: PLC0415 (lazy: keep the DDE compile stack out of import hyphi)

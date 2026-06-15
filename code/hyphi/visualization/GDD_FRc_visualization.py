@@ -2,8 +2,7 @@
 Plotting helpers for the Forman-Ricci / Graph Diffusion Distance (GDD) pipeline.
 
 Companion module to :mod:`hyphi.modeling.GDD_FRc_helpers` and
-:mod:`hyphi.modeling.transform_curvature`.  The two ``GDD_FRc_*.ipynb``
-notebooks in ``code/notebooks/`` use these functions to render:
+:mod:`hyphi.modeling.transform_curvature`.  These functions render:
 
 - per-matrix histograms of (transformed) curvature distributions,
 - a successive-GDD line plot for time-ordered graph sequences,
