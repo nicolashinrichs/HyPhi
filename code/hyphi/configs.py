@@ -77,7 +77,8 @@ visualizations = "./results/datavisualization"
 
 # Set parameters
 [params]
-weight_decay = 0.01 # TODO: replace PLACEHOLDER, and add relevant parameters
+# Project-specific analysis parameters go here. Example (edit or replace):
+plv_threshold = 0.2
 
 ################################################
 ##################  LOGGER  ####################
