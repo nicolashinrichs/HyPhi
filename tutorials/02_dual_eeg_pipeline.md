@@ -49,24 +49,27 @@ data/your-study/
 
 `data/` is already in HyPhi's path config (`paths.DATA`).
 
-## 3. Convert raw EEG to phase time series
+## 3. Convert raw EEG to the band-limited signal and its phase
 
 If your data are in **BrainVision** (`.vhdr`), **EDF**, **FIF**, or **EEGLAB** (`.set`)
 format, the recipe below uses MNE-Python (installed by HyPhi).  Save it as
-`prepare_phases.py` in the project root.
+`prepare_inputs.py` in the project root.  It writes two files per dyad: the band-limited
+signal (for the one-call path in Section 4.1) and its instantaneous phase (for the
+lower-level path in Section 4.2).
 
 ```python
-"""Convert one dyad's raw dual-EEG to a HyPhi-ready phase array."""
+"""Convert one dyad's raw dual-EEG to HyPhi-ready arrays: the band-limited signal and its phase."""
 from pathlib import Path
 
 import mne
 import numpy as np
 from scipy.signal import hilbert
 
-# --- EDIT THESE THREE PATHS ------------------------------------------------
+# --- EDIT THESE PATHS ------------------------------------------------------
 SUBJECT_A_RAW = Path("/path/to/dyad_01_subjectA.vhdr")
 SUBJECT_B_RAW = Path("/path/to/dyad_01_subjectB.vhdr")
-OUT_FILE      = Path("data/your-study/dyad_01_phases.npy")
+SIGNAL_FILE   = Path("data/your-study/dyad_01_signal.npy")
+PHASES_FILE   = Path("data/your-study/dyad_01_phases.npy")
 # ---------------------------------------------------------------------------
 
 raw_a = mne.io.read_raw_brainvision(SUBJECT_A_RAW, preload=True)
@@ -75,22 +78,26 @@ raw_b = mne.io.read_raw_brainvision(SUBJECT_B_RAW, preload=True)
 assert raw_a.info["sfreq"] == raw_b.info["sfreq"], "Sampling rates differ"
 n_samples = min(raw_a.n_times, raw_b.n_times)
 
-# Bandpass to a frequency band of interest (alpha shown here)
+# Bandpass to a frequency band of interest (alpha shown here).
 raw_a.filter(l_freq=8.0, h_freq=12.0, fir_design="firwin")
 raw_b.filter(l_freq=8.0, h_freq=12.0, fir_design="firwin")
 
-# Hilbert analytic-signal phase, per channel
 data_a = raw_a.get_data()[:, :n_samples]
 data_b = raw_b.get_data()[:, :n_samples]
-phases_a = np.angle(hilbert(data_a, axis=1))
-phases_b = np.angle(hilbert(data_b, axis=1))
 
-# Stack into (n_oscillators, T) — subject A on top of subject B
-phases = np.vstack([phases_a, phases_b])
+# The band-limited SIGNAL (subject A stacked on top of subject B). This is the input to the
+# one-call run_eeg_pipeline in Section 4.1, which extracts the instantaneous phase itself.
+signal = np.vstack([data_a, data_b])
+SIGNAL_FILE.parent.mkdir(parents=True, exist_ok=True)
+np.save(SIGNAL_FILE, signal)
 
-OUT_FILE.parent.mkdir(parents=True, exist_ok=True)
-np.save(OUT_FILE, phases)
-print(f"Saved {phases.shape} → {OUT_FILE}")
+# The instantaneous PHASE, for the lower-level sliding_window_plv path in Section 4.2 (which takes
+# phase directly). Do not feed this file to run_eeg_pipeline: it would apply the Hilbert transform a
+# second time.
+phases = np.vstack([np.angle(hilbert(data_a, axis=1)), np.angle(hilbert(data_b, axis=1))])
+np.save(PHASES_FILE, phases)
+
+print(f"Saved signal {signal.shape} and phases {phases.shape} to data/your-study/")
 ```
 
 Run it for each dyad:
@@ -101,7 +108,36 @@ uv run python prepare_phases.py
 
 ## 4. End-to-end pipeline
 
-Save this as `run_pipeline.py` in the project root.  It produces per-window curvature
+### 4.1 The one-call path
+
+For a single recording, `hyphi.main.run_eeg_pipeline` wraps the whole chain (instantaneous
+phase, sliding-window inter-brain PLV graphs, Forman-Ricci curvature, and the Ricci Network
+Entropy trace with curvature quantiles).  It accepts an MNE `Raw`/`Epochs` or a plain
+`(n_oscillators, n_time_samples)` array of the band-limited signal, exactly what Section 3
+saved as `dyad_01_signal.npy`:
+
+```python
+import numpy as np
+from hyphi.main import run_eeg_pipeline
+
+signal = np.load("data/your-study/dyad_01_signal.npy")  # (n_oscillators, T), band-limited, partners stacked
+result = run_eeg_pipeline(signal, win_size=500, win_stride=250)
+
+result["entropy"]    # (n_windows,)    Ricci Network Entropy trace H(t)
+result["quantiles"]  # (n_windows, 5)  curvature quantiles per window
+result["graphs"]     # the per-window curvature-annotated inter-brain graphs
+```
+
+The inter-brain edge measure is the Phase-Locking Value (PLV), the canonical EEG inter-brain
+connectivity in HyPhi.  `run_eeg_pipeline` returns exactly the same structure as
+`run_pipeline` (which takes a precomputed connectivity tensor), so the statistics and null
+models below apply identically.
+
+### 4.2 The full study (null models + hierarchical test)
+
+For a study with several dyads and conditions, run each dyad through the chain, build a
+null-model envelope, and compare conditions with the hierarchical permutation test.  Save
+this as `run_pipeline.py` in the project root.  It produces per-window curvature
 entropies, a null-model envelope, and a hierarchical-permutation p-value.
 
 ```python

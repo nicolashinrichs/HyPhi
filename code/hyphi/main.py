@@ -27,6 +27,7 @@ import numpy as np
 
 from hyphi.analyses import build_sliding_window_graphs, compute_entropy, compute_windowed_curvatures
 from hyphi.modeling.entropies import DEFAULT_ENTROPY_METHOD, get_estimator, vec_quantiles
+from hyphi.preprocessing import epochs_to_plv_graphs
 from hyphi.simulation.graph_simulations import gen_weighted_sw
 
 _QUANTILES = (0.05, 0.25, 0.5, 0.75, 0.95)
@@ -117,19 +118,85 @@ def run_pipeline(
     if arr.shape[-1] != arr.shape[-2]:
         msg = f"connectivity matrices must be square, got last two dims {arr.shape[-2:]}."
         raise ValueError(msg)
+    _validate_methods(entropy_method, curvature_method)
+
+    graphs = build_sliding_window_graphs(arr)
+    return _summarize_graph_series(graphs, entropy_method=entropy_method, curvature_method=curvature_method)
+
+
+def _validate_methods(entropy_method: str, curvature_method: str) -> None:
+    """Reject unknown curvature/entropy methods up front, before any expensive graph or curvature work."""
     if curvature_method not in _VALID_CURVATURE_METHODS:
         # FormanRicci silently writes no curvature attribute for an unknown method, which fails far
         # downstream as an opaque KeyError; reject it here, mirroring the entropy estimator check.
         valid = ", ".join(_VALID_CURVATURE_METHODS)
         msg = f"Unknown curvature method {curvature_method!r}; choose from: {valid}."
         raise ValueError(msg)
-    get_estimator(entropy_method)  # fail fast with a clear error before the expensive curvature pass
+    get_estimator(entropy_method)  # raises a clear error for an unknown estimator
 
-    graphs = build_sliding_window_graphs(arr)
+
+def _summarize_graph_series(
+    graphs: list[nx.Graph],
+    entropy_method: str = DEFAULT_ENTROPY_METHOD,
+    curvature_method: str = "1d",
+) -> dict[str, Any]:
+    """
+    Annotate a window-ordered graph series with curvature and summarise it (shared pipeline core).
+
+    Both the connectivity-tensor pipeline (:func:`run_pipeline`) and the EEG pipeline
+    (:func:`run_eeg_pipeline`) converge here once they have a per-window graph series, so they
+    produce identically-shaped output. The methods are validated by the entry points before any
+    graph-building; this computes per-window Forman-Ricci curvature, its Ricci Network Entropy trace,
+    and its quantiles.
+    """
     curved = compute_windowed_curvatures(graphs, method=curvature_method)
     entropy = compute_entropy(curved, method=entropy_method)
     quantiles = vec_quantiles(curved, qs=list(_QUANTILES))
     return {"graphs": curved, "entropy": entropy, "quantiles": quantiles}
+
+
+def run_eeg_pipeline(
+    inst: Any,
+    win_size: int,
+    win_stride: int,
+    picks: Any = None,
+    entropy_method: str = DEFAULT_ENTROPY_METHOD,
+    curvature_method: str = "1d",
+) -> dict[str, Any]:
+    """
+    Run the dual-EEG curvature-entropy pipeline end to end, from preprocessed signals.
+
+    The one-call EEG path: a preprocessed, band-limited dual-EEG input becomes per-window inter-brain
+    PLV graphs (the canonical EEG inter-brain connectivity measure; issue #91), each annotated with
+    Forman-Ricci curvature, summarised into the Ricci Network Entropy trace and curvature quantiles.
+    The result has the same shape as :func:`run_pipeline`, so the same statistics
+    (``hyphi.stats.hierarchical_permutation_test``) and null models apply downstream.
+
+    Parameters
+    ----------
+    inst : Any
+        Preprocessed, band-limited signal: an MNE ``Raw`` / ``Epochs`` (anything exposing
+        ``get_data``) or a plain ``(n_channels, n_times)`` array, with both partners' channels stacked
+        on the channel axis (the inter-brain node set). See :func:`hyphi.preprocessing.epochs_to_plv_graphs`.
+    win_size, win_stride : int
+        Sliding-window length and stride, in samples.
+    picks : Any
+        Channel selection passed through to the adapter (default: all channels).
+    entropy_method : str
+        Entropy estimator name (any key of ``hyphi.modeling.entropies.ESTIMATORS``).
+    curvature_method : str
+        Forman-Ricci method, ``"1d"`` (Forman) or ``"augmented"`` (augmented Forman).
+
+    Returns
+    -------
+    dict
+        ``{"graphs": curvature-annotated graphs, "entropy": (n_windows,) trace,
+        "quantiles": (n_windows, 5) curvature quantiles}``.
+
+    """
+    _validate_methods(entropy_method, curvature_method)  # fail fast before the expensive PLV pass
+    graphs = epochs_to_plv_graphs(inst, win_size, win_stride, picks=picks)
+    return _summarize_graph_series(graphs, entropy_method=entropy_method, curvature_method=curvature_method)
 
 
 def main(argv: list[str] | None = None) -> None:
