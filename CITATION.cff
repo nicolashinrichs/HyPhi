@@ -1,9 +1,16 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it using the metadata below."
 title: "HyPhi(Φ): A toolkit for detecting phase transitions in inter-brain networks"
-version: "1.2.0"
-date-released: "2026-04-14"
-doi: "10.5281/zenodo.18415664"
+version: "2.1.0"
+date-released: "2026-05-19"
+doi: "10.5281/zenodo.20298309"
+identifiers:
+  - type: doi
+    value: "10.5281/zenodo.18415663"
+    description: "Concept DOI, resolves to the latest version"
+  - type: doi
+    value: "10.5281/zenodo.20298309"
+    description: "Version DOI for v2.1.0"
 repository-code: "https://github.com/nicolashinrichs/HyPhi/"
 license: BSD-3-Clause
 type: software
