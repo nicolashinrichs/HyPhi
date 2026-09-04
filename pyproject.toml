@@ -100,9 +100,9 @@ docs = [
     "mkdocs-jupyter>=0.24,<1.0", # render the tutorial notebooks in the docs
 ]
 
-experiments = []  # TODO: move depdencies here, that are only relevant for running scripts in `./experiments/`
+experiments = ["tqdm-joblib"]  # dependencies only needed to run scripts in ./experiments/
 
-tutorial = []  # TODO: move depdencies here, that are only relevant for running scripts in `./tutorials/`
+tutorial = []  # dependencies only needed to run scripts in ./tutorials/
 
 # Accelerator backends for hyphi.backends. The PEP 508 environment markers make
 # `pip install hyphi[accel]` resolve the correct backend for the user's machine

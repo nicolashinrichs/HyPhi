@@ -52,7 +52,7 @@ jobs:
               fail=1
             fi
           done
-          if git grep -nIE '(/Users/|/home/|/media/|/raven/|/scratch/)[A-Za-z]' -- ':!*.lock' ':!data'; then
+          if git grep -nIE '(/Users/|/Volumes/|/home/|/media/|/raven/|/scratch/)[A-Za-z]' -- ':!*.lock' ':!data'; then
             echo "::error::absolute personal path found above; use a relative path"
             fail=1
           fi

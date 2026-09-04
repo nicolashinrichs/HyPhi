@@ -2,6 +2,8 @@
 # data/
 results/
 data/*.npy
+data/*.pkl
+data/connectome/
 data_8node/
 
 # Private configs in ./configs/ (starting with an underscore)
