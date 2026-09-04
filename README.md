@@ -51,11 +51,11 @@ The repository is split into the following main directories, each with a dedicat
 
 ### `code`
 
-Source folder of the Python toolbox `hyphi`, which implements the core analysis modules and pipelines for the pipeline.
+Source folder of the Python toolbox `hyphi`, which implements the core analysis modules and pipelines.
 
 - Network simulations
 - Ricci curvature computation
-- [Ricci Flow](code/README_Ricci-Flow.md)
+- [Ricci Flow](docs/ricci-flow.md)
 - Density estimation
 - Entropy and quantile analysis
 
@@ -71,7 +71,7 @@ More in the corresponding [`data/README.md`](data/README.md).
 
 This directory contains worked, end-to-end examples illustrating the canonical HyPhi workflow on synthetic networks.
 
-``More in the corresponding [`experiments/README.md`](experiments/README.md).``
+More in the corresponding [`experiments/README.md`](experiments/README.md).
 
 ### `tutorials`
 
@@ -93,7 +93,7 @@ All dependencies are specified in `pyproject.toml` and can be installed via `uv`
 uv sync [--extra develop] [--extra notebook]
 ```
 
-Use `--extra develop` to install development dependencies (e.g., testing, linting) and `--extra notebook` to install `Jupyter`|`marimo`-related dependencies for running the notebooks in the `tutorials` and `code/notebooks` directories.
+Use `--extra develop` to install development dependencies (e.g., testing, linting) and `--extra notebook` to install `Jupyter`|`marimo`-related dependencies for running the notebooks in the `tutorials` and `experiments/notebooks` directories.
 
 To check that the package is installed correctly, you can run:
 

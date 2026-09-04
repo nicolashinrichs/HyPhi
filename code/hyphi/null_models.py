@@ -44,6 +44,9 @@ __all__ = [
 
 _VALID_METHODS = {"phase_randomize", "circular_time_shift", "dyad_subject_swap"}
 
+# Minimum number of elements required for a non-trivial derangement.
+_MIN_DERANGEMENT_SIZE = 2
+
 
 # %% Functions >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
@@ -54,7 +57,7 @@ def _as_rng(rng: np.random.Generator | None) -> np.random.Generator:
 
 def _random_derangement(n: int, rng: np.random.Generator, max_tries: int = 100) -> np.ndarray:
     """Random derangement of ``[0, n)`` — a permutation with no fixed points."""
-    if n < 2:
+    if n < _MIN_DERANGEMENT_SIZE:
         return np.arange(n)
     base = np.arange(n)
     for _ in range(max_tries):
@@ -186,7 +189,7 @@ def dyad_subject_swap(
     """
     rng = _as_rng(rng)
     n_dyads = data_matrix.shape[0]
-    if n_dyads < 2:
+    if n_dyads < _MIN_DERANGEMENT_SIZE:
         logger.warning("dyad_subject_swap: n_dyads=%d — nothing to swap.", n_dyads)
         return data_matrix.copy()
 
@@ -277,7 +280,7 @@ def condition_label_shuffle_within_dyad(
         uniq_trials, first_idx = np.unique(sub_trials, return_index=True)
         trial_cond = sub_cond[first_idx]
         perm = rng.permutation(len(uniq_trials))
-        mapping = dict(zip(uniq_trials, trial_cond[perm]))
+        mapping = dict(zip(uniq_trials, trial_cond[perm], strict=True))
         cond[mask] = np.array([mapping[t] for t in sub_trials])
     return cond
 

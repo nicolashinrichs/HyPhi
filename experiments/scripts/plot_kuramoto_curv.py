@@ -3,13 +3,13 @@
 # %% Import
 import os
 import sys
-from pathlib import Path
 
 import matplotlib as mpl
 import matplotlib.colors as mpc
 import matplotlib.pyplot as plt
 import numpy as np
 from hyphi.configs import config as hyphi_config
+from hyphi.configs import project_path
 from hyphi.io import load_config
 from matplotlib import cm
 from matplotlib.gridspec import GridSpec
@@ -47,7 +47,7 @@ if curv_type == "FRC":
 elif curv_type == "AFRC":
     cmethod = "augmented"
 
-Path(config["kuramoto_viz_loc"]).mkdir(exist_ok=True, parents=True)
+project_path(config["kuramoto_viz_loc"]).mkdir(exist_ok=True, parents=True)
 
 # %% Functions >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
@@ -107,17 +107,13 @@ if __name__ == "__main__":
 
     for num in config["num_kuramotos"]:
         # Load data
-        Hpath = os.path.abspath(
-            os.path.join(
-                config["kuramoto_result_loc"],
-                f"Kuramoto_PLV_{cmethod}_FRC_entropy_cond_{num}_config_{config['config_id']}.npy",
-            )
+        Hpath = project_path(
+            config["kuramoto_result_loc"],
+            f"Kuramoto_PLV_{cmethod}_FRC_entropy_cond_{num}_config_{config['config_id']}.npy",
         )
-        Qpath = os.path.abspath(
-            os.path.join(
-                config["kuramoto_result_loc"],
-                f"Kuramoto_PLV_{cmethod}_FRC_quantiles_cond_{num}_config_{config['config_id']}.npy",
-            )
+        Qpath = project_path(
+            config["kuramoto_result_loc"],
+            f"Kuramoto_PLV_{cmethod}_FRC_quantiles_cond_{num}_config_{config['config_id']}.npy",
         )
         if num == "avg":
             Havg = np.load(Hpath)
@@ -134,7 +130,7 @@ if __name__ == "__main__":
     # Final plot
     time_axis = np.array(range(len(Havg)))
     f = plotKuramotos(time_axis, HQs, Havg, QQs, Qavg, config["quantiles"])
-    kurviz = os.path.abspath(os.path.join(config["kuramoto_viz_loc"], f"kuramoto_PLV_{curv_type}.png"))
+    kurviz = project_path(config["kuramoto_viz_loc"], f"kuramoto_PLV_{curv_type}.png")
     f.savefig(kurviz, bbox_inches="tight")
 
 # o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o END

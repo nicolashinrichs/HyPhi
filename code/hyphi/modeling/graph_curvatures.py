@@ -1,4 +1,4 @@
-"""TODO: add description here."""
+"""Graph curvature computation utilities for Forman-Ricci and Ollivier-Ricci curvatures."""
 
 # %% Import
 import math
@@ -11,7 +11,7 @@ from GraphRicciCurvature.OllivierRicci import OllivierRicci
 # %% Functions >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
 
-def compute_frc(G: nx.Graph, method: str = "1d") -> nx.Graph:  # noqa: N803
+def compute_frc(G: nx.Graph, method: str = "1d") -> nx.Graph:
     """
     Compute Forman-Ricci curvature on graph G.
 
@@ -34,7 +34,21 @@ def compute_frc(G: nx.Graph, method: str = "1d") -> nx.Graph:  # noqa: N803
 
 
 def compute_frc_vec(list_of_graphs: list[nx.Graph], method: str = "1d") -> list[nx.Graph]:
-    """Get Forman-Ricci curvatures as a vector for a list of graphs."""
+    """Compute Forman-Ricci curvature for each graph in a list.
+
+    Parameters
+    ----------
+    list_of_graphs : list[nx.Graph]
+        Input graphs to process.
+    method : str
+        FormanRicci method parameter (default ``"1d"``).
+
+    Returns
+    -------
+    list[nx.Graph]
+        Graphs with ``'formanCurvature'`` edge attribute set.
+
+    """
     return [compute_frc(G, method=method) for G in list_of_graphs]
 
 
@@ -45,12 +59,29 @@ def get_orc(
     power_val: int = 0,
     method_val: str = "OTDSinkhornMix",
 ) -> nx.Graph:
-    """Get Ollivier-Ricci curvature."""
-    # Initialize Ollivier-Ricci Curvature class
+    """Compute Ollivier-Ricci curvature on graph G.
+
+    Parameters
+    ----------
+    G : nx.Graph
+        Input graph.
+    alpha_val : float
+        Laziness parameter for the random walk (default ``0.5``).
+    base_val : float
+        Base for the ORC computation (default ``math.e``).
+    power_val : int
+        Exponent power for the ORC computation (default ``0``).
+    method_val : str
+        ORC solver method (default ``"OTDSinkhornMix"``).
+
+    Returns
+    -------
+    nx.Graph
+        Graph with ``'ricciCurvature'`` edge attribute set.
+
+    """
     orc = OllivierRicci(G, alpha=alpha_val, base=base_val, exp_power=power_val, method=method_val)
-    # Compute the Ollivier-Ricci curvature
     orc.compute_ricci_curvature()
-    # Return updated graph with curvature property on edges
     return orc.G
 
 
@@ -61,27 +92,99 @@ def get_orc_vec(
     power_val: int = 0,
     method_val: str = "OTDSinkhornMix",
 ) -> list[nx.Graph]:
-    """Get Ollivier-Ricci curvatures as a vector for a list of graphs."""
+    """Compute Ollivier-Ricci curvature for each graph in a list.
+
+    Parameters
+    ----------
+    list_of_graphs : list[nx.Graph]
+        Input graphs to process.
+    alpha_val : float
+        Laziness parameter for the random walk (default ``0.5``).
+    base_val : float
+        Base for the ORC computation (default ``math.e``).
+    power_val : int
+        Exponent power for the ORC computation (default ``0``).
+    method_val : str
+        ORC solver method (default ``"OTDSinkhornMix"``).
+
+    Returns
+    -------
+    list[nx.Graph]
+        Graphs with ``'ricciCurvature'`` edge attribute set.
+
+    """
     return [get_orc(G, alpha_val, base_val, power_val, method_val=method_val) for G in list_of_graphs]
 
 
 def extract_curvatures(G: nx.Graph, curvature: str = "formanCurvature") -> np.ndarray:
-    """Extract curvatures from a graph G."""
+    """Extract per-edge curvature values from a graph as a 1-D array.
+
+    Parameters
+    ----------
+    G : nx.Graph
+        Graph with curvature edge attributes.
+    curvature : str
+        Name of the edge attribute to extract (default ``"formanCurvature"``).
+
+    Returns
+    -------
+    np.ndarray
+        1-D array of curvature values, one entry per edge.
+
+    """
     return np.array([ddict[curvature] for u, v, ddict in G.edges(data=True)])
 
 
-def extract_curvatures_vec(list_of_graphs: list[nx.Graph], curvature: str = "formanCurvature"):
-    """Extract curvatures from a graph G as a vector for a list of graphs."""
+def extract_curvatures_vec(list_of_graphs: list[nx.Graph], curvature: str = "formanCurvature") -> list[np.ndarray]:
+    """Extract per-edge curvature values for each graph in a list.
+
+    Parameters
+    ----------
+    list_of_graphs : list[nx.Graph]
+        Graphs with curvature edge attributes.
+    curvature : str
+        Name of the edge attribute to extract (default ``"formanCurvature"``).
+
+    Returns
+    -------
+    list[np.ndarray]
+        List of 1-D curvature arrays, one per graph.
+
+    """
     return [extract_curvatures(G, curvature=curvature) for G in list_of_graphs]
 
 
 def compute_afrc(G: nx.Graph) -> nx.Graph:
-    """Compute Augmented Forman-Ricci curvature on graph G."""
+    """Compute Augmented Forman-Ricci curvature on graph G.
+
+    Parameters
+    ----------
+    G : nx.Graph
+        Input graph.
+
+    Returns
+    -------
+    nx.Graph
+        Graph with ``'formanCurvature'`` edge attribute set using the augmented method.
+
+    """
     return compute_frc(G, method="augmented")
 
 
 def compute_afrc_vec(list_of_graphs: list[nx.Graph]) -> list[nx.Graph]:
-    """Compute AFRC on a list of graphs for a list of graphs."""
+    """Compute Augmented Forman-Ricci curvature for each graph in a list.
+
+    Parameters
+    ----------
+    list_of_graphs : list[nx.Graph]
+        Input graphs to process.
+
+    Returns
+    -------
+    list[nx.Graph]
+        Graphs with ``'formanCurvature'`` edge attribute set using the augmented method.
+
+    """
     return compute_frc_vec(list_of_graphs, method="augmented")
 
 
@@ -127,7 +230,27 @@ def compute_orc_vec(
     exp_power: float = 0,
     method: str = "OTDSinkhornMix",
 ) -> list[nx.Graph]:
-    """Compute ORC on a list of graphs."""
+    """Compute Ollivier-Ricci curvature for each graph in a list.
+
+    Parameters
+    ----------
+    list_of_graphs : list[nx.Graph]
+        Input graphs to process.
+    alpha : float
+        Laziness parameter for the random walk (default ``0.5``).
+    base : float
+        Base for the ORC computation (default ``math.e``).
+    exp_power : float
+        Exponent power for the ORC computation (default ``0``).
+    method : str
+        ORC solver method (default ``"OTDSinkhornMix"``).
+
+    Returns
+    -------
+    list[nx.Graph]
+        Graphs with ``'ricciCurvature'`` edge attribute set.
+
+    """
     return [compute_orc(G, alpha, base, exp_power, method=method) for G in list_of_graphs]
 
 

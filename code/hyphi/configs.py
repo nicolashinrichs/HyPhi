@@ -1,32 +1,28 @@
-"""
-Configuration script for the hyphi toolbox.
+"""Configuration module for the hyphi toolbox.
 
-This module is designed to work both inside the hyphi repository itself and when hyphi is installed
-(e.g., via pip) as a dependency of another project. It discovers the *using* project's root by walking
-up from the current working directory looking for a `.git` folder or `pyproject.toml`, then searches
-for `<project_root>/configs/*config.toml`.
+Works both inside the hyphi repository itself and when hyphi is installed as a
+dependency of another project. Discovers the using project's root by walking up
+from the current working directory looking for a ``.git`` folder or
+``pyproject.toml``, then searches for ``<project_root>/configs/*config.toml``.
 
-Usage:
+Examples
+--------
+>>> from hyphi.configs import config
+>>> config.init()  # loads configs/*config.toml, creating a default if none exist
+
+Notes
 -----
-    >>> from hyphi.configs import config
-    >>> config.init()  # loads configs/*config.toml, creating a default if none exist
+Private configs live in the same folder as ``config.toml`` and start with an
+underscore, e.g. ``_config.toml`` or ``_secret_config.toml``. Files starting with
+``_`` are git-ignored and are loaded last, so they override the public configs.
+Non-private files such as ``experiment_config.toml`` are tracked by git.
 
-Note:
-----
-    * private configs live in the same folder as 'config.toml' and start with an underscore,
-      e.g., "_config.toml" or "_secret_config.toml". Files starting with "_" are git-ignored and
-      are loaded last, so they override the public configs.
-    * non-private files such as "experiment_config.toml" are tracked by git.
-
-Alternatives:
------------
-    * load *configs.toml's with the toml module (see below) and process it further with the package python-box
-    * configs could also be set using an .env file together with the python-dotenv package.
+Alternatives: load ``*config.toml`` files with the ``toml`` module and process
+further with ``python-box``; or use an ``.env`` file with ``python-dotenv``.
 
 Author: Simon M. Hofmann
 GitHub: SHEscher
 Years: 2023 & 2026
-
 """
 
 # %% Imports
@@ -123,14 +119,22 @@ handlers = ["file_handler", "stream_handler"]
 
 
 def _find_project_root(start: str | Path | None = None) -> Path:
-    """
-    Find the root of the project that uses hyphi.
+    """Find the root of the project that uses hyphi.
 
-    Walks up from `start` (default: current working directory) until a directory containing one of
-    `_PROJECT_ROOT_MARKERS` is found. Falls back to `start` if no marker is found.
+    Walks up from `start` (default: current working directory) until a directory
+    containing one of `_PROJECT_ROOT_MARKERS` is found. Falls back to `start` if
+    no marker is found.
 
-    :param start: directory to start the upward search from (default: CWD)
-    :return: the discovered project root path
+    Parameters
+    ----------
+    start : str or Path or None, optional
+        Directory to start the upward search from. Defaults to the current working
+        directory when None.
+
+    Returns
+    -------
+    Path
+        The discovered project root path.
     """
     start = Path(start or Path.cwd()).absolute()
     for path in (start, *start.parents):
@@ -140,12 +144,19 @@ def _find_project_root(start: str | Path | None = None) -> Path:
 
 
 def _create_default_config(config_dir: Path, project_name: str) -> Path:
-    """
-    Create a default `config.toml` in `config_dir`.
+    """Create a default ``config.toml`` in ``config_dir``.
 
-    :param config_dir: directory in which to create the config file (created if missing)
-    :param project_name: value to use for `PROJECT_NAME` in the new config file
-    :return: path to the newly created config file
+    Parameters
+    ----------
+    config_dir : Path
+        Directory in which to create the config file. Created if missing.
+    project_name : str
+        Value to use for ``PROJECT_NAME`` in the new config file.
+
+    Returns
+    -------
+    Path
+        Path to the newly created config file.
     """
     config_dir.mkdir(parents=True, exist_ok=True)
     config_path = config_dir / "config.toml"
@@ -158,14 +169,22 @@ def _create_default_config(config_dir: Path, project_name: str) -> Path:
 
 
 def _discover_config_files(config_dir: Path) -> list[Path]:
-    """
-    Find all `*config.toml` files in `config_dir`.
+    """Find all ``*config.toml`` files in ``config_dir``.
 
-    Public configs (not starting with `_`) are returned first, private configs (starting with `_`)
-    last, so that private configs override public ones when loaded in order.
+    Public configs (not starting with ``_``) are returned first, private configs
+    (starting with ``_``) last, so that private configs override public ones when
+    loaded in order.
 
-    :param config_dir: directory to search for config files
-    :return: ordered list of config file paths (public first, private last); empty if the directory is missing
+    Parameters
+    ----------
+    config_dir : Path
+        Directory to search for config files.
+
+    Returns
+    -------
+    list of Path
+        Ordered list of config file paths (public first, private last). Empty if
+        the directory is missing.
     """
     if not config_dir.is_dir():
         return []
@@ -179,7 +198,18 @@ def _discover_config_files(config_dir: Path) -> list[Path]:
 
 
 def _iter_nested_dicts(nested_dict: dict[str, Any]) -> Any:
-    """Create a generator iterating over values in nested dicts."""
+    """Yield all leaf values from a recursively nested dict.
+
+    Parameters
+    ----------
+    nested_dict : dict
+        Arbitrarily nested dictionary to traverse.
+
+    Yields
+    ------
+    Any
+        Each non-dict value encountered at any depth.
+    """
     for value in nested_dict.values():
         if isinstance(value, dict):
             yield from _iter_nested_dicts(value)
@@ -188,22 +218,41 @@ def _iter_nested_dicts(nested_dict: dict[str, Any]) -> Any:
 
 
 def _create_parent_dirs(config_as_dict: dict[str, Any]) -> None:
-    """Create parent dirs of log files."""
+    """Create parent directories for all log file paths found in the config dict.
+
+    Parameters
+    ----------
+    config_as_dict : dict
+        The logging config (or any nested dict) whose leaf string values ending in
+        ``.log`` are treated as log file paths. Parent directories are created with
+        ``parents=True, exist_ok=True``.
+    """
     for value in _iter_nested_dicts(config_as_dict):
         if isinstance(value, str) and value.endswith(".log"):
             Path(PROJECT_ROOT, value).parent.mkdir(parents=True, exist_ok=True)
 
 
 class _CONFIG:
-    """Configuration object."""
+    """Nested configuration container populated from a TOML dict.
+
+    Attributes are set dynamically from the dict keys. Nested TOML tables become
+    nested ``_CONFIG`` instances, so config sections are accessible as attribute
+    chains (``config.paths.DATA``).
+    """
 
     def __init__(self, config_dict: dict | None = None):
-        """Initialize _CONFIG class object."""
+        """Initialize a ``_CONFIG`` instance, optionally from a dict.
+
+        Parameters
+        ----------
+        config_dict : dict or None, optional
+            If provided, all keys are added as attributes via :meth:`update`.
+        """
         if config_dict is not None:
             self.update(config_dict)
 
     def __repr__(self):
-        """Implement __repr__ of _CONFIG."""
+        """Return a concise string representation of the config object."""
         str_out = "_CONFIG("
         list_attr = [k for k in self.__dict__ if not k.startswith("_")]
         ctn = 0  # counter for visible attributes only
@@ -222,22 +271,33 @@ class _CONFIG:
         return str_out + ")"
 
     def init(self, project_name: str | None = None) -> None:
-        """
-        Create the config infrastructure (if missing) and load it.
+        """Create the config infrastructure (if missing) and load it.
 
-        Searches for `<project_root>/configs/*config.toml`. If none exist, a default
-        `configs/config.toml` is created. All relative config paths are resolved to
-        absolute paths against the project root, so the working directory does not
-        matter afterwards. Never changes the caller's working directory; entry-point
-        scripts that want to run from the project root call :func:`bootstrap` instead.
+        Searches for ``<project_root>/configs/*config.toml``. If none exist, a
+        default ``configs/config.toml`` is created. All relative config paths are
+        resolved to absolute paths against the project root, so the working directory
+        does not matter afterwards. Never changes the caller's working directory;
+        entry-point scripts that want to run from the project root call
+        :func:`bootstrap` instead.
 
-        :param project_name: value for `PROJECT_NAME` when creating a new config (default: root folder name)
-        :return: None (configured config object (self) is update)
+        Parameters
+        ----------
+        project_name : str or None, optional
+            Value for ``PROJECT_NAME`` when creating a new config. Defaults to the
+            project root folder name when None.
         """
         _configure(self, project_name=project_name)
 
     def update(self, new_configs: dict[str, Any]):
-        """Update the config object with new entries."""
+        """Update the config object with new entries from a dict.
+
+        Parameters
+        ----------
+        new_configs : dict
+            Key-value pairs to set as attributes. Dict values become nested
+            ``_CONFIG`` instances; list/tuple elements that are dicts are likewise
+            wrapped.
+        """
         for k, val in new_configs.items():
             if isinstance(val, (list, tuple)):
                 setattr(self, k, [_CONFIG(x) if isinstance(x, dict) else x for x in val])
@@ -245,12 +305,13 @@ class _CONFIG:
                 setattr(self, k, _CONFIG(val) if isinstance(val, dict) else val)
 
     def show(self, indent: int = 0):
-        """
-        Display the nested configuration information.
+        """Display the nested configuration information.
 
-        :param indent: The number of tabs to use for indentation (default: 0)
-        :type indent: int
-        :return: None
+        Parameters
+        ----------
+        indent : int, optional
+            Number of tab characters used for indentation at the current nesting
+            level. Defaults to 0.
         """
         for key, val in self.__dict__.items():
             if isinstance(val, _CONFIG):
@@ -261,7 +322,14 @@ class _CONFIG:
                 print("\t" * indent + f"{key}: " + (f"'{_val}'" if isinstance(val, str) else f"{val}"))
 
     def asdict(self):
-        """Convert config object to dict."""
+        """Convert the config object to a plain nested dict.
+
+        Returns
+        -------
+        dict
+            Recursive dictionary mirroring the config attribute tree. Nested
+            ``_CONFIG`` instances are converted recursively.
+        """
         dict_out = {}
         for key, val in self.__dict__.items():
             if isinstance(val, _CONFIG):
@@ -271,7 +339,20 @@ class _CONFIG:
         return dict_out
 
     def update_paths(self, parent_path: str | None = None, for_logging: bool = False):
-        """Update relative paths to PROJECT_ROOT dir."""
+        """Resolve all relative string paths in this config to absolute paths.
+
+        Parameters
+        ----------
+        parent_path : str or None, optional
+            Absolute directory used as the base for resolving relative paths. If
+            None and the config has a ``PROJECT_ROOT`` attribute, that is used
+            instead. Prints a red warning and returns without modifying anything
+            if no parent path can be determined.
+        for_logging : bool, optional
+            When True, only the ``filename`` key is updated (all other string values
+            are skipped). This avoids inadvertently absolutising logging format
+            strings that are not file paths. Defaults to False.
+        """
         # Use the project root dir as the parent path if not specified
         parent_path = self.PROJECT_ROOT if hasattr(self, "PROJECT_ROOT") else parent_path  # ty:ignore[invalid-assignment]
 
@@ -293,10 +374,15 @@ class _CONFIG:
 
 
 def _set_wd(new_dir: str | Path) -> None:
-    """
-    Set the given directory as the new working directory of the project.
+    """Set the given directory as the new working directory of the project.
 
-    :param new_dir: name of new working directory (must be in the project folder)
+    Parameters
+    ----------
+    new_dir : str or Path
+        Name or absolute path of the target directory. When a bare name is given,
+        the project tree is searched recursively; an :class:`OSError` is raised if
+        the current working directory is already outside the project root, and a
+        :class:`ValueError` is raised if multiple matching directories are found.
     """
     # Compare resolved paths component-wise: a raw string startswith() both
     # false-matches sibling dirs whose names share a prefix (/a/bc vs /a/b) and
@@ -367,13 +453,19 @@ PROJECT_NAME: str | None = None
 
 
 def _configure(config_obj: _CONFIG, *, project_name: str | None = None, chdir: bool = False) -> None:
-    """
-    Discover, create (if missing), load and apply the hyphi configuration.
+    """Discover, create (if missing), load and apply the hyphi configuration.
 
-    :param config_obj: the config object to populate (the module-level `config`)
-    :param project_name: `PROJECT_NAME` for a newly created config (default: project root folder name)
-    :param chdir: also change the working directory to the project root (default False)
-    :return: None
+    Parameters
+    ----------
+    config_obj : _CONFIG
+        The config object to populate (the module-level ``config`` singleton).
+    project_name : str or None, optional
+        Value for ``PROJECT_NAME`` when creating a new config. Defaults to the
+        project root folder name when None.
+    chdir : bool, optional
+        Also change the working directory to the project root after loading.
+        Defaults to False. Never done implicitly: config paths are already absolute,
+        and silently moving the caller's cwd would break their relative paths.
     """
     global PROJECT_NAME, PROJECT_ROOT  # noqa: PLW0603 (module-level config singletons)
 
@@ -456,19 +548,51 @@ def _configure(config_obj: _CONFIG, *, project_name: str | None = None, chdir: b
 
 
 def bootstrap(project_name: str | None = None) -> _CONFIG:
-    """
-    Initialize hyphi once at the start of an entry-point script.
+    """Initialize hyphi once at the start of an entry-point script.
 
-    Loads the config, sets up logging, prints the banner, AND changes the working
-    directory to the project root. This is the only entry point that changes the
-    working directory: ``config.init()`` is always cwd-neutral. Library code should
-    never call this; use ``config.init()`` or read the absolute ``config.paths.*``.
+    Loads the config, sets up logging, prints the welcome banner, and changes the
+    working directory to the project root. This is the only entry point that alters
+    the working directory: ``config.init()`` is always cwd-neutral. Library code
+    should never call this; use ``config.init()`` or read the absolute
+    ``config.paths.*`` attributes.
 
-    :param project_name: `PROJECT_NAME` for a newly created config (default: project root folder name)
-    :return: the module-level config object
+    Parameters
+    ----------
+    project_name : str or None, optional
+        Value for ``PROJECT_NAME`` when creating a new config. Defaults to the
+        project root folder name when None.
+
+    Returns
+    -------
+    _CONFIG
+        The populated module-level config object.
     """
     _configure(config, project_name=project_name, chdir=True)
     return config
+
+
+def project_path(*parts: str | Path) -> Path:
+    """Join path parts against the absolute project root, independent of the cwd.
+
+    ``config.init()`` resolves ``config.paths.*`` to absolute paths but leaves raw
+    relative strings (e.g. those read from an experiment ``*config.toml`` via
+    :func:`hyphi.io.load_config`) unresolved. Resolving them through this helper
+    makes a script launch-directory-independent: ``project_path(config["data_loc"],
+    "file.mat")`` always points under the detected project root regardless of where
+    the script is run from. Call :func:`config.init` (or :func:`bootstrap`) first so
+    the root is detected.
+
+    Parameters
+    ----------
+    *parts : str or Path
+        Path components, relative to the project root.
+
+    Returns
+    -------
+    Path
+        ``Path(PROJECT_ROOT, *parts)``.
+    """
+    return Path(PROJECT_ROOT, *parts)
 
 
 # o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o END

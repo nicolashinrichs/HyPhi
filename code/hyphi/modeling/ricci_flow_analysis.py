@@ -33,6 +33,10 @@ from .windowing import compute_plv_matrix
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
+# Named constants for array-dimension checks used in phase_windows_from_array.
+_NDIM_3D = 3
+_NDIM_2D = 2
+
 # %% Functions >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
 
@@ -67,13 +71,13 @@ def parse_run_ids(raw_runs: Iterable[object]) -> list[int]:
 def phase_windows_from_array(arr: np.ndarray, win_size: int, win_stride: int) -> list[np.ndarray]:
     """Compute phase windows from a 2D array."""
     arr = np.asarray(arr)
-    if arr.ndim == 3:
+    if arr.ndim == _NDIM_3D:
         # Supports (W, N, T) and (W, T, N).
         if arr.shape[1] > arr.shape[2]:
             arr = np.transpose(arr, (0, 2, 1))
         return [np.asarray(arr[w], dtype=float) for w in range(arr.shape[0])]
 
-    if arr.ndim != 2:
+    if arr.ndim != _NDIM_2D:
         raise ValueError(f"Unsupported phase array shape: {arr.shape}")
 
     phases = np.asarray(arr, dtype=float)
@@ -105,7 +109,7 @@ def load_phase_windows(phase_path: Path, win_size: int, win_stride: int) -> list
     return phase_windows_from_array(arr, win_size=win_size, win_stride=win_stride)
 
 
-def simulate_missing_phase_files(
+def simulate_missing_phase_files(  # noqa: PLR0913 (all 12 params are distinct simulation/IO knobs; no natural grouping)
     missing_runs: list[int],
     phase_dir: Path,
     phase_pattern: str,
@@ -229,12 +233,12 @@ def forman_ricci_flow(
     weight: str = "weight",
 ) -> nx.Graph:
     """Compute the Forman-Ricci flow on a graph."""
-    G = graph.copy()  # noqa: N806
+    G = graph.copy()
     eps = 1e-12
     normalized_weight = float(max(1, G.number_of_edges()))
 
     if not nx.get_edge_attributes(G, "formanCurvature"):
-        G = compute_frc(G, method=method)  # noqa: N806
+        G = compute_frc(G, method=method)
 
     if not nx.get_edge_attributes(G, "original_FRC"):
         for u, v in G.edges():
@@ -256,7 +260,7 @@ def forman_ricci_flow(
             weights[edge] = max(eps, weights[edge] * scale)
         nx.set_edge_attributes(G, values=weights, name=weight)
 
-        G = compute_frc(G, method=method)  # noqa: N806
+        G = compute_frc(G, method=method)
         rc = nx.get_edge_attributes(G, "formanCurvature")
         if not rc or (max(rc.values()) - min(rc.values()) < delta):
             break
@@ -351,7 +355,13 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def main() -> None:
+def main() -> None:  # noqa: C901, PLR0912, PLR0915 (CLI entrypoint; complexity is inherent branching over all flags)
+    """Run the per-window PLV to Forman curvature to Ricci-flow pipeline.
+
+    Parses CLI arguments, loads or simulates phase data, builds merged PLV
+    graphs, computes Forman curvature, applies Forman Ricci flow, and writes
+    per-window results and a summary JSON to the output directory.
+    """
     args = parse_args()
 
     need_config = any(v is None for v in (args.runs, args.data_dir, args.phase_dir, args.target_windows))

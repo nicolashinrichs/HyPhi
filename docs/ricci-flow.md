@@ -1,10 +1,5 @@
 # Ricci-Flow Analysis
 
-    Last update:    June 4, 2026
-    Status:         work in progress
-
-***
-
 `hyphi` contains a standalone workflow script for Kuramoto-based PLV graph analysis with Forman curvature and Ricci flow:
 
 - `ricci_flow_analysis.py`

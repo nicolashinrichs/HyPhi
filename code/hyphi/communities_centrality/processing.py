@@ -37,8 +37,24 @@ from .adjacency_from_pickle import load_pickle_adjacency
 # %% Functions >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
 
-def find_centrality(file_path: str | Path):  # TODO: add type-hints for return
-    """Calculate matrix, graph, communities, and centrality."""
+def find_centrality(file_path: str | Path) -> tuple[np.ndarray, nx.Graph, pd.DataFrame]:
+    """Calculate matrix, graph, communities, and centrality.
+
+    Parameters
+    ----------
+    file_path
+        Path to a pickle file readable by :func:`.load_pickle_adjacency`.
+
+    Returns
+    -------
+    adj_matrix : numpy.ndarray
+        The adjacency matrix loaded from the pickle.
+    graph : networkx.Graph
+        The undirected graph constructed from ``adj_matrix``.
+    results : pandas.DataFrame
+        Per-node DataFrame with columns ``Community`` (Louvain integer label),
+        ``Degree`` (degree centrality), and ``Betweenness`` (betweenness centrality).
+    """
     adj_matrix = load_pickle_adjacency(file_path)
     graph = nx.from_numpy_array(adj_matrix)
 
@@ -62,7 +78,8 @@ def find_centrality(file_path: str | Path):  # TODO: add type-hints for return
     return adj_matrix, graph, results
 
 
-# TODO (smh): I would revise (lets discuss) or drop this function
+# Note: the design of process_folder (prefix extraction, output naming) may be
+# revisited; see discussion with smh before extending this function.
 def process_folder(
     input_folder: str | Path,
     output_folder: str | Path,
@@ -74,17 +91,18 @@ def process_folder(
     Parameters
     ----------
     input_folder
-        Folder containing ...
-
+        Folder containing pickle files to process.
     output_folder
-        Folder containing sample-based results of ``find_centrality``
-
+        Destination folder; created if it does not exist.  Receives
+        ``<prefix>_processed_{graph.pkl, matrix.npy, stats.csv}`` triples.
     pattern
-        file pattern to detect in input_folder
+        Glob pattern used to select files inside ``input_folder``.
 
     Returns
     -------
-    Returns the list of processed prefixes.
+    list of str
+        The prefix strings (first ``_``-delimited token of each matched filename)
+        for which output files were written.
 
     """
     output_folder = Path(output_folder)
@@ -139,7 +157,7 @@ def plot_processed_graph(
 
     """
     with Path(graph_pkl_path).open("rb") as f:
-        G: nx.Graph = pickle.load(f)  # noqa: N806
+        G: nx.Graph = pickle.load(f)
     df: pd.DataFrame = pd.read_csv(filepath_or_buffer=stats_csv_path, index_col=0)
 
     node_colors = [df.loc[node, "Community"] for node in G.nodes()]

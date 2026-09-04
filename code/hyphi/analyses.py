@@ -1,8 +1,4 @@
-"""
-Analyzes module for HyPhi: Graph curvature and entropy computations.
-
-Years: 2026
-"""
+"""Analyses module for HyPhi: graph curvature and entropy computations."""
 
 # %% Import
 from typing import Any
@@ -14,8 +10,12 @@ from scipy.stats import differential_entropy
 
 from .modeling.graph_curvatures import compute_frc_vec, extract_curvatures
 
-# %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
-pass
+# %% Constants >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
+
+# Minimum number of distinct values required to fit a KDE or Vasicek estimator.
+_MIN_UNIQUE_VALUES = 2
+# Number of dimensions for a plain 2-D connectivity matrix (no window axis).
+_MATRIX_2D_NDIM = 2
 
 
 # %% Functions >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
@@ -27,17 +27,22 @@ pass
 
 
 def build_sliding_window_graphs(connectivity_matrix: np.ndarray) -> list[nx.Graph]:
+    """Convert a 3D or 2D connectivity array into a list of NetworkX graphs.
+
+    Parameters
+    ----------
+    connectivity_matrix : np.ndarray
+        Shape ``(windows, nodes, nodes)`` or ``(nodes, nodes)``.  A 2D array is
+        treated as a single window.
+
+    Returns
+    -------
+    list[nx.Graph]
+        One ``nx.Graph`` per window, with edge weights set to the absolute
+        values of the connectivity matrix entries.
+
     """
-    Convert a 3D or 2D connectivity array into a list of NetworkX graphs.
-
-    Args:
-        connectivity_matrix: (windows, nodes, nodes) or (nodes, nodes).
-
-    Returns:
-        List of nx.Graph instances with edge weights.
-
-    """
-    if connectivity_matrix.ndim == 2:
+    if connectivity_matrix.ndim == _MATRIX_2D_NDIM:
         connectivity_matrix = connectivity_matrix[np.newaxis, :, :]
 
     graphs = []
@@ -58,11 +63,30 @@ def build_sliding_window_graphs(connectivity_matrix: np.ndarray) -> list[nx.Grap
 def compute_entropy_kde_plugin(
     G: nx.Graph, curvature: str = "formanCurvature", kernel: str = "gaussian", bw: str | float = "ISJ"
 ) -> float:
-    """Compute plugin entropy estimator using KDE."""
+    """Compute plugin entropy estimator using kernel density estimation.
+
+    Parameters
+    ----------
+    G : nx.Graph
+        Graph whose edge curvature values are used as samples.
+    curvature : str
+        Name of the curvature attribute to read from ``G``.
+    kernel : str
+        KDE kernel passed to :class:`KDEpy.TreeKDE`.
+    bw : str or float
+        Bandwidth selector; ``"ISJ"`` (Improved Sheather-Jones) is the default.
+
+    Returns
+    -------
+    float
+        Negative mean log-density (plugin entropy estimate).  Returns ``0.0``
+        when all curvature values are identical (degenerate distribution).
+
+    """
     curvatures = extract_curvatures(G, curvature=curvature)
 
-    # Needs some variation in data to compute KDE
-    if len(np.unique(curvatures)) <= 1:
+    # Needs at least two distinct values to fit a KDE.
+    if len(np.unique(curvatures)) < _MIN_UNIQUE_VALUES:
         return 0.0
 
     f = TreeKDE(kernel=kernel, bw=bw).fit(curvatures)
@@ -75,24 +99,73 @@ def compute_entropy_kde_plugin(
 def compute_entropy_vasicek(
     G: nx.Graph, curvature: str = "formanCurvature", window_length: int | None = None
 ) -> float:
-    """Compute Vasicek entropy estimator."""
+    """Compute Vasicek entropy estimator from edge curvature values.
+
+    Parameters
+    ----------
+    G : nx.Graph
+        Graph whose edge curvature values are used as samples.
+    curvature : str
+        Name of the curvature attribute to read from ``G``.
+    window_length : int or None
+        Window length for the Vasicek spacing estimator.  ``None`` lets
+        :func:`scipy.stats.differential_entropy` choose automatically.
+
+    Returns
+    -------
+    float
+        Vasicek differential-entropy estimate.  Returns ``0.0`` when fewer
+        than two curvature values are available.
+
+    """
     curvatures = extract_curvatures(G, curvature=curvature)
-    if len(curvatures) < 2:
+    if len(curvatures) < _MIN_UNIQUE_VALUES:
         return 0.0
     return differential_entropy(curvatures, method="vasicek", window_length=window_length, nan_policy="omit")
 
 
 def compute_windowed_curvatures(graphs: list[nx.Graph], method: str = "1d") -> list[nx.Graph]:
-    """
-    Compute windowed curvatures for a list of graphs.
+    """Compute Forman-Ricci curvatures for a list of windowed graphs.
 
-    Convenience pipeline for FRC.
+    Thin convenience wrapper around :func:`compute_frc_vec`.
+
+    Parameters
+    ----------
+    graphs : list[nx.Graph]
+        Sequence of graphs, typically one per sliding window.
+    method : str
+        FRC computation variant forwarded to :func:`compute_frc_vec`.
+
+    Returns
+    -------
+    list[nx.Graph]
+        Same graphs with curvature attributes attached in place.
+
     """
     return compute_frc_vec(graphs, method=method)
 
 
 def compute_entropy(graphs: list[nx.Graph], method: str = "vasicek") -> np.ndarray:
-    """Compute entropy for a list of graphs."""
+    """Compute entropy for each graph in a list.
+
+    Parameters
+    ----------
+    graphs : list[nx.Graph]
+        Graphs whose curvature distributions are used to estimate entropy.
+    method : str
+        Entropy estimator to apply: ``"vasicek"`` (default) or ``"kde"``.
+
+    Returns
+    -------
+    np.ndarray
+        1-D array of entropy values, one per input graph.
+
+    Raises
+    ------
+    ValueError
+        If ``method`` is not ``"vasicek"`` or ``"kde"``.
+
+    """
     entropies = []
     for g in graphs:
         if method == "vasicek":

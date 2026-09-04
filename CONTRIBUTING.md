@@ -283,25 +283,26 @@ NumPy style.  Match the terse register already in the codebase:
 
 ## Adding, extending, using `HyPhi` notebooks
 
-The repository includes notebooks for interactive exploration and analysis in `./code/notebooks/`:
+The repository includes notebooks for interactive exploration and analysis in `./tutorials/`
+and `./experiments/notebooks/`:
 
 | Notebook | Format |
 |---|---|
-| `code/notebooks/hyphi.ipynb` | Jupyter notebook |
-| `code/notebooks/hyphi_explore.py` | [marimo](https://marimo.io/) notebook |
+| `tutorials/hyphi.ipynb` | Jupyter notebook |
+| `experiments/notebooks/hyphi_explore.py` | [marimo](https://marimo.io/) notebook |
 
 ### Running notebooks
 
 **Jupyter:**
 
 ```shell
-uv run --extra notebook jupyter lab code/notebooks/hyphi.ipynb
+uv run --extra notebook jupyter lab tutorials/hyphi.ipynb
 ```
 
 **marimo:**
 
 ```shell
-uv run --extra notebook marimo edit code/notebooks/hyphi_explore.py
+uv run --extra notebook marimo edit experiments/notebooks/hyphi_explore.py
 ```
 
 > **Note:** Make sure the notebook kernel points to the project's virtual environment (`.venv`) so that `import hyphi` works.

@@ -1,7 +1,6 @@
 """Compute per-window Forman-Ricci curvatures on CCORR inter-brain graphs and write per-trial entropies."""
 
 # %% Import
-import os
 import sys
 from pathlib import Path
 
@@ -12,7 +11,7 @@ from hyphi.configs import config
 from tqdm import tqdm
 
 config.init()  # load hyphi config
-from hyphi.configs import config
+from hyphi.configs import config, project_path
 from hyphi.io import load_config
 from hyphi.modeling.entropies import vec_entropy, vec_quantiles
 from hyphi.modeling.graph_curvatures import compute_frc_vec
@@ -28,14 +27,14 @@ config = load_config(Path(config.paths.experiments.configs, sys.argv[1]))
 ccorr_data = {}
 for dyad in config["dyads"]:
     # Construct file path for dyad
-    dyad_file = Path(config["data_loc"], f"CCORR_{dyad}.mat").absolute()
+    dyad_file = project_path(config["data_loc"], f"CCORR_{dyad}.mat")
     # Load dyad CCORR dictionary
     dyad_ccorr = sp.io.loadmat(dyad_file)
     # Throw away unused metadata, keep only CCORR matrices by trial type
     ccorr_data[dyad] = {trial_type: dyad_ccorr[f"CCORR_{trial_type}"] for trial_type in config["trial_types"]}
 
 # If the results directory doesn't exist, make it
-Path(config["result_loc"]).absolute().mkdir(parents=True, exist_ok=True)
+project_path(config["result_loc"]).mkdir(parents=True, exist_ok=True)
 
 # %% __main__  >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
@@ -130,22 +129,18 @@ if __name__ == "__main__":
             # Save data by dyad and trial type
 
             # First, construct save paths
-            FRCpath = os.path.abspath(
-                os.path.join(
-                    config["result_loc"],
-                    f"CCORR_FRC_matrix_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy",
-                )
+            FRCpath = project_path(
+                config["result_loc"],
+                f"CCORR_FRC_matrix_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy",
             )
-            Hpath = os.path.abspath(
-                os.path.join(
-                    config["result_loc"],
-                    f"CCORR_FRC_entropy_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy",
-                )
+            Hpath = project_path(
+                config["result_loc"],
+                f"CCORR_FRC_entropy_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy",
             )
-            Qpath = Path(
+            Qpath = project_path(
                 config["result_loc"],
                 f"CCORR_FRC_quantiles_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy",
-            ).absolute()
+            )
 
             # Now save the NPY files
             np.save(FRCpath, FRCvals)

@@ -15,11 +15,11 @@ heatmap / successive-GDD analyses in the ``GDD_FRc_*`` notebooks rely on.
 import networkx as nx
 import numpy as np
 
+_RESCALE_TUPLE_LENGTH = 2
+
 
 def as_1d_float_array(values):
-    """
-    Convert an array-like or an edge->value dict into a 1D float NumPy array.
-    """
+    """Convert an array-like or an edge->value dict into a 1D float NumPy array."""
     if isinstance(values, dict):
         values = list(values.values())
 
@@ -91,7 +91,7 @@ def fit_global_positive_linear_transform(
         scale = 1.0
         shift = -signed_min + float(eps)
     else:
-        if not isinstance(rescale, (tuple, list)) or len(rescale) != 2:
+        if not isinstance(rescale, (tuple, list)) or len(rescale) != _RESCALE_TUPLE_LENGTH:
             raise ValueError("rescale must be None or a tuple/list (low, high).")
 
         low, high = map(float, rescale)
@@ -132,9 +132,7 @@ def apply_linear_transform(values, *, sign, scale, shift):
 
 
 def transform_curvature_collection(curvature_dict, params):
-    """
-    Apply one fitted transform to every entry in a curvature dictionary.
-    """
+    """Apply one fitted transform to every entry in a curvature dictionary."""
     return {
         key: apply_linear_transform(
             values,
@@ -147,9 +145,7 @@ def transform_curvature_collection(curvature_dict, params):
 
 
 def check_all_positive(transformed_dict):
-    """
-    Return per-matrix positivity diagnostics.
-    """
+    """Return per-matrix positivity diagnostics."""
     summary = {}
     for key, values in transformed_dict.items():
         arr = as_1d_float_array(values)
@@ -162,9 +158,7 @@ def check_all_positive(transformed_dict):
 
 
 def attach_edge_weights_to_graph(graph, edge_weight_dict, attr_name="positive_weight"):
-    """
-    Copy a graph and attach transformed edge weights as a new edge attribute.
-    """
+    """Copy a graph and attach transformed edge weights as a new edge attribute."""
     H = graph.copy()
     nx.set_edge_attributes(H, edge_weight_dict, name=attr_name)
     return H

@@ -43,6 +43,24 @@ if TYPE_CHECKING:
 # %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 logger = logging.getLogger(__name__)
 
+# Minimum number of distinct within-dyad label arrangements below which the
+# smallest reachable p-value exceeds 0.05 (see _check_permutation_design).
+_MIN_PERMUTATION_SPACE = 20
+
+# Minimum array dimensionality expected for the entropy input (n_freq, n_trials, n_windows).
+_EXPECTED_ENTROPY_NDIM = 3
+
+# Minimum sample size required to compute a pooled variance (two observations per group).
+_MIN_SAMPLE_SIZE = 2
+
+# Numerical floor below which a standard deviation is treated as zero,
+# avoiding division by near-zero values in Cohen's d computations.
+_SD_FLOOR = 1e-15
+
+# Minimum number of distinct conditions required within a dyad for the
+# energy-distance pairwise loop to produce any pairs.
+_MIN_CONDITIONS_FOR_PAIRS = 2
+
 __all__ = [
     "cohens_d",
     "cohens_d_timeseries",
@@ -98,7 +116,7 @@ def entropy_to_long_df(
     rows = []
     for dyad, by_cond in entropy_by_dyad_condition.items():
         for cond, arr in by_cond.items():
-            if arr.ndim != 3:
+            if arr.ndim != _EXPECTED_ENTROPY_NDIM:
                 msg = f"Expected (n_freq, n_trials, n_windows) for dyad={dyad} cond={cond}, got shape {arr.shape}."
                 raise ValueError(msg)
             n_freq, n_trials, n_windows = arr.shape
@@ -154,17 +172,17 @@ def cohens_d(group_a: np.ndarray, group_b: np.ndarray, paired: bool = False) -> 
             raise ValueError("Paired Cohen's d requires equal-length arrays.")
         diff = a - b
         sd = float(np.std(diff, ddof=1))
-        if sd < 1e-15:
+        if sd < _SD_FLOOR:
             return 0.0
         return float(np.mean(diff) / sd)
 
     na, nb = len(a), len(b)
-    if na < 2 or nb < 2:
+    if na < _MIN_SAMPLE_SIZE or nb < _MIN_SAMPLE_SIZE:
         return 0.0
     var_a = float(np.var(a, ddof=1))
     var_b = float(np.var(b, ddof=1))
     pooled_sd = float(np.sqrt(((na - 1) * var_a + (nb - 1) * var_b) / (na + nb - 2)))
-    if pooled_sd < 1e-15:
+    if pooled_sd < _SD_FLOOR:
         return 0.0
     return float((np.mean(a) - np.mean(b)) / pooled_sd)
 
@@ -203,8 +221,7 @@ def cohens_d_timeseries(arr_a: np.ndarray, arr_b: np.ndarray, axis: int = 0) -> 
     var_b = b.var(axis=0, ddof=1) if nb > 1 else np.zeros_like(mean_b)
     pooled_sd = np.sqrt(((na - 1) * var_a + (nb - 1) * var_b) / max(na + nb - 2, 1))
     with np.errstate(divide="ignore", invalid="ignore"):
-        d = np.where(pooled_sd > 1e-15, (mean_a - mean_b) / pooled_sd, 0.0)
-    return d
+        return np.where(pooled_sd > _SD_FLOOR, (mean_a - mean_b) / pooled_sd, 0.0)
 
 
 # ---------------------
@@ -295,11 +312,6 @@ def _default_test_stat(df: pd.DataFrame, value_col: str, condition_col: str) -> 
         for j in range(i + 1, len(conditions)):
             total += (means[str(conditions[i])] - means[str(conditions[j])]) ** 2
     return float(total)
-
-
-# Below this many distinct within-dyad label arrangements, the smallest reachable
-# p-value (~1/space) exceeds 0.05, so significance is structurally impossible.
-_MIN_PERMUTATION_SPACE = 20
 
 
 def _validate_hierarchical_input(
@@ -486,7 +498,7 @@ def hierarchical_permutation_test(
 
     trial_to_row_idx: dict[tuple[Any, Any], np.ndarray] = {}
     # Index labels equal positions here thanks to the reset_index above.
-    for (d, t), rows in data.groupby(by=[dyad_col, trial_col]).groups.items():
+    for (d, t), rows in data.groupby(by=[dyad_col, trial_col]).groups.items():  # type: ignore[misc]  # ty: ignore[not-iterable]
         trial_to_row_idx[(d, t)] = np.asarray(rows)
 
     null_dist = np.empty(n_perms, dtype=float)
@@ -551,7 +563,7 @@ def energy_distance_hierarchical(
         dyad_stats = []
         for _, d_df in df.groupby(dyad_col):
             conds = np.unique(d_df[cond].values)
-            if len(conds) < 2:
+            if len(conds) < _MIN_CONDITIONS_FOR_PAIRS:
                 continue
             pairs = []
             for i in range(len(conds)):

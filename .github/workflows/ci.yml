@@ -56,13 +56,12 @@ jobs:
         run: uv run --extra develop pytest -q
 
       - name: Lint
-        # Reports but does not gate: the pre-existing violation backlog is
-        # being burned down separately. Flip to blocking once it reaches zero.
-        continue-on-error: true
+        # Gating: code/hyphi is ruff-clean, so any new violation fails CI.
         run: uv run --extra develop ruff check code/hyphi
 
       - name: Type check
-        # Non-gating like lint: surfaces type regressions on PRs (the Makefile's
-        # `make typecheck` runs the same checker). Flip to blocking once clean.
+        # Non-gating: the only remaining ty diagnostics are the optional-import
+        # (plotly/seaborn) None-union pattern that static analysis cannot follow.
+        # Surfaces type regressions on PRs (same as `make typecheck`).
         continue-on-error: true
         run: uv run --extra develop ty check code/hyphi

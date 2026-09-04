@@ -232,9 +232,7 @@ class TestHierarchicalPermutation:
         df = entropy_to_long_df(_synthetic_entropy_dict(n_dyads=3, effect=0.0, seed=1))
         df.loc[5, "condition"] = np.nan
         with pytest.raises(ValueError, match="missing values"):
-            hierarchical_permutation_test(
-                data=df, value_col="entropy", condition_col="condition", n_perms=10, seed=0
-            )
+            hierarchical_permutation_test(data=df, value_col="entropy", condition_col="condition", n_perms=10, seed=0)
 
     def test_nan_value_raises(self):
         """Refuse data with missing values."""
@@ -243,9 +241,7 @@ class TestHierarchicalPermutation:
         df = entropy_to_long_df(_synthetic_entropy_dict(n_dyads=3, effect=0.0, seed=1))
         df.loc[5, "entropy"] = np.nan
         with pytest.raises(ValueError, match="missing values"):
-            hierarchical_permutation_test(
-                data=df, value_col="entropy", condition_col="condition", n_perms=10, seed=0
-            )
+            hierarchical_permutation_test(data=df, value_col="entropy", condition_col="condition", n_perms=10, seed=0)
 
     def test_nan_dyad_or_trial_raises(self):
         """Refuse missing dyad/trial ids (groupby silently drops NaN keys, biasing the null)."""
@@ -266,8 +262,12 @@ class TestHierarchicalPermutation:
         # Regression: each dyad in only one condition silently returned p=1.0 for
         # ANY effect (measured: A=0 vs B=100 across 6 dyads -> p=1.0).
         rows = [
-            {"dyad": d, "condition": "A" if d < 3 else "B", "trial_id": f"{d}__x__{t}",
-             "entropy": 0.0 if d < 3 else 100.0}
+            {
+                "dyad": d,
+                "condition": "A" if d < 3 else "B",
+                "trial_id": f"{d}__x__{t}",
+                "entropy": 0.0 if d < 3 else 100.0,
+            }
             for d in range(6)
             for t in range(4)
         ]
@@ -301,9 +301,7 @@ class TestHierarchicalPermutation:
         """Refuse an empty frame (once reported p=1.0 on zero data)."""
         df = pd.DataFrame({"entropy": [], "condition": [], "dyad": [], "trial_id": []})
         with pytest.raises(ValueError, match="Empty data"):
-            hierarchical_permutation_test(
-                data=df, value_col="entropy", condition_col="condition", n_perms=10, seed=0
-            )
+            hierarchical_permutation_test(data=df, value_col="entropy", condition_col="condition", n_perms=10, seed=0)
 
     def test_mixed_type_trial_ids_run(self):
         """Accept hand-built data with mixed-type trial ids."""
@@ -334,9 +332,7 @@ class TestHierarchicalPermutation:
             }
         )
         with pytest.raises(ValueError, match="more than one condition"):
-            hierarchical_permutation_test(
-                data=df, value_col="entropy", condition_col="condition", n_perms=10, seed=0
-            )
+            hierarchical_permutation_test(data=df, value_col="entropy", condition_col="condition", n_perms=10, seed=0)
 
     def test_two_sided_tail_uses_absolute_values(self):
         """Cover the two-sided branch: a signed statistic counts |null| >= |observed|."""
@@ -349,8 +345,13 @@ class TestHierarchicalPermutation:
             return float(a - b)  # can be negative, unlike the squared default
 
         res = hierarchical_permutation_test(
-            data=df, value_col="entropy", condition_col="condition",
-            n_perms=200, seed=3, test_stat_fn=signed_mean_diff, tail="two-sided",
+            data=df,
+            value_col="entropy",
+            condition_col="condition",
+            n_perms=200,
+            seed=3,
+            test_stat_fn=signed_mean_diff,
+            tail="two-sided",
         )
         assert 0.0 < res["p_value"] <= 1.0
         assert res["tail"] == "two-sided"

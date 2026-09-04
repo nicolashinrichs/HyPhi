@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 import numpy as np
-from hyphi.configs import config
+from hyphi.configs import config, project_path
 from hyphi.io import load_config
 from joblib import Parallel, delayed
 from scipy.stats import energy_distance
@@ -25,7 +25,7 @@ config.init()
 config = load_config(Path(config.paths.experiments.configs, sys.argv[1]))
 
 # If the pooled results directory doesn't exist, make it
-Path(config["pooled_result_loc"]).absolute().mkdir(parents=True, exist_ok=True)
+project_path(config["pooled_result_loc"]).mkdir(parents=True, exist_ok=True)
 
 # Type of curvature
 curv_type = sys.argv[2]

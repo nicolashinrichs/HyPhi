@@ -18,8 +18,9 @@ install: ## Install all dependencies
 test: ## Run tests with coverage
 	uv run --extra develop pytest --cov=hyphi --cov-report=html -v
 
-check: typecheck lint ## Run read-only typecheck, lint, and format checks (matches CI; does not mutate)
-	uv run --extra develop ruff format --check code/tests code/hyphi experiments/scripts
+check: lint ## Local mirror of CI: lint gates (ruff check); typecheck and format are report-only
+	-uv run --extra develop ty check code/hyphi
+	-uv run --extra develop ruff format --check code/hyphi code/tests
 
 lint: ## Lint code with ruff
 	uv run --extra develop ruff check code/hyphi

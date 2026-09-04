@@ -1,7 +1,6 @@
 """Plot fully-pooled FRC/AFRC distributional comparisons across trial types."""
 
 # %% Import
-import os
 import sys
 from pathlib import Path
 
@@ -9,7 +8,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 from hyphi.configs import config as hyphi_config
-
+from hyphi.configs import project_path
 from hyphi.io import load_config
 
 # %% Set global vars & paths >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
@@ -29,18 +28,14 @@ assert curv_type in ["FRC", "AFRC"], f"Curvature type ({curv_type}) must be one 
 def fully_pooled_path_constructor(trial_type, curvature, config):
     """Build the on-disk path of the pooled curvature matrix for ``trial_type`` / ``curvature``."""
     if curvature == "FRC":
-        FRCpath = os.path.abspath(
-            os.path.join(
-                config["pooled_result_loc"],
-                f"CCORR_FRC_matrix_fully_pooled_trial_type_{trial_type}_config_{config['config_id']}.npy",
-            )
+        FRCpath = project_path(
+            config["pooled_result_loc"],
+            f"CCORR_FRC_matrix_fully_pooled_trial_type_{trial_type}_config_{config['config_id']}.npy",
         )
     elif curvature == "AFRC":
-        FRCpath = os.path.abspath(
-            os.path.join(
-                config["pooled_result_loc"],
-                f"CCORR_aug_FRC_matrix_fully_pooled_trial_type_{trial_type}_config_{config['config_id']}.npy",
-            )
+        FRCpath = project_path(
+            config["pooled_result_loc"],
+            f"CCORR_aug_FRC_matrix_fully_pooled_trial_type_{trial_type}_config_{config['config_id']}.npy",
         )
     return FRCpath
 
@@ -114,7 +109,7 @@ if __name__ == "__main__":
     data_downsamp = downsample_fully_pooled(data, sample_size=200_000)  # downsample first
 
     # Visualization path variables
-    hyperviz = Path(config["pool_viz_loc"]).absolute()
+    hyperviz = project_path(config["pool_viz_loc"])
     hyperviz.mkdir(parents=True, exist_ok=True)
 
     # Colorblind friendly palette (8 colors) to set the color cycle of plots (Bang Wong's palette)

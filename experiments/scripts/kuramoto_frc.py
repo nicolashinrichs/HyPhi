@@ -7,6 +7,7 @@ from pathlib import Path
 import networkx as nx
 import numpy as np
 from hyphi.configs import config as hyphi_config
+from hyphi.configs import project_path
 from hyphi.io import load_config, load_network_pkl
 from hyphi.modeling.entropies import vec_entropy, vec_quantiles
 from hyphi.modeling.graph_curvatures import compute_frc_vec
@@ -28,7 +29,7 @@ if curv_type not in ["FRC", "AFRC"]:
 
 c_method = "1d" if curv_type == "FRC" else "augmented"
 
-Path(config["kuramoto_result_loc"]).mkdir(exist_ok=True, parents=True)
+project_path(config["kuramoto_result_loc"]).mkdir(exist_ok=True, parents=True)
 
 # %% __main__  >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
@@ -37,7 +38,7 @@ if __name__ == "__main__":
 
     for num in tqdm(config["num_kuramotos"], desc="Kuramoto Simulations"):
         # Load condition network time series
-        Gt: nx.Graph = load_network_pkl(Path(config["kuramoto_loc"], f"{num}_connectome_kuramoto.pkl").absolute())
+        Gt: nx.Graph = load_network_pkl(project_path(config["kuramoto_loc"], f"{num}_connectome_kuramoto.pkl"))
 
         # Allocate memory
         FRCvals = np.zeros((len(Gt), config["kuramoto_size"], config["kuramoto_size"]))
@@ -58,18 +59,18 @@ if __name__ == "__main__":
         # Save data by condition
 
         # First, construct save paths
-        FRCpath = Path(
+        FRCpath = project_path(
             config["kuramoto_result_loc"],
             f"Kuramoto_PLV_{c_method}_FRC_matrix_cond_{num}_config_{config['config_id']}.npy",
-        ).absolute()
-        Hpath = Path(
+        )
+        Hpath = project_path(
             config["kuramoto_result_loc"],
             f"Kuramoto_PLV_{c_method}_FRC_entropy_cond_{num}_config_{config['config_id']}.npy",
-        ).absolute()
-        Qpath = Path(
+        )
+        Qpath = project_path(
             config["kuramoto_result_loc"],
             f"Kuramoto_PLV_{c_method}_FRC_quantiles_cond_{num}_config_{config['config_id']}.npy",
-        ).absolute()
+        )
 
         # Now save the NPY files
         np.save(FRCpath, FRCvals)

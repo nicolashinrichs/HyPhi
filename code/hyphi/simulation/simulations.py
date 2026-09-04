@@ -42,10 +42,11 @@ def load_connectome(pickle_path: str) -> tuple[np.ndarray, np.ndarray, list[str]
         ``(W, tract, roi_names)`` — connectivity matrix, tract lengths, region labels.
 
     """
-    import pickle
+    import pickle  # noqa: PLC0415 (lazy: pickle is optional and only needed here)
+    from pathlib import Path  # noqa: PLC0415 (lazy: only needed in this function)
 
-    with open(pickle_path, "rb") as f:  # noqa: S301
-        W, tract, roi_names, _centers_raw, _hemis_raw, _areas_raw = pickle.load(f)  # noqa: S301
+    with Path(pickle_path).open("rb") as f:
+        W, tract, roi_names, _centers_raw, _hemis_raw, _areas_raw = pickle.load(f)
 
     # Symmetrize and zero diagonal
     W = (W + W.T) / 2.0
@@ -299,8 +300,11 @@ def run_ws_sweep(
         Shapes: ``pt (t_rez,)``, ``Hreps (n_reps, t_rez)``, ``Qreps (n_reps, t_rez, 5)``.
 
     """
-    from hyphi.analyses import compute_frc_vec
-    from hyphi.modeling.entropies import vec_entropy, vec_quantiles
+    from hyphi.analyses import compute_frc_vec  # noqa: PLC0415 (deferred to avoid circular import at module load)
+    from hyphi.modeling.entropies import (  # noqa: PLC0415 (deferred to avoid circular import at module load)
+        vec_entropy,
+        vec_quantiles,
+    )
 
     pt = np.logspace(min_pow, max_pow, t_rez)
     qvals = np.array([0.05, 0.25, 0.5, 0.75, 0.95])

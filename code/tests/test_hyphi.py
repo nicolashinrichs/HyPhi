@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 from hyphi import configs as configs_module
-from hyphi.configs import bootstrap, config
+from hyphi.configs import bootstrap, config, project_path
 from hyphi.modeling.density_estimation import fit_kde
 from hyphi.modeling.entropies import entropy_kde_plugin, vec_entropy
 from hyphi.modeling.graph_curvatures import compute_frc_vec
@@ -100,6 +100,20 @@ def test_config_init_does_not_change_cwd(tmp_project, monkeypatch):
     # so the caller's cwd does not matter.
     assert Path(config.paths.DATA).is_absolute()
     assert Path(config.paths.DATA) == tmp_project / "data"
+
+
+def test_project_path_is_root_relative(tmp_project, monkeypatch):
+    """project_path joins against the project root, not the caller's working directory."""
+    subdir = tmp_project / "scripts"
+    subdir.mkdir()
+    monkeypatch.chdir(subdir)  # launch from a subdirectory
+    config.init()
+    p = project_path("./data/ccorr", "file.mat")
+    assert p.is_absolute()
+    assert p.name == "file.mat"
+    assert "scripts" not in p.parts  # under the root, not the launch subdir
+    assert "data" in p.parts
+    assert "ccorr" in p.parts
 
 
 def test_bootstrap_chdirs_to_project_root(tmp_project, monkeypatch):

@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy as sp
 from hyphi.configs import config as hyphi_config
+from hyphi.configs import project_path
 from hyphi.io import load_config
 from plot_hyper_ccorr_frc import (
     params,
@@ -36,7 +37,7 @@ trial_type_ids = list(np.array(config["trial_type_ids"]) - 1)
 trial_type_map = dict(zip(trial_type_ids, config["trial_types"], strict=True))
 
 # Visualization path variables
-hyperviz = Path(config["aug_viz_loc"]).absolute()
+hyperviz = project_path(config["aug_viz_loc"])
 Path(hyperviz).mkdir(parents=True, exist_ok=True)
 
 
@@ -47,7 +48,7 @@ if __name__ == "__main__":
     # Loop over dyads
     for dyad in tqdm(config["dyads"], desc="Dyads"):
         # Data path for shot times
-        Spath = Path(config["behav_loc"], f"exp{dyad_date_map[dyad]}").absolute()
+        Spath = project_path(config["behav_loc"], f"exp{dyad_date_map[dyad]}")
 
         # Load shot time data
         Svals = sp.io.loadmat(Spath)["trialtype"].flatten()
@@ -59,14 +60,14 @@ if __name__ == "__main__":
         # Loop over trial types
         for trial_type in tqdm(config["trial_types"], desc="Trial Types"):
             # Data paths
-            Hpath = Path(
+            Hpath = project_path(
                 config["result_loc"],
                 f"CCORR_aug_FRC_entropy_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy",
-            ).absolute()
-            Qpath = Path(
+            )
+            Qpath = project_path(
                 config["result_loc"],
                 f"CCORR_aug_FRC_quantiles_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy",
-            ).absolute()
+            )
 
             # Load data
             Hvals = np.load(Hpath)

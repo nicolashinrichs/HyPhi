@@ -63,6 +63,17 @@ _FEATURE_NAMES: tuple[str, ...] = (
     "total_strength",
 )
 
+# Minimum denominator / threshold below which a value is treated as zero.
+_EPSILON: float = 1e-15
+# Minimum number of nodes required for global efficiency to be well-defined.
+_MIN_NODES_FOR_EFFICIENCY: int = 2
+# Number of brain-subjects encoded in a single inter-brain matrix (A and B).
+_N_SUBJECTS: int = 2
+# Expected tensor rank for the CCORR input to extract_window_features.
+_CCORR_NDIM: int = 5
+# Expected matrix rank (ndim) for a single connectivity matrix.
+_MATRIX_NDIM: int = 2
+
 
 # %% Functions >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
@@ -116,7 +127,7 @@ def compute_wpli(phases_i: np.ndarray, phases_j: np.ndarray) -> float:
     cs = np.exp(1j * (phi_i - phi_j))
     im = np.imag(cs)
     denom = float(np.mean(np.abs(im)))
-    if denom < 1e-15:
+    if denom < _EPSILON:
         return 0.0
     return float(np.abs(np.mean(np.abs(im) * np.sign(im))) / denom)
 
@@ -145,7 +156,7 @@ def compute_imaginary_coherence(
         ``(freqs, imag_coh)`` — frequency array and ``|Im(coherence)|``.
 
     """
-    from scipy.signal import csd, welch
+    from scipy.signal import csd, welch  # noqa: PLC0415 (optional scipy dep, imported lazily)
 
     si = np.asarray(signal_i, dtype=float)
     sj = np.asarray(signal_j, dtype=float)
@@ -157,7 +168,7 @@ def compute_imaginary_coherence(
     _, pyy = welch(sj, fs=fs, nperseg=nperseg)
 
     denom = np.sqrt(pxx * pyy)
-    denom = np.where(denom < 1e-15, 1e-15, denom)
+    denom = np.where(denom < _EPSILON, _EPSILON, denom)
     return freqs, np.abs(np.imag(pxy / denom))
 
 
@@ -166,23 +177,23 @@ def compute_imaginary_coherence(
 # ---------------------
 
 
-def compute_global_efficiency(G: nx.Graph, weight: str | None = None) -> float:
-    """Global efficiency of a graph; returns 0.0 on degenerate input."""
-    if G.number_of_nodes() < 2:
+def compute_global_efficiency(G: nx.Graph, weight: str | None = None) -> float:  # noqa: ARG001 (weight kept for API symmetry with other graph metrics; nx.global_efficiency does not accept a weight kwarg)
+    """Compute global efficiency of a graph; returns 0.0 on degenerate input."""
+    if G.number_of_nodes() < _MIN_NODES_FOR_EFFICIENCY:
         return 0.0
     return float(nx.global_efficiency(G))
 
 
-def compute_modularity(G: nx.Graph, weight: str | None = "weight") -> float:  # noqa: N803
-    """Modularity via greedy community detection; 0.0 if no edges."""
+def compute_modularity(G: nx.Graph, weight: str | None = "weight") -> float:
+    """Compute modularity via greedy community detection; 0.0 if no edges."""
     if G.number_of_edges() == 0:
         return 0.0
     communities = nx.algorithms.community.greedy_modularity_communities(G, weight=weight)
     return float(nx.algorithms.community.quality.modularity(G, communities, weight=weight))
 
 
-def compute_assortativity(G: nx.Graph, weight: str | None = "weight") -> float:  # noqa: N803
-    """Degree assortativity coefficient; 0.0 when undefined on the graph."""
+def compute_assortativity(G: nx.Graph, weight: str | None = "weight") -> float:
+    """Compute degree assortativity coefficient; 0.0 when undefined on the graph."""
     if G.number_of_edges() == 0:
         return 0.0
     try:
@@ -193,7 +204,7 @@ def compute_assortativity(G: nx.Graph, weight: str | None = "weight") -> float: 
 
 
 def compute_mean_clustering(G: nx.Graph, weight: str | None = "weight") -> float:
-    """Mean (weighted) clustering coefficient; 0.0 on empty graphs."""
+    """Compute mean (weighted) clustering coefficient; 0.0 on empty graphs."""
     if G.number_of_nodes() == 0:
         return 0.0
     return float(nx.average_clustering(G, weight=weight))
@@ -237,12 +248,12 @@ def connectivity_matrix_features(
 
     """
     M = np.asarray(corr_matrix, dtype=float)
-    if M.ndim != 2 or M.shape[0] != M.shape[1]:
+    if M.ndim != _MATRIX_NDIM or M.shape[0] != M.shape[1]:
         raise ValueError(f"Expected square matrix, got shape {M.shape}")
     total = M.shape[0]
     n = n_ch_per_subject
-    if total != 2 * n:
-        raise ValueError(f"Matrix is {total}x{total} but n_ch_per_subject={n} implies {2 * n}.")
+    if total != _N_SUBJECTS * n:
+        raise ValueError(f"Matrix is {total}x{total} but n_ch_per_subject={n} implies {_N_SUBJECTS * n}.")
 
     intra_A = M[:n, :n]
     intra_B = M[n:, n:]
@@ -301,8 +312,8 @@ def extract_window_features(
         ``(n_freq, n_trials, n_windows, n_features)``.
 
     """
-    if ccorr_tensor.ndim != 5:
-        raise ValueError(f"Expected 5-D tensor (freq, trial, window, 2n, 2n), got {ccorr_tensor.shape}")
+    if ccorr_tensor.ndim != _CCORR_NDIM:
+        raise ValueError(f"Expected {_CCORR_NDIM}-D tensor (freq, trial, window, 2n, 2n), got {ccorr_tensor.shape}")
     n_freq, n_trials, n_windows = ccorr_tensor.shape[:3]
     n_feats = len(_FEATURE_NAMES)
     out = np.empty((n_freq, n_trials, n_windows, n_feats), dtype=float)
@@ -375,12 +386,16 @@ def classify_curvature_vs_benchmarks(
         ``n_groups`` — plus ``combined_*`` if ``X_combined`` was supplied.
 
     """
-    from sklearn.ensemble import RandomForestClassifier
-    from sklearn.linear_model import LogisticRegression
-    from sklearn.model_selection import StratifiedGroupKFold, StratifiedKFold, cross_val_score  # noqa: PLC0415
-    from sklearn.pipeline import make_pipeline
-    from sklearn.preprocessing import StandardScaler
-    from sklearn.svm import SVC
+    from sklearn.ensemble import RandomForestClassifier  # noqa: PLC0415 (optional sklearn dep, imported lazily)
+    from sklearn.linear_model import LogisticRegression  # noqa: PLC0415 (optional sklearn dep, imported lazily)
+    from sklearn.model_selection import (  # noqa: PLC0415 (optional sklearn dep, imported lazily)
+        StratifiedGroupKFold,
+        StratifiedKFold,
+        cross_val_score,
+    )
+    from sklearn.pipeline import make_pipeline  # noqa: PLC0415 (optional sklearn dep, imported lazily)
+    from sklearn.preprocessing import StandardScaler  # noqa: PLC0415 (optional sklearn dep, imported lazily)
+    from sklearn.svm import SVC  # noqa: PLC0415 (optional sklearn dep, imported lazily)
 
     X_curvature = np.asarray(X_curvature, dtype=float)
     X_benchmarks = np.asarray(X_benchmarks, dtype=float)

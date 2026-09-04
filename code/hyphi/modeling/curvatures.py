@@ -12,18 +12,26 @@ import networkx as nx
 import numpy as np
 
 try:
-    import plotly.graph_objects as go  # TODO: need to be added as optional dependency
+    # plotly is an optional dependency; install it to enable graph visualisation functions.
+    import plotly.graph_objects as go
 except ModuleNotFoundError:
     go = None
-from GraphRicciCurvature.FormanRicci import FormanRicci  # noqa: F401
+from GraphRicciCurvature.FormanRicci import FormanRicci
 from GraphRicciCurvature.OllivierRicci import OllivierRicci
-from pynndescent import NNDescent
 from scipy import linalg
-
-# from scipy.spatial.distance import pdist  # noqa: ERA001
 from scipy.stats import spearmanr
 from sklearn.metrics.pairwise import cosine_similarity, euclidean_distances
 from sklearn.neighbors import NearestNeighbors
+
+# %% Module-level constants
+
+# Adjacency-method selectors used in adj_matrix()
+_ADJ_METHOD_COSINE = 2
+_ADJ_METHOD_SPEARMAN = 3
+_ADJ_METHOD_PDIST = 4
+
+# Minimum adjacency degree to annotate a node label in graph_vis_direct()
+_ANNOTATION_DEGREE_THRESHOLD = 15
 
 # %% Functions >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
@@ -57,10 +65,10 @@ def adj_matrix(data, method: int = 1):
     """
     if method == 1:
         return np.round(euclidean_distances(data, data), decimals=3)
-    if method == 2:  # noqa: PLR2004
+    if method == _ADJ_METHOD_COSINE:
         cos_sim = cosine_similarity(data)
         return np.round(np.ones_like(cos_sim) - cos_sim, decimals=3)
-    if method == 3:  # noqa: PLR2004
+    if method == _ADJ_METHOD_SPEARMAN:
         n = data.shape[0]
         distance_matrix = np.zeros((n, n))
         for i in range(n):
@@ -68,7 +76,7 @@ def adj_matrix(data, method: int = 1):
                 rho, _ = spearmanr(data[i], data[j])
                 distance_matrix[i, j] = distance_matrix[j, i] = 1 - abs(rho)
         return np.round(distance_matrix, decimals=3)
-    if method == 4:
+    if method == _ADJ_METHOD_PDIST:
         raise NotImplementedError("Method 4 ('Euclidean Distance with pdist function') is not implemented yet.")
     return None
 
@@ -95,7 +103,7 @@ def compute_forman_curvature(adj_mat: np.ndarray, threshold: float = 0.5):
     G_generated: nx.Graph = nx.from_numpy_array(adjacency_matrix)  # noqa: N806
     frc = FormanRicci(G=G_generated, verbose="TRACE")
     frc.compute_ricci_curvature()
-    G_frc: nx.Graph = frc.G.copy()  # save an intermediate result # noqa: N806
+    G_frc: nx.Graph = frc.G.copy()  # save an intermediate result
     forman_curvtures = np.array(list(nx.get_edge_attributes(G_frc, "formanCurvature").values()))
     return forman_curvtures, G_frc
 
@@ -200,7 +208,7 @@ def graph_vis_direct(graph: nx.Graph) -> None:
 
     annotations = []
     for node, adjacencies in graph.adjacency():
-        if len(adjacencies) > 15:
+        if len(adjacencies) > _ANNOTATION_DEGREE_THRESHOLD:
             x, y = pos[node]
             annotations.append(
                 dict(
@@ -416,9 +424,14 @@ def nearest_neighbor_graph(data: np.ndarray, k: int = 5, weight: bool = False):
     Create graph embedding with k nearest neighbors from given data (n_samples, m_features).
 
     :param data: data array of shape (n_samples, m_features)
-    :param k: number of neighbors [default: k=10].
+    :param k: number of neighbors [default: k=5].
     :return: generated graph for nearest neighbors, distance matrix
     """
+    # Lazy import: pynndescent pulls in numba/llvmlite (~3 s to import); only load
+    # it here, where the approximate-kNN path actually runs, so importing this
+    # module (and hence `import hyphi`) stays fast.
+    from pynndescent import NNDescent  # noqa: PLC0415
+
     index = NNDescent(data)  # metric="euclidean" [default], n_neighbors=30 [default]
     n_neighbor, dist_neighbor = index.query(query_data=data, k=k)
     graph = nx.Graph()
@@ -473,11 +486,38 @@ def sim_graph(data: np.ndarray, k: int = 5, weight: bool = True):
 
 def adaptive_neighborhood_graph(X, k_min=5, k_max=50, density_method="knn"):
     """
-    Compute adapative k and distnaces.
+    Compute an adaptive-k neighborhood graph and distances.
 
-    This function is based on the distance of the data points, and the density is defined as the inverse of the distance
-    weight= non : no weight is considered for the edges, and all have the similar value 1
-    weight= distance: the attribute weight to each neighbor is equal to the Euclidean distance between the nodes
+    The per-node neighbor count is scaled by local density (inverse of the
+    distance to the k_max-th neighbor).  All edge weights are set to 1
+    regardless of the actual Euclidean distance; the distance is stored as a
+    separate ``"distance"`` edge attribute.
+
+    Parameters
+    ----------
+    X : np.ndarray
+        Data array of shape (n_samples, n_features).
+    k_min : int, optional
+        Minimum number of neighbors per node. Default is 5.
+    k_max : int, optional
+        Maximum number of neighbors per node (also used to estimate density).
+        Default is 50.
+    density_method : str, optional
+        Method for computing local density. Only ``"knn"`` is supported.
+
+    Returns
+    -------
+    G : nx.Graph
+        NetworkX graph with adaptive neighborhood edges.
+    distances : np.ndarray
+        Distance array of shape (n_samples, k_max) from the k_max-NN query.
+    adaptive_k : np.ndarray
+        Per-node neighbor counts of shape (n_samples,).
+
+    Raises
+    ------
+    NotImplementedError
+        If ``density_method`` is not ``"knn"``.
     """
     n_samples = X.shape[0]
 
@@ -504,7 +544,7 @@ def adaptive_neighborhood_graph(X, k_min=5, k_max=50, density_method="knn"):
                 distance = np.linalg.norm(X[i] - X[j])
                 G.add_edge(i, j, weight=1, distance=distance)  # weight= distance
 
-    for i, (density, k) in enumerate(zip(local_density, adaptive_k)):
+    for i, (density, k) in enumerate(zip(local_density, adaptive_k, strict=True)):
         G.nodes[i]["density"] = density
         G.nodes[i]["adaptive_k"] = k
 
@@ -542,7 +582,7 @@ def heat_kernel_distance(L1, L2):
     K1 = np.array([evecs1 @ np.diag(np.exp(-evals1 * ti)) @ evecs1.T for ti in t])
     K2 = np.array([evecs2 @ np.diag(np.exp(-evals2 * ti)) @ evecs2.T for ti in t])
 
-    diff = np.array([np.linalg.norm(k1 - k2, "fro") for k1, k2 in zip(K1, K2)])
+    diff = np.array([np.linalg.norm(k1 - k2, "fro") for k1, k2 in zip(K1, K2, strict=True)])
 
     return np.max(diff)
 
@@ -605,9 +645,7 @@ def kl_divergence(p, q):
     # Mask to ignore zero probabilities in q
     mask = (p_padded > 0) & (q_padded > 0)
 
-    kl_div = np.sum(p_padded[mask] * np.log(p_padded[mask] / (q_padded[mask] + epsilon)))
-
-    return kl_div
+    return np.sum(p_padded[mask] * np.log(p_padded[mask] / (q_padded[mask] + epsilon)))
 
 
 def ricci_flow(

@@ -7,13 +7,18 @@
 
 ## Description
 
-*List relevant information one needs to know about the code of this research project.
-For instance, one could describe the computational model that was applied,
-and which statistical approach has been chosen for.*
+`hyphi` analyses hyperscanning (dual-brain EEG) data through the geometry of
+inter-brain connectivity graphs. It builds sliding-window phase-locking (PLV)
+graphs, computes their Forman-Ricci (and Ollivier-Ricci) curvature, summarises
+the curvature distribution as a geometric entropy, and tests condition
+differences with hierarchical permutation and mixed-effects models. The package
+also provides null models, Kuramoto and small-world simulations, and benchmark
+comparisons against standard hyperscanning metrics (PLV, wPLI).
 
 ## Codebase
 
-*Refer to the corresponding code/scripts written for the analysis/simulation/etc.*
+The analysis lives in the `hyphi` package; runnable end-to-end examples live in
+`tutorials/` (start with `tutorials/02_dual_eeg_pipeline.md`) and `experiments/`.
 
 ### `hyphi` Python package
 
@@ -28,9 +33,12 @@ uv sync [--extra develop] [--extra notebook]
 Or use other package management tools (e.g., `conda`, `pip`, or `pixi`) to install the package in editable mode.
 
 
-### Notebooks
+### Notebooks and examples
 
-`Jupyter` | `marimo` notebooks are stored in `./code/notebooks/`
+Polished, instructional material is in `./tutorials/` (the quickstart and the
+dual-EEG pipeline walkthrough). Raw research-exploration notebooks (Kuramoto,
+GDD-FRC, network checks) are in `./experiments/notebooks/`, alongside the
+experiment scripts in `./experiments/scripts/`.
 
 ### Configs
 
@@ -63,7 +71,8 @@ weight_decay = config.params.weight_decay
 api_key = config.service_x.api_key
 ```
 
-*Fill the corresponding `*config.toml` files with your data.*
+Point the paths in `configs/config.toml` (and any private `_config.toml`) at
+your own data before running an analysis.
 
 For other programming languages, corresponding scripts must be implemented to use these `*config.toml` files in a similar way.
 

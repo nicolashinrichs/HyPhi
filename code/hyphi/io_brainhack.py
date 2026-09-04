@@ -1,153 +1,49 @@
-"""
-Brainhack I/O helpers for loading adjacency matrices.
+"""Brainhack I/O helpers for loading adjacency matrices.
 
 This module bundles loaders for the two graph-pickle datasets used by the
-GDD / Forman-Ricci transformation notebooks (`GDD_FRc_Kuramoto.ipynb`,
-`GDD_FRc_prebase.ipynb`):
+GDD / Forman-Ricci transformation notebooks (``GDD_FRc_Kuramoto.ipynb``,
+``GDD_FRc_prebase.ipynb``):
 
 - the per-window Kuramoto connectomes shipped in ``data/connectome/``
-- the per-dyad prebase graphs (external — see ``data/README.md`` for download
+- the per-dyad prebase graphs (external; see ``data/README.md`` for download
   instructions; these pickles are not committed to the repo)
 
 Each loader returns plain NumPy adjacency matrices keyed by integer index, so
-downstream code (``hyphi.modeling.GDD_FRc_helpers``) can build NetworkX graphs
-and compute curvatures without re-implementing the unpickling logic.
+downstream code (:mod:`hyphi.modeling.gdd_frc_helpers`) can build NetworkX graphs
+and compute curvatures without re-implementing the unpickling logic. The
+cross-version graph-pickle loader itself lives in :func:`hyphi.io.load_pickle_adjacency`.
 
-A small back-compat shim (`_compat_load`) lets us read graph pickles produced
-under older NetworkX versions even when the importing environment ships a
-different NetworkX, by stubbing out the legacy ``Graph`` / ``*View`` classes
-referenced inside the pickle stream and reading the ``_adj`` dict directly.
+Years: 2026
 """
 
 from __future__ import annotations
 
-import io
-import pickle
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-import numpy as np
+from hyphi.io import load_pickle_adjacency
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+
+__all__ = [
+    "build_kuramoto_paths",
+    "build_prebase_paths",
+    "load_adjacencies_from_paths",
+    "load_all_kuramoto_adjacencies",
+    "load_all_prebase_adjacencies",
+    "load_pickle_adjacency",
+]
+
+# Default run indices (immutable range objects shared as defaults to avoid
+# evaluating range() in the signature, per ruff B008).
+_DEFAULT_KURAMOTO_INDICES = range(1, 9)
+_DEFAULT_PREBASE_INDICES = range(1, 30)
+
 
 # ------------------------------------------------------------------------------------------
 # general
 # ------------------------------------------------------------------------------------------
-
-
-def load_pickle_adjacency(
-    pickle_path: str | Path,
-    weight_key: str = "weight",
-    symmetrize: bool = False,
-    return_nodes: bool = False,
-):
-    """
-    Read a graph pickle and return its adjacency matrix as a NumPy array.
-
-    Parameters
-    ----------
-    pickle_path
-        Path to a pickle containing a NetworkX-like graph object.
-        If the pickle contains a list/tuple, the first item is used.
-    weight_key
-        Edge-attribute key used as edge weight (default: "weight").
-    symmetrize
-        If True, return max(A, A.T).
-    return_nodes
-        If True, also return the node order used in the matrix.
-
-    Returns
-    -------
-    np.ndarray
-        Adjacency matrix.
-    (np.ndarray, list)
-        Returned when return_nodes=True.
-
-    """
-    path = Path(pickle_path)
-
-    def _compat_load(path_obj: Path):
-        class _CompatGraph:
-            def __init__(self, *args, **kwargs):
-                pass
-
-            def __setstate__(self, state):
-                if isinstance(state, dict):
-                    self.__dict__.update(state)
-
-        class _CompatView:
-            def __init__(self, *args, **kwargs):
-                pass
-
-            def __setstate__(self, state):
-                self.__dict__["_state"] = state
-
-        class _CompatUnpickler(pickle.Unpickler):
-            _VIEW_NAMES = {
-                "NodeView",
-                "NodeDataView",
-                "EdgeView",
-                "OutEdgeView",
-                "InEdgeView",
-                "MultiEdgeView",
-                "OutMultiEdgeView",
-                "InMultiEdgeView",
-                "EdgeDataView",
-                "OutEdgeDataView",
-                "InEdgeDataView",
-                "MultiEdgeDataView",
-                "OutMultiEdgeDataView",
-                "InMultiEdgeDataView",
-            }
-
-            def find_class(self, module, name):
-                if module == "networkx.classes.graph" and name == "Graph":
-                    return _CompatGraph
-                if module == "networkx.classes.reportviews" and name in self._VIEW_NAMES:
-                    return _CompatView
-                return super().find_class(module, name)
-
-        with path_obj.open("rb") as f:
-            raw = f.read()
-        return _CompatUnpickler(io.BytesIO(raw)).load()
-
-    try:
-        with path.open("rb") as f:
-            obj = pickle.load(f)
-    except Exception:
-        obj = _compat_load(path)
-
-    if isinstance(obj, (list, tuple)):
-        if not obj:
-            raise ValueError("Pickle contains an empty list/tuple.")
-        obj = obj[0]
-
-    adj = obj["_adj"] if isinstance(obj, dict) and "_adj" in obj else getattr(obj, "_adj", None)
-
-    if not isinstance(adj, dict):
-        raise TypeError("Could not find dictionary-like '_adj' in the pickle object.")
-
-    nodes: list[object] = list(adj.keys())
-    idx = {node: i for i, node in enumerate(nodes)}
-    n = len(nodes)
-    A = np.zeros((n, n), dtype=float)
-
-    for u, nbrs in adj.items():
-        i = idx.get(u)
-        if i is None or not isinstance(nbrs, dict):
-            continue
-        for v, attr in nbrs.items():
-            j = idx.get(v)
-            if j is None:
-                continue
-            if isinstance(attr, dict):
-                A[i, j] = float(attr.get(weight_key, 1.0))
-            else:
-                A[i, j] = float(attr)
-
-    if symmetrize:
-        A = np.maximum(A, A.T)
-
-    if return_nodes:
-        return A, nodes
-    return A
 
 
 def load_adjacencies_from_paths(
@@ -157,30 +53,26 @@ def load_adjacencies_from_paths(
     return_nodes=False,
     verbose=False,
 ):
-    """
-    Load adjacency matrices for a dictionary of paths keyed by index.
+    """Load adjacency matrices for a dictionary of paths keyed by index.
 
     Parameters
     ----------
     paths : dict
-        Dictionary like {1: Path(...), 2: Path(...), ...}.
-    weight_key : str
-        Edge attribute to use as adjacency weight.
-    symmetrize : bool
-        If True, return max(A, A.T) for each adjacency matrix.
-    return_nodes : bool
+        Dictionary like ``{1: Path(...), 2: Path(...), ...}``.
+    weight_key : str, default="weight"
+        Edge attribute to use as the adjacency weight.
+    symmetrize : bool, default=False
+        If True, return ``max(A, A.T)`` for each adjacency matrix.
+    return_nodes : bool, default=False
         If True, also return the node order used for each adjacency matrix.
-    verbose : bool
+    verbose : bool, default=False
         If True, print basic loading information.
 
     Returns
     -------
-    dict
-        {idx: adjacency}
-    (dict, dict)
-        Returned when return_nodes=True:
-        ({idx: adjacency}, {idx: nodes})
-
+    dict or tuple of (dict, dict)
+        ``{idx: adjacency}``, and additionally ``{idx: nodes}`` when
+        ``return_nodes`` is True.
     """
     adjacencies = {}
     node_orders = {} if return_nodes else None
@@ -215,18 +107,33 @@ def load_adjacencies_from_paths(
 
 
 def build_kuramoto_paths(
-    indices=range(1, 9),
+    indices: Iterable[int] = _DEFAULT_KURAMOTO_INDICES,
     base_dir=Path("HyPhi") / "data" / "connectome",
     suffix="connectome_kuramoto.pkl",
 ):
-    """
-    Build Kuramoto paths.
+    """Build per-run Kuramoto connectome pickle paths and check they exist.
 
-    For example, build paths like:
+    For example, build paths ``1_connectome_kuramoto.pkl`` ...
+    ``8_connectome_kuramoto.pkl`` and verify each one is present.
 
-        1_connectome_kuramoto.pkl, ..., 8_connectome_kuramoto.pkl
+    Parameters
+    ----------
+    indices : iterable of int, optional
+        Run indices to build paths for.
+    base_dir : Path, optional
+        Directory containing the pickle files.
+    suffix : str, optional
+        Filename suffix appended after ``{idx}_``.
 
-    and check that they exist.
+    Returns
+    -------
+    dict
+        ``{idx: Path}`` for every requested index.
+
+    Raises
+    ------
+    FileNotFoundError
+        If any requested pickle file is missing.
     """
     paths = {idx: Path(base_dir) / f"{idx}_{suffix}" for idx in indices}
 
@@ -239,7 +146,7 @@ def build_kuramoto_paths(
 
 
 def load_all_kuramoto_adjacencies(
-    indices=range(1, 9),
+    indices: Iterable[int] = _DEFAULT_KURAMOTO_INDICES,
     base_dir=Path("HyPhi") / "data" / "connectome",
     suffix="connectome_kuramoto.pkl",
     weight_key="weight",
@@ -247,7 +154,7 @@ def load_all_kuramoto_adjacencies(
     return_nodes=False,
     verbose=False,
 ):
-    """Load all Kuramoto adjacency matrices only."""
+    """Load every Kuramoto adjacency matrix and return them with their paths."""
     paths = build_kuramoto_paths(
         indices=indices,
         base_dir=base_dir,
@@ -282,14 +189,33 @@ def load_all_kuramoto_adjacencies(
 
 
 def build_prebase_paths(
-    indices=range(1, 30),
+    indices: Iterable[int] = _DEFAULT_PREBASE_INDICES,
     base_dir=Path("HyPhi") / "data" / "prebase",
     suffix="_prebase_graph.pkl",
 ):
-    """
-    Build paths like:
-    01_prebase_graph.pkl, ..., 29_prebase_graph.pkl
-    and check that they exist.
+    """Build per-dyad prebase graph pickle paths and check they exist.
+
+    For example, build paths ``01_prebase_graph.pkl`` ... ``29_prebase_graph.pkl``
+    and verify each one is present.
+
+    Parameters
+    ----------
+    indices : iterable of int, optional
+        Dyad indices to build paths for.
+    base_dir : Path, optional
+        Directory containing the pickle files.
+    suffix : str, optional
+        Filename suffix appended after the zero-padded index.
+
+    Returns
+    -------
+    dict
+        ``{idx: Path}`` for every requested index.
+
+    Raises
+    ------
+    FileNotFoundError
+        If any requested pickle file is missing.
     """
     paths = {idx: Path(base_dir) / f"{idx:02d}{suffix}" for idx in indices}
 
@@ -302,7 +228,7 @@ def build_prebase_paths(
 
 
 def load_all_prebase_adjacencies(
-    indices=range(1, 30),
+    indices: Iterable[int] = _DEFAULT_PREBASE_INDICES,
     base_dir=Path("HyPhi") / "data" / "prebase",
     suffix="_prebase_graph.pkl",
     weight_key="weight",
@@ -310,7 +236,7 @@ def load_all_prebase_adjacencies(
     return_nodes=False,
     verbose=False,
 ):
-    """Load all prebase adjacency matrices only."""
+    """Load every prebase adjacency matrix and return them with their paths."""
     paths = build_prebase_paths(
         indices=indices,
         base_dir=base_dir,

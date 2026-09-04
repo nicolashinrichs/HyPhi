@@ -11,7 +11,7 @@ from pathlib import Path
 import networkx as nx
 import numpy as np
 import scipy as sp
-from hyphi.configs import config
+from hyphi.configs import config, project_path
 from hyphi.io import load_config
 from hyphi.modeling.entropies import entropy_kozachenko, get_quantiles
 from hyphi.modeling.graph_curvatures import compute_orc
@@ -33,7 +33,7 @@ for dyad in config["dyads"]:
     ccorr_data[dyad] = {}
 
     # Load dyad CCORR dictionary
-    dyad_ccorr = sp.io.loadmat(Path(config["data_loc"], f"CCORR_{dyad}.mat").absolute())
+    dyad_ccorr = sp.io.loadmat(project_path(config["data_loc"], f"CCORR_{dyad}.mat"))
 
     # Throw away unused metadata, keep only CCORR matrices by trial type
     for trial_type in tqdm(config["trial_types"], desc="Trial Types"):
@@ -67,7 +67,7 @@ for dyad in config["dyads"]:
         ccorr_data[dyad][trial_type] = ccorr_mat
 
 # If the results directory doesn't exist, make it
-Path(config["result_loc"]).absolute().mkdir(parents=True, exist_ok=True)
+project_path(config["result_loc"]).mkdir(parents=True, exist_ok=True)
 
 # %% Functions >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 

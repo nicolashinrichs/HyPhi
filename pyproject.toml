@@ -81,6 +81,11 @@ docs = [
     "mkdocs-jupyter>=0.25,<1",
 ]
 
+viz = [
+    "plotly>=5.0,<7.0", # interactive curvature/network figures (modeling.curvatures, visualization)
+    "seaborn>=0.12,<1.0", # statistical plotting helpers in the visualization layer
+]
+
 [project.urls]
 # homepage = "https://www.hyphi.org" # TODO: change to actual homepage and uncomment
 # documentation = "https://readthedocs.org" # TODO: change to actual documentation  and uncomment
@@ -132,7 +137,7 @@ exclude_lines = ["if __name__ == .__main__.:", "if TYPE_CHECKING:", "@abstract"]
 directory = "code/tests/coverage_html_report"
 
 [tool.ruff]
-src = ["code/hyphi", "code/notebooks", "code/tests"]
+src = ["code/hyphi", "code/tests"]
 include = ["*.py", "*.pyi", "**/pyproject.toml", "*.ipynb"]
 
 # Exclude a variety of commonly ignored directories:
@@ -224,6 +229,7 @@ ignore = [
 [tool.ruff.lint.extend-per-file-ignores]
 "__init__.py" = ["F401", "D104"]
 "configs.py" = ["UP036", "UP038"]
+"io.py" = ["A005"]                              # hyphi.io is namespaced; it does not shadow stdlib io for importers
 "*.ipynb" = ["D100"]                            # ignore docsstring in notebooks
 "code/tests/*.py" = ["S101", "PLC2701", "N802"] # ignore assert statements in tests, private name imports, & lowercase (tearDown, setUp)
 
@@ -256,10 +262,22 @@ known-local-folder = ["code/hyphi"]
 max-complexity = 10 # default x: 10
 
 [tool.ruff.lint.pep8-naming]
-ignore-names = [] # fill with specific class, function, variable names
+# Conventional scientific / graph-theory identifiers are written with capitals by
+# domain convention (G for a graph, A/L/W for adjacency/Laplacian/weight matrices,
+# FRC/ORC for curvatures, Gt/Ht for time series of graphs/entropies). We declare
+# the convention here rather than lowercasing domain symbols.
+ignore-names = [
+    "A", "A_prime", "C", "C_inter", "D", "D_vir", "Dmax", "Fs",
+    "G", "G_curr", "G_frc", "G_prev", "Gt", "H", "H_pruned", "Hreps", "Ht",
+    "K", "K1", "K2", "L", "L1", "L2", "L_curr", "L_prev", "M", "N",
+    "Qreps", "Qt", "T", "W", "W_inter", "W_pair", "W_small", "W_vir",
+    "X", "X_benchmarks", "X_combined", "X_curvature",
+    "FRC*", "ORC*", "AFRC*", "GDD*",
+    "intra_A", "intra_B", "mean_W", "mean_intra_A", "mean_intra_B",
+]
 
 [tool.ruff.lint.pydocstyle]
-# convention = "google"  # "numpy", "pep257"
+convention = "numpy"
 
 [tool.ruff.lint.pylint]
 max-args = 10         # default: 5
@@ -271,7 +289,7 @@ max-nested-blocks = 5 # default: 5
 # allow-magic-value-types = ["int"]
 
 [tool.ty.src]
-include = ["code/hyphi", "code/notebooks", "code/tests"]
+include = ["code/hyphi", "code/tests"]
 
 [tool.ty.terminal]
 output-format = "concise" # or "full"

@@ -3,7 +3,6 @@
 # %% Import
 from __future__ import annotations
 
-from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from KDEpy import TreeKDE
@@ -12,6 +11,8 @@ from scipy.stats import differential_entropy
 from hyphi.modeling.graph_curvatures import extract_curvatures
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     import networkx as nx
     import numpy.typing as npt
 
@@ -27,7 +28,7 @@ import numpy as np
 
 def entropy_vasicek(
     G: nx.classes.graph.Graph, curvature: str = "formanCurvature", window_length: int | None = None
-) -> npt.number | npt.ndarray:
+) -> np.floating | np.ndarray:
     """
     Vasicek entropy estimator on graph curvatures.
 
@@ -53,20 +54,62 @@ def entropy_vasicek(
     return differential_entropy(curvatures, **kwargs)
 
 
-def entropy_van_es(G: nx.classes.graph.Graph, curvature: str = "formanCurvature") -> npt.number | npt.ndarray:
-    """Van Es entropy estimator on graph curvatures."""
+def entropy_van_es(G: nx.classes.graph.Graph, curvature: str = "formanCurvature") -> np.floating | np.ndarray:
+    """Compute Van Es entropy estimate on graph curvatures.
+
+    Parameters
+    ----------
+    G : nx.Graph
+        Graph with curvature edge attributes.
+    curvature : str
+        Name of the curvature edge attribute.
+
+    Returns
+    -------
+    float
+        Van Es entropy estimate.
+
+    """
     curvatures = extract_curvatures(G, curvature=curvature)
     return differential_entropy(curvatures, method="van es", nan_policy="omit")
 
 
-def entropy_ebrahimi(G: nx.classes.graph.Graph, curvature: str = "formanCurvature") -> npt.number | npt.ndarray:
-    """Ebrahimi entropy estimator on graph curvatures."""
+def entropy_ebrahimi(G: nx.classes.graph.Graph, curvature: str = "formanCurvature") -> np.floating | np.ndarray:
+    """Compute Ebrahimi entropy estimate on graph curvatures.
+
+    Parameters
+    ----------
+    G : nx.Graph
+        Graph with curvature edge attributes.
+    curvature : str
+        Name of the curvature edge attribute.
+
+    Returns
+    -------
+    float
+        Ebrahimi entropy estimate.
+
+    """
     curvatures = extract_curvatures(G, curvature=curvature)
     return differential_entropy(curvatures, method="ebrahimi", nan_policy="omit")
 
 
-def entropy_correa(G: nx.classes.graph.Graph, curvature: str = "formanCurvature") -> npt.number | npt.ndarray:
-    """Correa entropy estimator on graph curvatures."""
+def entropy_correa(G: nx.classes.graph.Graph, curvature: str = "formanCurvature") -> np.floating | np.ndarray:
+    """Compute Correa entropy estimate on graph curvatures.
+
+    Parameters
+    ----------
+    G : nx.Graph
+        Graph with curvature edge attributes.
+    curvature : str
+        Name of the curvature edge attribute.
+
+    Returns
+    -------
+    float
+        Correa entropy estimate.
+
+    """
     curvatures = extract_curvatures(G, curvature=curvature)
     return differential_entropy(curvatures, method="correa", nan_policy="omit")
 
@@ -119,8 +162,24 @@ def entropy_kde_plugin(
 
 
 def entropy_kozachenko(G: nx.classes.graph.Graph, curvature: str = "formanCurvature", k: int = 4) -> float:
-    """Kozachenko-Leonenko kNN entropy estimator."""
-    import infomeasure as im
+    """Compute Kozachenko-Leonenko kNN entropy estimate on graph curvatures.
+
+    Parameters
+    ----------
+    G : nx.Graph
+        Graph with curvature edge attributes.
+    curvature : str
+        Name of the curvature edge attribute.
+    k : int
+        Number of nearest neighbours.
+
+    Returns
+    -------
+    float
+        Kozachenko-Leonenko entropy estimate.
+
+    """
+    import infomeasure as im  # noqa: PLC0415 (optional heavy dependency, deferred to call time)
 
     curvatures = extract_curvatures(G, curvature=curvature)
     return im.entropy(curvatures, approach="metric", k=k)
@@ -129,8 +188,26 @@ def entropy_kozachenko(G: nx.classes.graph.Graph, curvature: str = "formanCurvat
 def entropy_renyi(
     G: nx.classes.graph.Graph, curvature: str = "formanCurvature", order: float | int = 2, k: int = 4
 ) -> float:
-    """Rényi entropy estimator via kNN."""
-    import infomeasure as im
+    """Compute Renyi entropy estimate via kNN on graph curvatures.
+
+    Parameters
+    ----------
+    G : nx.Graph
+        Graph with curvature edge attributes.
+    curvature : str
+        Name of the curvature edge attribute.
+    order : float or int
+        Order of the Renyi entropy (alpha parameter).
+    k : int
+        Number of nearest neighbours.
+
+    Returns
+    -------
+    float
+        Renyi entropy estimate.
+
+    """
+    import infomeasure as im  # noqa: PLC0415 (optional heavy dependency, deferred to call time)
 
     curvatures = extract_curvatures(G, curvature=curvature)
     return im.entropy(curvatures, approach="renyi", alpha=order, k=k)
@@ -139,8 +216,26 @@ def entropy_renyi(
 def entropy_tsallis(
     G: nx.classes.graph.Graph, curvature: str = "formanCurvature", order: float | int = 2, k: int = 4
 ) -> float:
-    """Tsallis entropy estimator via kNN."""
-    import infomeasure as im
+    """Compute Tsallis entropy estimate via kNN on graph curvatures.
+
+    Parameters
+    ----------
+    G : nx.Graph
+        Graph with curvature edge attributes.
+    curvature : str
+        Name of the curvature edge attribute.
+    order : float or int
+        Order of the Tsallis entropy (q parameter).
+    k : int
+        Number of nearest neighbours.
+
+    Returns
+    -------
+    float
+        Tsallis entropy estimate.
+
+    """
+    import infomeasure as im  # noqa: PLC0415 (optional heavy dependency, deferred to call time)
 
     curvatures = extract_curvatures(G, curvature=curvature)
     return im.entropy(curvatures, approach="tsallis", q=order, k=k)
@@ -152,10 +247,10 @@ def entropy_tsallis(
 
 
 def vec_entropy(
-    graphs: npt.NDArray[nx.classes.graph.Graph] | list[nx.classes.graph.Graph],
+    graphs: np.ndarray | list[nx.classes.graph.Graph],
     estimator: Callable | None = None,
     parallel: bool = False,
-) -> npt.NDArray[float]:
+) -> npt.NDArray[np.float64]:
     """
     Compute entropy over a list of curvature-annotated graphs.
 
@@ -178,7 +273,7 @@ def vec_entropy(
         estimator = entropy_kozachenko
 
     if parallel:
-        import ray
+        import ray  # noqa: PLC0415 (optional heavy dependency, deferred to call time)
 
         @ray.remote
         def _par_estim(g):
@@ -193,19 +288,51 @@ def vec_entropy(
 
 
 def get_quantiles(
-    G: nx.classes.graph.Graph, qs: npt.NDArray[float] | list[float], curvature: str = "formanCurvature"
-) -> npt.NDArray[float]:
-    """Get quantiles of the curvature distribution on a single graph."""
+    G: nx.classes.graph.Graph, qs: npt.NDArray[np.float64] | list[float], curvature: str = "formanCurvature"
+) -> npt.NDArray[np.float64]:
+    """Return quantiles of the curvature distribution on a single graph.
+
+    Parameters
+    ----------
+    G : nx.Graph
+        Graph with curvature edge attributes.
+    qs : array-like of float
+        Quantile levels in [0, 1].
+    curvature : str
+        Name of the curvature edge attribute.
+
+    Returns
+    -------
+    np.ndarray
+        Array of quantile values corresponding to ``qs``.
+
+    """
     curvatures = extract_curvatures(G, curvature=curvature)
     return np.quantile(curvatures, qs)
 
 
 def vec_quantiles(
-    graphs: npt.NDArray[nx.classes.graph.Graph] | list[nx.classes.graph.Graph],
-    qs: npt.NDArray[float] | list[float],
+    graphs: np.ndarray | list[nx.classes.graph.Graph],
+    qs: npt.NDArray[np.float64] | list[float],
     curvature: str = "formanCurvature",
-) -> npt.NDArray[float]:
-    """Get quantiles for a list of graphs."""
+) -> npt.NDArray[np.float64]:
+    """Return quantiles of curvature distributions for a list of graphs.
+
+    Parameters
+    ----------
+    graphs : list[nx.Graph]
+        Graphs with curvature edge attributes.
+    qs : array-like of float
+        Quantile levels in [0, 1].
+    curvature : str
+        Name of the curvature edge attribute.
+
+    Returns
+    -------
+    np.ndarray
+        2-D array of shape ``(len(graphs), len(qs))`` with quantile values.
+
+    """
     return np.array([get_quantiles(G, qs=qs, curvature=curvature) for G in graphs])
 
 

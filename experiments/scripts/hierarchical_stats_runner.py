@@ -62,7 +62,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 from hyphi.benchmarks import classify_curvature_vs_benchmarks, extract_window_features
-from hyphi.configs import config as hyphi_config
+from hyphi.configs import config as hyphi_config, project_path
 
 from hyphi.io import load_config
 from hyphi.null_models import dyad_label_shuffle
@@ -128,7 +128,7 @@ def _prefix(curvature: str) -> str:
 
 def entropy_path(config: dict, dyad: Any, trial_type: str, curvature: str) -> Path:
     """Per-dyad × per-trial-type entropy array path (shape: n_freq × n_trials × n_windows)."""
-    base = Path(config["result_loc"]).resolve()
+    base = project_path(config["result_loc"])
     return base / (
         f"{_prefix(curvature)}_entropy_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy"
     )
@@ -136,7 +136,7 @@ def entropy_path(config: dict, dyad: Any, trial_type: str, curvature: str) -> Pa
 
 def curvature_matrix_path(config: dict, dyad: Any, trial_type: str, curvature: str) -> Path:
     """Per-dyad × per-trial-type curvature matrix path (shape: n_freq × n_trials × n_windows × 2n × 2n)."""
-    base = Path(config["result_loc"]).resolve()
+    base = project_path(config["result_loc"])
     return base / (f"{_prefix(curvature)}_matrix_dyad_{dyad}_trial_type_{trial_type}_config_{config['config_id']}.npy")
 
 
@@ -567,7 +567,7 @@ def main(config_file: str, curvature: str, strict: bool = False) -> dict:
     if caps.n_dyads_loaded == 0:
         msg = "No dyads loaded — aborting."
         logger.error(msg)
-        return {"error": "no_entropy_data", "searched_under": str(Path(config["result_loc"]).resolve())}
+        return {"error": "no_entropy_data", "searched_under": str(project_path(config["result_loc"]))}
 
     if strict and not (caps.can_hierarchical_perm or caps.can_mixed_effects):
         logger.error("--strict: no inferential analyses are runnable at N=%d; aborting.", caps.n_dyads_loaded)

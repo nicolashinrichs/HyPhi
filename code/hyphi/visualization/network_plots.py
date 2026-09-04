@@ -44,7 +44,7 @@ _VALID_LAYOUTS = ("spring", "kamada_kawai", "spectral", "circular", "shell")
 # %% Helpers >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
 
 
-def _get_layout_positions(G: nx.Graph, layout: str = "spring", seed: int = 42) -> dict:  # noqa: N803
+def _get_layout_positions(G: nx.Graph, layout: str = "spring", seed: int = 42) -> dict:
     """Dispatch to the chosen ``networkx`` layout; raises on unknown names."""
     if G.number_of_nodes() == 0:
         return {}
@@ -75,7 +75,7 @@ def _safe_color_limits(values: Iterable[float]) -> tuple[float, float]:
 
 
 def plot_weight_distribution(
-    G: nx.Graph,  # noqa: N803
+    G: nx.Graph,
     bins: int = 20,
     figsize: tuple[float, float] = (7, 4),
     title: str = "Distribution of edge weights",
@@ -120,7 +120,7 @@ def plot_weight_distribution(
 
 
 def plot_network(
-    G: nx.Graph,  # noqa: N803
+    G: nx.Graph,
     layout: str = "spring",
     figsize: tuple[float, float] = (10, 10),
     title: str | None = None,
@@ -130,7 +130,36 @@ def plot_network(
     width: float = 1.5,
     seed: int = 42,
 ) -> Figure:
-    """Draw a graph using the requested layout; returns the Figure."""
+    """
+    Draw a graph using the requested layout.
+
+    Parameters
+    ----------
+    G : nx.Graph
+        The graph to draw.
+    layout : str
+        One of :data:`_VALID_LAYOUTS`.
+    figsize : tuple
+        Matplotlib figsize.
+    title : str, optional
+        Plot title.
+    with_labels : bool
+        Whether to draw node labels.
+    node_size : int
+        Node marker size in points squared.
+    font_size : int
+        Label font size.
+    width : float
+        Edge line width.
+    seed : int
+        Seed for stochastic layouts.
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+        The created figure.
+
+    """
     pos = _get_layout_positions(G, layout=layout, seed=seed)
 
     fig, ax = plt.subplots(figsize=figsize)
@@ -149,8 +178,8 @@ def plot_network(
     return fig
 
 
-def plot_curvature_network(
-    G: nx.Graph,  # noqa: N803
+def plot_curvature_network(  # noqa: PLR0913 (visualization function requires many style knobs)
+    G: nx.Graph,
     curvature_attr: str = "formanCurvature",
     layout: str = "spring",
     figsize: tuple[float, float] = (10, 10),
@@ -228,8 +257,8 @@ def plot_curvature_network(
     return fig
 
 
-def plot_curvature_network_layouts(
-    G: nx.Graph,  # noqa: N803
+def plot_curvature_network_layouts(  # noqa: PLR0913 (visualization function requires many style knobs)
+    G: nx.Graph,
     curvature_attr: str = "formanCurvature",
     layouts: tuple[str, ...] = ("spring", "kamada_kawai", "circular"),
     figsize: tuple[float, float] = (18, 6),
@@ -243,13 +272,50 @@ def plot_curvature_network_layouts(
     suptitle: str | None = "Curvature-coloured network in multiple layouts",
 ) -> Figure:
     """
-    Side-by-side curvature-colored views of the same graph across multiple layouts.
+    Draw side-by-side curvature-colored views of the same graph across multiple layouts.
 
     Useful for quickly checking whether high-curvature edges localize
     structurally (i.e., the same edges stand out regardless of layout).
 
+    Parameters
+    ----------
+    G : nx.Graph
+        Graph whose edges carry ``curvature_attr``.
+    curvature_attr : str
+        Edge attribute name (default ``"formanCurvature"``).
+    layouts : tuple of str
+        Sequence of layout names from :data:`_VALID_LAYOUTS`.
+    figsize : tuple
+        Matplotlib figsize for the combined figure.
+    with_labels : bool
+        Whether to draw node labels in each panel.
+    node_size : int
+        Node marker size in points squared.
+    node_alpha : float
+        Node transparency (0-1).
+    font_size : int
+        Label font size.
+    width : float
+        Edge line width.
+    seed : int
+        Seed for stochastic layouts.
+    cmap : matplotlib.colors.Colormap, optional
+        Defaults to ``plt.cm.coolwarm``.
+    suptitle : str, optional
+        Figure-level super title.
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+        The created figure with one subplot per layout.
+
+    Raises
+    ------
+    ValueError
+        If the graph has no edges to color.
+
     """
-    cmap = cmap if cmap is not None else plt.cm.coolwarm
+    cmap = cmap if cmap is not None else plt.cm.coolwarm  # ty:ignore[unresolved-attribute]
 
     edge_curvs = [data[curvature_attr] for _, _, data in G.edges(data=True)]
     if len(edge_curvs) == 0:
@@ -294,7 +360,26 @@ def plot_curvature_distribution(
     figsize: tuple[float, float] = (7, 4),
     title: str = "Distribution of Forman-Ricci curvature",
 ) -> Figure:
-    """Histogram of curvature values."""
+    """
+    Plot a histogram of Forman-Ricci curvature values.
+
+    Parameters
+    ----------
+    curvatures : np.ndarray
+        Array of per-edge curvature values.
+    bins : int
+        Number of histogram bins.
+    figsize : tuple
+        Matplotlib figsize.
+    title : str
+        Plot title.
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+        The created figure.
+
+    """
     fig, ax = plt.subplots(figsize=figsize)
     ax.hist(np.asarray(curvatures), bins=bins)
     ax.set_xlabel("Forman-Ricci curvature")

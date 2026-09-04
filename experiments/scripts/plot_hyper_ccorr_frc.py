@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy as sp
 from hyphi.configs import config as hyphi_config
+from hyphi.configs import project_path
 from hyphi.io import load_config
 from matplotlib import cm
 from matplotlib.colors import BoundaryNorm, ListedColormap
@@ -50,7 +51,7 @@ trial_type_ids = list(np.array(config["trial_type_ids"]) - 1)
 trial_type_map = dict(zip(trial_type_ids, config["trial_types"], strict=True))
 
 # Visualization path variables
-hyperviz = Path(config["viz_loc"]).absolute()
+hyperviz = project_path(config["viz_loc"])
 hyperviz.mkdir(parents=True, exist_ok=True)
 
 # %% Functions >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o >><< o
