@@ -55,8 +55,11 @@ def get_orc(
     base_val: float = math.e,
     power_val: int = 0,
     method_val: str = "OTDSinkhornMix",
+    metric: str = "neglog",
 ) -> nx.Graph:
-    """Get Ollivier-Ricci curvature."""
+    """Get Ollivier-Ricci curvature (edge weights mapped to neglog distance; see _orc_distance_graph)."""
+    # Map coupling similarity -> transport distance (dist = -log(w)) before ORC.
+    G = _orc_distance_graph(G, metric)
     # Initialize Ollivier-Ricci Curvature class
     orc = OllivierRicci(G, alpha=alpha_val, base=base_val, exp_power=power_val, method=method_val)
     # Compute the Ollivier-Ricci curvature
@@ -101,8 +104,40 @@ def compute_afrc_vec(list_of_graphs: list[nx.Graph]) -> list[nx.Graph]:
 # ---------------------
 
 
+def _orc_distance_graph(G: nx.Graph, metric: str = "neglog") -> nx.Graph:
+    """Map coupling-SIMILARITY edge weights to the transport DISTANCE OllivierRicci consumes.
+
+    GraphRicciCurvature treats the edge ``weight`` as a DISTANCE in the optimal-transport
+    shortest paths, so feeding a raw coupling similarity (PLV, |CCorr|, ...) inverts the
+    geometry (stronger coupling reads as farther apart). The atlas and the published ORC use
+    ``dist = -log(weight)``; this transform is required to reproduce them.
+
+    Matches curvature-entropy-atlas/atlas_campaign_cache.py exactly: weight clipped to
+    [1e-6, 1 - 1e-9], ``dist = -log(w)``, floored at 1e-9. To reproduce the atlas ORC also set
+    ``alpha=0.5, exp_power=2.0, method="OTD"`` (exact transport, not Sinkhorn) on compute_orc.
+
+    Parameters
+    ----------
+    metric : {"neglog", "raw"}
+        "neglog" (default) returns a COPY of G with each weight replaced by the neglog distance;
+        "raw" returns G unchanged (legacy behaviour that will NOT reproduce the atlas ORC).
+    """
+    if metric == "raw":
+        return G
+    if metric != "neglog":
+        raise ValueError(f"metric must be 'neglog' or 'raw', got {metric!r}")
+    H = nx.Graph()
+    H.add_nodes_from(G.nodes(data=True))
+    for u, v, d in G.edges(data=True):
+        w = float(d.get("weight", 0.0))
+        w = min(max(w, 1e-6), 1.0 - 1e-9)
+        H.add_edge(u, v, weight=max(-math.log(w), 1e-9))
+    return H
+
+
 def compute_orc(
-    G: nx.Graph, alpha: float = 0.5, base: float = math.e, exp_power: float = 0, method: str = "OTDSinkhornMix"
+    G: nx.Graph, alpha: float = 0.5, base: float = math.e, exp_power: float = 0,
+    method: str = "OTDSinkhornMix", metric: str = "neglog"
 ) -> nx.Graph:
     """
     Compute Ollivier-Ricci curvature on graph G.
@@ -126,6 +161,7 @@ def compute_orc(
         Graph with 'ricciCurvature' edge attribute.
 
     """
+    G = _orc_distance_graph(G, metric)
     orc = OllivierRicci(G, alpha=alpha, base=base, exp_power=exp_power, method=method)
     orc.compute_ricci_curvature()
     return orc.G
