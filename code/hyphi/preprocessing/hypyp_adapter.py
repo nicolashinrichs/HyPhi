@@ -133,6 +133,13 @@ def epochs_to_plv_graphs(inst: Any, win_size: int, win_stride: int, picks: Any =
         )
         raise ValueError(msg)
     if data.ndim == _CHANNELS_TIME_NDIM:
+        if win_size > data.shape[-1]:
+            logger.warning(
+                "epochs_to_plv_graphs: win_size=%d exceeds the recording length %d, so no window fits "
+                "and no graphs are produced. Reduce win_size, or provide more time samples.",
+                win_size,
+                data.shape[-1],
+            )
         return sliding_window_plv(_instantaneous_phase(data), win_size, win_stride)
     if data.ndim == _EPOCHED_NDIM:
         if win_size > data.shape[-1]:

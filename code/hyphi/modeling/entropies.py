@@ -626,7 +626,15 @@ def vec_quantiles(
     qs: npt.NDArray[np.float64] | list[float],
     curvature: str = "formanCurvature",
 ) -> npt.NDArray[np.float64]:
-    """Get quantiles for a list of graphs."""
+    """Get quantiles for a list of graphs.
+
+    Returns a ``(0, len(qs))`` array for an empty graph series so the second (quantile) axis is
+    preserved: an empty list would otherwise collapse to shape ``(0,)`` and break the documented
+    ``(n_windows, len(qs))`` contract (and any ``quantiles[:, k]`` column access) on the degenerate
+    zero-window path that ``run_eeg_pipeline`` can legitimately hit.
+    """
+    if len(graphs) == 0:
+        return np.empty((0, np.size(qs)), dtype=float)
     return np.array([get_quantiles(G, qs=qs, curvature=curvature) for G in graphs])
 
 
